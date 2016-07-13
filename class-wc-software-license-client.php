@@ -530,6 +530,9 @@ class WC_Software_License_Client {
 
 	} // add_license_menu()
 
+	/**
+	 * License page output call back function 
+	 */
 	public function license_page(){ 
 	?>
 		<div class='wrap'>
@@ -551,9 +554,13 @@ class WC_Software_License_Client {
 		</div>
 
 	<?
-	}	
+	} // license_page() 
 
-	// Work out why this isn't working grr ! 
+	/**
+	 * Load settings for the admin screens so users can input their license key 
+	 *
+	 * Utilizes the WordPress Settings API to implment this
+	 */
 	public function load_settings(){ 
 
 		register_setting( $this->slug . '_license_information', $this->slug . '_license_information', array( $this, 'validate_license_options' ) ); 
@@ -575,16 +582,24 @@ class WC_Software_License_Client {
 			array( 'label_for' => $this->slug .'_license_key' )
 		); 
 
-	}
+	} // load_settings() 
 
+	/**
+	 * Validate the license key information sent from the form. 
+	 * 
+	 */
 	public function validate_license_options( $input ){ 
 
-	}
+	} // validate_license_options() 
 
+	/**
+	 * License key field callback
+	 */
 	public function license_key_field( ){ 
 
 		echo '<input type="text" value="' . $this->license_details[ 'license_key' ] . '" />'; 
-	}
+
+	} // license_key_field() 
 
 
 } // WC_Software_License_Client 
