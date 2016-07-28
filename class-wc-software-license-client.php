@@ -113,6 +113,14 @@ class WC_Software_License_Client {
 	private $domain; 
 
 	/**
+	 * The plugin license key 
+	 * 
+	 * @since 1.0.0 
+	 * @access private 
+	 */
+	private $admin_notice; 
+
+	/**
 	 * Don't allow cloning 
 	 *
 	 * @since 1.0.0
@@ -134,15 +142,16 @@ class WC_Software_License_Client {
 	 * @param string  $version - the software version currently running 
 	 * @param string  $text_domain - the text domain of the plugin
 	 * @param string  $plugin_file - path to the plugin file or directory, relative to the plugins directory
-	 * @param integer $update_interval - time in hours between update checks 
 	 * @param string  $plugin_nice_name - A nice name for the plugin for use in messages 
+	 * @param integer $update_interval - time in hours between update checks 
+	 * @param bool 	  $debug - pass if the plugin is in debug mode 
 	 * @return object A single instance of this class.
 	 */
-	public static function get_instance( $license_server_url, $version, $text_domain, $plugin_file, $plugin_nice_name, $update_interval = 12 ){
+	public static function get_instance( $license_server_url, $version, $text_domain, $plugin_file, $plugin_nice_name, $slug = '', $update_interval = 12, $debug = false ){
 
 		// If the single instance hasn't been set, set it now.
 		if ( null == self::$instance ) {
-			self::$instance = new self( $license_server_url, $version, $text_domain, $plugin_file,  $plugin_nice_name, $update_interval );
+			self::$instance = new self( $license_server_url, $version, $text_domain, $plugin_file,  $plugin_nice_name, $slug, $update_interval, $debug );
 		}
 
 		return self::$instance;
@@ -160,7 +169,7 @@ class WC_Software_License_Client {
 	 * @param string  $plugin_nice_name - A nice name for the plugin for use in messages 
 	 * @param integer $update_interval - time in hours between update checks 
 	 */
-	private function __construct( $license_server_url, $version, $text_domain, $plugin_file, $plugin_nice_name,  $update_interval ){
+	private function __construct( $license_server_url, $version, $text_domain, $plugin_file, $plugin_nice_name,  $update_interval, $debug ){
 
 		
 		$this->plugin_nice_name		= $plugin_nice_name; 
@@ -169,12 +178,13 @@ class WC_Software_License_Client {
 		$this->text_domain			= $text_domain; 
 		$this->plugin_file			= plugin_basename( $plugin_file ); 
 		$this->update_interval		= $update_interval; 
-		$this->debug 				= ( bool ) (constant( 'WP_DEBUG' ) ); 
+		$this->debug 				= defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $debug; 
 		$this->slug 				= basename( $this->plugin_file, '.php' ); 	
-		$this->option_name 			= $this->slug . '_wc_software_license'; 	
+		$this->option_name 			= $this->slug . '_license_manager'; 
 		$this->domain 				= str_ireplace( array( 'http://', 'https://' ), '', home_url() );
 		$this->license_details 		= get_option( $this->option_name ); 
 		$this->license_manager_url 	= esc_url( admin_url( 'options-general.php?page='. $this->slug . '_license_manager' ) ); 
+
 
 		// Get the license server host 
 		$this->license_server_host 	= @parse_url( $this->license_server_url, PHP_URL_HOST ); 
@@ -191,10 +201,12 @@ class WC_Software_License_Client {
 
 		// Admin Options 
 		add_action( 'admin_menu', 								array( $this, 'add_license_menu' ) ); 
-		add_action( 'admin_init', 								array( $this, 'load_settings' ) ); 
+		add_action( 'admin_init', 								array( $this, 'add_license_settings' ) ); 
+
+		add_action( 'admin_notice', 							array( $this, 'display_error_message' ) ); 
 
 		// Log the class for debugging purposes 
-		if ( $this->debug ) $this->log( $this ); 
+		// if ( $this->debug ) $this->log( $this ); 
 
 	} // __construct()
 
@@ -206,19 +218,20 @@ class WC_Software_License_Client {
 	public function check_install(){ 
 
 		// Set defaults 
-		if ( $this->license_details == '' ) { 
+		if ( empty( $this->license_details ) ) { 
 			$default_license_options = array( 
-				'license_status'		=> 'deactivated', 
+				'license_status'		=> 'inactive', 
 				'license_key'			=> '', 
+				'license_expires'		=> '', 
+				'deactivate_license'	=> '', 
 				'current_version'		=> $this->version, 
-				'instance_key'			=> '', // Work out a way to generate a unique key to help with security for updates 
 			); 
 
 			update_option( $this->option_name, $default_license_options ); 
 
 		}
 
-		if ( $this->license_details == '' || $this->license_details[ 'license_status' ] == 'deactivated' ){ 
+		if ( $this->license_details == '' || $this->license_details[ 'license_status' ] == 'inactive' ){ 
 			add_action( 'admin_notices', array( $this, 'license_inactive' ) );  
 		}
 
@@ -232,6 +245,8 @@ class WC_Software_License_Client {
 
 		if ( ! current_user_can( 'manage_options' ) ) return; 
 		
+		// Add a check so if this plugin is running on localhost display a different message that means updates won't work  
+
 		echo '<div class="error notice is-dismissible"><p>'. 
 			sprintf( __( 'The %s license key has not been activated, so you will be unable to get automatic updates or support! %sClick here%s to activate your support and updates license key.', 'wcvendors-pro' ), $this->plugin_nice_name, '<a href="' . $this->license_manager_url . '">', '</a>' ) . 
 		'</p></div>'; 
@@ -250,11 +265,9 @@ class WC_Software_License_Client {
 			return $transient;
 		}
 
-		$request_args = array( 
-			'action' 			=> 'update_check', 
-		); 
+		$server_response = $this->server_request( 'check_update' ); 
 
-		$plugin_update_info = $this->get_plugin_info( $request_args ); 
+		$plugin_update_info = $server_response->software_details; 
 
 		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ) { 
 
@@ -286,77 +299,84 @@ class WC_Software_License_Client {
 
 		$version = get_site_transient( 'update_plugins' ); 
 
-		// Is the current API call about plugin information ? 
-		// if ( $action == 'plugin_information' ) { 
-
 		// 	// Is this about our plugin? 
 		if ( isset( $args->slug ) && $args->slug != $this->slug ){ 
 			return false; 				
 		} 
 
-		$request_args = array( 
-			'action'  => 'info', 
-		);
+		$server_response = $this->server_request( 'check_update' );  
+		$plugin_update_info = $server_response->software_details; 
 
-		$plugin_info = $this->get_plugin_info( $request_args ); 
+		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && $plugin_update_info !== false ){ 
 
-		if ( isset( $plugin_info ) && is_object( $plugin_info ) && $plugin_info !== false ){ 
-
-			return $plugin_info; 
+			return $plugin_update_info; 
 		}
 		
 	} // add_plugin_info() 
 
-
 	/**
-	 *  Communicates with the license server 
+	 * Send a request to the server 
+	 * @param $action string activate|deactivate|check_update
 	 */
-	public function get_plugin_info( $request_args = array() ){ 
+	public function server_request( $action = 'check_update' ){ 
 
-		$request_args[ 'current_version' ] 		= $this->version; 
-		$request_args[ 'slug' ] 				= $this->slug; 
-		$request_args[ 'license_key' ] 			= $this->license_key; 
+		$request_info[ 'slug' ] 				= $this->slug; 
+		$request_info[ 'license_key' ] 			= $this->license_details[ 'license_key' ]; 
+		$request_info[ 'domain' ]				= $this->domain; 
 
-		// Allow filtering the request args for plugins 
-		$request_args = apply_filters( 'wcsl_request_args_' . $this->slug, $request_args ); 
+		// Allow filtering the request info for plugins 
+		$request_args = apply_filters( 'wcsl_request_info_' . $this->slug, $request_info ); 
 
-		if ( $this->debug ) $this->log( $request_args ); 
+		// Build the server url api end point fix url build to support the WordPress API 
+		$server_request_url = esc_url_raw( $this->license_server_url . '/wp-json/wpsls/v1/' . $action . '?' . http_build_query( $request_info ) ); 
+
+		// Options to parse the wp_safe_remote_get() call 
+		$request_options = array(  'timeout' => 20 ); 
+
+		// Allow filtering the request options
+		$request_options = apply_filters( 'wcsl_request_options_' . $this->slug, $request_options ); 
 
 		// Query the license server 
-		$response = wp_remote_post( $this->license_server_url, array( 'body' => $request_args ) ); 
+		$response = wp_safe_remote_get( $server_request_url, $request_options ); 
 
-		// Validate that the response is valid 
+		// Validate that the response is valid not what the response is 
 		$result = $this->validate_response( $response ); 
-
-		$this->log( $result ); 
-
+		
 		// Check if there is an error and display it if there is one, otherwise process the response. 
-		if ( is_wp_error( $result ) ){ 
-			echo $result->get_error_message(); 
+		if ( ! is_wp_error( $result ) ){ 
+
+			$response_body = json_decode( wp_remote_retrieve_body( $response ) ); 
+
+			// Check the status of the response 
+			$continue = $this->check_response_status( $response_body ); 
+
+			if ( $continue ){ 
+				return $response_body;
+			} else { 
+
+				// Display the message 
+				// $this->log( $response_body ); 
+
+			}
+
 		} else { 
 
-			// actually process the response once the server is built 
+			// Display the error message in admin 
+			$this->log(' problems..' ); 
+			$this->log( $result ); 
 
-		 	$plugin_update_info = new stdClass; 
-			$plugin_update_info->id = ''; 
-			$plugin_update_info->slug 			= $this->slug; 
-			$plugin_update_info->new_version 	= '1.3.4'; 
-			$plugin_update_info->plugin 		= $this->plugin_file;
-			$plugin_update_info->package 		= 'https://someupdateurl.com/nextversion.zip'; 
-			$plugin_update_info->url 			= 'https://someupdateurl.com/myproduct'; 
-			$plugin_update_info->tested			= '4.5.3'; 
+			$this->set_admin_notice( $result->get_error_message(), 'error' ); 
 
-			return $plugin_update_info; 
+		} 
 
-		}
-
-
-	} // check_for_update() 
+	} // server_request() 
 
 
 	/**
-	 * Validate the license server response 
+	 * Validate the license server response to ensure its valid response not what the response is 
+	 * 
 	 * @since 1.0.0 
+	 * @access public 
 	 * @param WP_Error | Array The response or WP_Error 
 	 */
 	public function validate_response( $response ){ 
@@ -368,15 +388,15 @@ class WC_Software_License_Client {
 			}
 
 			if ( !isset( $response[ 'response'][ 'code'] ) ){ 
-				return new WP_Error( 'wc_software_license_no_response_code', __( 'wp_remote_get() returned an unexpected result.', $this->text_domain ) ); 
+				return new WP_Error( 'wcsl_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', $this->text_domain ) ); 
 			}
 
 			if ( $response[ 'response'][ 'code'] !== 200 ){ 
-				return new WP_Error( 'wc_software_license_unexpected_response_code', sprintf( __( 'HTTP response code is : % s, expecting ( 200 )', $this->text_domain ), $response[ 'result'][ 'code'] ) ); 
+				return new WP_Error( 'wcsl_unexpected_response_code', sprintf( __( 'HTTP response code is : % s, expecting ( 200 )', $this->text_domain ), $response['response']['code'] ) ); 
 			}
 
 			if ( empty( $response[ 'body' ] ) ){ 
-				return new WP_Error( 'wc_software_license_no_response', __( 'The server returned no response', $this->text_domain ) ); 
+				return new WP_Error( 'wcsl_no_response', __( 'The server returned no response', $this->text_domain ) ); 
 			}
 
 			return true; 
@@ -387,10 +407,31 @@ class WC_Software_License_Client {
 
 
 	/**
+	 * Validate the license server response to ensure its valid response not what the response is 
+	 * 
+	 * @since 1.0.0 
+	 * @access public 
+	 * @param WP_Error | Array The response or WP_Error 
+	 */
+	public function check_response_status( $response_body ){ 
+
+		$status = $response_body->status; 
+
+		if ( $status === 'valid' || $status === 'deactivated' ){ 
+			return true; 
+		} else { 
+			return false; 
+		}
+
+	}  // check_response_status() 
+
+
+	/**
 	 * Add a check for update link on the plugins page. You can change the link with the supplied filter. 
 	 * returning an empty string will disable this link   
-	 *
+	 * 
 	 * @since 1.0.0 
+	 * @access public 
 	 * @param array  $links The array having default links for the plugin.
 	 * @param string $file The name of the plugin file.
 	 */
@@ -425,13 +466,31 @@ class WC_Software_License_Client {
 	 * Process the manual check for update if check for update is clicked on the plugins page. 
 	 * 
 	 * @since 1.0.0 
+	 * @access public 
 	 */
 	public function process_manual_update_check(){ 
 
 		if ( isset( $_GET[ 'wcsl_check_for_update' ], $_GET[ 'wcsl_slug' ]) && $_GET[ 'wcsl_slug' ] == $this->slug && current_user_can( 'update_plugins') && check_admin_referer( 'wcsl_check_for_update' ) ){ 
 
-			// Check for updates / hardcoded for now 
-			$update_available = true; 
+			// Check for updates
+			$server_response = $this->server_request( 'check_update' );  
+			$plugin_update_info = $server_response->software_details; 
+			
+			if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) 	){ 
+					
+				if ( version_compare( ( string ) $plugin_update_info->new_version, ( string ) $this->version, '>' ) ){ 
+
+					$update_available = true; 
+
+				} else { 
+
+					$update_available = false; 
+				}
+
+			} else { 
+
+				$update_available = false; 
+			}
 
 			$status = ( $update_available == null ) ? 'no' : 'yes'; 
 
@@ -450,7 +509,9 @@ class WC_Software_License_Client {
 
 	/**
 	 * Out the results of the manual check 
+	 *
 	 * @since 1.0.0 
+	 * @access public 
 	 */
 	public function output_manual_update_check_result(){ 
 
@@ -463,7 +524,7 @@ class WC_Software_License_Client {
 					$admin_notice = __( 'This plugin is up to date. ', $this->text_domain ); 
 					break; 
 				case 'yes': 
-					$admin_notice = __( 'An update is available for this plugin.', $this->text_domain ); 
+					$admin_notice = sprintf( __( 'An update is available for %s.', $this->text_domain ), $this->plugin_nice_name ); 
 					break;
 				default:
 					$admin_notice = __( 'Unknown update status.', $this->text_domain ); 
@@ -480,8 +541,10 @@ class WC_Software_License_Client {
 	 * This is for internal purposes to ensure that during development the HTTP requests go through 
 	 * due to security features in the WordPress HTTP API. 
 	 * 
-	 * Source for this solution: Plugin Update Checker Library 3.1 by Janis Elsts 
+	 * Source for this solution: Plugin Update Checker Library 3387.1 by Janis Elsts 
 	 *
+	 * @since 1.0.0 
+	 * @access public 
 	 * @param bool $allow
 	 * @param string $host
 	 * @return bool
@@ -498,7 +561,9 @@ class WC_Software_License_Client {
 
 	/**
 	 * Class logger so that we can keep our debug and logging information cleaner 
+	 *
 	 * @since 1.0.0 
+	 * @access public 
 	 * @param mixed - the data to go to the error log 
 	 */
 	private function log( $data ){ 
@@ -511,98 +576,288 @@ class WC_Software_License_Client {
 
 	} // log() 
 
+	/**
+	 * 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 * @param mixed - the data to go to the error log 
+	 */
+	private function set_admin_notice( $message, $message_type = 'error' ){ 
+
+		$this->admin_notice = array( 'message' => $message, 'message_type' => $message_type ); 
+
+
+
+	} // set_admin_notice() 
 
 	/**
 	 * Add the admin menu to the dashboard 
+	 *
 	 * @since 1.0.0 
+	 * @access public 
 	 */
 	public function add_license_menu(){ 
-
-		$this->log( $this ); 
 
 		$page = add_options_page( 
 			sprintf( __( '%s License', $this->text_domain ), $this->plugin_nice_name ),
 			sprintf( __( '%s License', $this->text_domain ), $this->plugin_nice_name ),
 			'manage_options', 
 			$this->slug . '_license_manager', 
-			array( $this, 'license_page' )
+			array( $this, 'load_license_page' )
 		); 
 
 	} // add_license_menu()
 
 	/**
-	 * License page output call back function 
+	 * Load settings for the admin screens so users can input their license key 
+	 *
+	 * Utilizes the WordPress Settings API to implment this
+	 *
 	 * @since 1.0.0 
+	 * @access public 
 	 */
-	public function license_page(){ 
-	?>
-		<div class='wrap'>
-			<?php screen_icon(); ?>
-			<h2><?php printf( __( '%s License Manager', $this->text_domain ), $this->plugin_nice_name ) ?></h2>
-			<form action='options.php' method='post'>
-				<div class="main">
-					<div class="notice update">
-							<?php printf( __( 'Please Note: If your license is active on another website you will need to deactivate this in your my account page before being able to activate it on this site. If you have problems activating the license key try deactivating and then activating %s in your plugins menu again.', $this->text_domain), $this->plugin_nice_name ); ?>
-					</div>
+	public function add_license_settings(){ 
 
-					<?php 
-						settings_fields(  $this->slug . '_license_information' ); 
-						do_settings_sections( $this->slug .'_license_activation' );
-						submit_button( __( 'Save Changes', $this->text_domain ) );
-					?>
+		register_setting( $this->option_name, $this->option_name, array( $this, 'validate_license') ); 
+
+		// License key section 
+		add_settings_section( 
+			$this->slug . '_license_activation', 
+			__( 'License Activation', $this->text_domain ), 
+			array( $this, 'license_activation_section_callback' ), 
+			$this->option_name
+		 ); 
+
+		// License key 
+		add_settings_field(
+			'license_key',  
+			__( 'License key', $this->text_domain ), 
+			array( $this, 'license_key_field' ), 
+			$this->option_name, 
+			$this->slug . '_license_activation'
+		); 
+
+		// License status 
+		add_settings_field(
+			'license_status',  
+			__( 'License Status', $this->text_domain ), 
+			array( $this, 'license_status_field' ), 
+			$this->option_name, 
+			$this->slug . '_license_activation'
+		); 
+
+		// Deactivate license checkbox 
+		add_settings_field(
+			'deactivate_license',  
+			__( 'Deactivate license', $this->text_domain ), 
+			array( $this, 'license_deactivate_field' ), 
+			$this->option_name, 
+			$this->slug . '_license_activation'
+		); 
+
+		// This is a staging server checkbox 
+		// The plugin can be activated on the main domain and a staging server, 
+		// Requires: MUST be a subdomain of your live site 
+
+
+	} // add_license_page() 
+
+	/**
+	 * License page output call back function 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 */
+	public function load_license_page(){ 
+	?>
+	<div class='wrap'>
+		<?php screen_icon(); ?>
+		<h2><?php printf( __( '%s License Manager', $this->text_domain ), $this->plugin_nice_name ) ?></h2>
+		<form action='options.php' method='post'>
+			<div class="main">
+				<div class="notice update">
+				<?php printf( __( 'Please Note: If your license is active on another website you will need to deactivate this in your my account page before being able to activate it on this site. If you have problems activating the license key try deactivating and then activating %s in your plugins menu again.', $this->text_domain ), $this->plugin_nice_name ); ?>
 				</div>
-			</form>
-		</div>
+
+				<?php 
+					settings_fields( $this->option_name ); 
+					do_settings_sections( $this->option_name );
+					submit_button( __( 'Save Changes', $this->text_domain ) );
+				?>
+			</div>
+		</form>
+	</div>
 
 	<?
 	} // license_page() 
 
 	/**
-	 * Load settings for the admin screens so users can input their license key 
+	 * License activation settings section callback 
 	 *
-	 * Utilizes the WordPress Settings API to implment this
 	 * @since 1.0.0 
+	 * @access public 
 	 */
-	public function load_settings(){ 
+	public function license_activation_section_callback(){ 
 
-		register_setting( $this->slug . '_license_information', $this->slug . '_license_information', array( $this, 'validate_license_options' ) ); 
+		echo '<p>'.__( 'Please enter your license key to activate automatic updates and verify your support.', $this->text_domain ) .'</p>'; 
 
-		add_settings_section( 
-			$this->slug .'_license_activation', 
-			sprintf( __( '%s License Activation', $this->text_domain ), $this->plugin_nice_name ), 
-			array( $this, 'license_activation_field' ), 
-			$this->slug . '_license_manager'
-		 ); 
-
-		// License Key 
-		add_settings_field(
-			$this->slug .'_license_key',  
-			sprintf( __( '%s License key', $this->text_domain ), $this->plugin_nice_name ), 
-			array( $this, 'license_key_field' ), 
-			$this->slug . '_license_manager', 
-			$this->slug .'_license_activation',
-			array( 'label_for' => $this->slug .'_license_key' )
-		); 
-
-	} // load_settings() 
-
-	/**
-	 * Validate the license key information sent from the form. 
-	 * @since 1.0.0 
-	 * 
-	 */
-	public function validate_license_options( $input ){ 
-
-	} // validate_license_options() 
+	} // license_activation_section_callback () 
 
 	/**
 	 * License key field callback
+	 *
+	 * @since 1.0.0
+	 * @access public 
 	 */
 	public function license_key_field( ){ 
-
-		echo '<input type="text" value="' . $this->license_details[ 'license_key' ] . '" />'; 
+		$value 			= ( isset( $this->license_details[ 'license_key' ] ) ) ? $this->license_details[ 'license_key' ] : ''; 
+		echo '<input type="text" id="license_key" name="' . $this->option_name . '[license_key]" value="' . $value . '" />'; 
 
 	} // license_key_field() 
+
+	/**
+	 * License acivated field 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 */
+	public function license_status_field(){ 
+
+		$activated 		= $this->license_details[ 'license_status' ]; 
+
+		if ( 'valid' === $activated ){ 
+			_e( 'Valid', $this->text_domain ); 
+		} elseif ( 'inactive' === $activated ){ 
+			_e( 'Invalid', $this->text_domain ); 
+		} elseif ( 'deactivated' === $activated ){ 
+			_e( 'Deactivated', $this->text_domain ); 
+		}
+
+	} // license_status_field() 
+
+	/**
+	 * License deactivate checkbox 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 */
+	public function license_deactivate_field(){ 
+
+		echo '<input type="checkbox" id="deactivate_license" name="' . $this->option_name . '[deactivate_license]" />';
+
+	} // license_deactivate_field() 
+
+
+	/**
+	 * Validate the license key information sent from the form. 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 * @param array $input the input passed from the request 
+	 */
+	public function validate_license( $input ){ 
+
+		$options 					= $this->license_details; 
+
+		foreach ( $options as $key => $value ) {
+				
+    		if ( 'license_key' === $key ){ 
+
+    			$this->log( 'the input array is: ' ); 
+    			$this->log( $input ); 
+
+    			if ( ! array_key_exists( 'deactivate_license', $input ) ){
+
+    				$this->log('activating...'); 
+    				$this->license_details[ 'license_key' ] = $input[ $key ]; 
+
+					$response = $this->server_request( 'activate' ); 
+
+					if ( $this->check_response_status( $response ) ){ 
+						$options[ $key ] = $input[ $key ]; 
+						$options[ 'license_status' ] = $response->status; 
+
+					} else { 
+
+						add_settings_error( 
+							 $this->option_name, 
+							 'invalid-license', 
+							 __( 'Invalid License', 'wpsls' ) 
+						); 
+					}
+
+					$options[ $key ] = $input[ $key ];
+
+    			} 
+
+    			$options[ $key ] = $input[ $key ];
+
+    		} elseif ( array_key_exists( $key, $input ) && 'deactivate_license' === $key ) { 
+
+    			$this->log('deactivating...'); 
+
+    			$response = $this->server_request( 'deactivate' );  
+
+    			if ( $this->check_response_status( $response ) ){ 
+    				$options[ $key ] = $input[ $key ]; 
+    				$options[ 'license_status' ] = $response->status; 
+    			} else { 
+    				add_settings_error( 
+						 $this->option_name, 
+						 'invalid-license', 
+						 __( 'Unable to deactivate license. Please deactivate on the store.', 'wpsls' ) 
+					); 
+    			}
+
+    		} elseif( 'license_status' === $key ){ 
+    			if ( empty( $options[ 'license_status' ] ) ) { 
+					$options[ 'license_status' ] = 'inactive'; 
+    			} else { 
+    				$options[ 'license_status' ] = $options[ 'license_status' ]; 
+    			}
+    			
+    		}
+
+		}
+
+		return $options; 
+
+	} // validate_license() 	
+
+
+
+	/**
+	 * Display an error from the licensing server 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 * @param json_object $body the response from the server 
+	 * 
+	 */
+	public function license_invalid( ){ 
+
+		echo sprintf( '<div id="message" class="error"><p>%s</p></div>', __( 'Invalid license key', $this->text_domain ) );
+
+	} // display_error_message()
+
+
+	/**
+	 * Display an error from the licensing server 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 * @param json_object $body the response from the server 
+	 * 
+	 */
+	public function display_message( ){ 
+
+		if ( ! empty( $this->admin_notice ) ){ 
+			echo sprintf( '<div id="message" class="%s"><p>%s</p></div>', $this->admin_notice[ 'message_type' ], $this->admin_notice[ 'message' ] );
+		}
+
+	} // display_error_message()
+
 
 
 } // WC_Software_License_Client 
