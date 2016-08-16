@@ -358,8 +358,6 @@ class WC_Software_License_Client {
 				return $response_body;
 			} 
 
-			$error = true; 
-
 		} else { 
 
 			// Display the error message in admin 
@@ -790,15 +788,15 @@ class WC_Software_License_Client {
 		$message 	= null; 
 		$expires 	= ''; 
 
-		$this->log( $options[ 'license_status' ] ); 
-
 		foreach ( $options as $key => $value ) {
 				
     		if ( 'license_key' === $key ){ 
 
     			if ( 'valid' === $options[ 'license_status' ] ) continue; 
 
-    			if ( ! array_key_exists( 'deactivate_license', $input ) && 'deactivated' === $options[ 'license_status' ] ) {
+    			// Check to make sure this doesn't fail when trying to activate twice. 
+
+    			if ( ! array_key_exists( 'deactivate_license', $input ) || 'deactivated' !== $options[ 'license_status' ] ) {
 
     				$this->license_details[ 'license_key' ] = $input[ $key ]; 
 					$response 								= $this->server_request( 'activate' ); 
