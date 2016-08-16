@@ -32,6 +32,7 @@
  * @package    	WC_Software_License_Client
  * @author     	Jamie Madden <support@wcvendors.com>
  * @link       	http://www.wcvendors.com/wc-software-license-server 
+ * @todo  		Need to cache results and updates to reduce load 
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -350,8 +351,6 @@ class WC_Software_License_Client {
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ) ); 
 
-			$this->log( $response_body ); 
-
 			// Check the status of the response 
 			$continue = $this->check_response_status( $response_body ); 
 
@@ -422,19 +421,6 @@ class WC_Software_License_Client {
 	 */
 	public function check_response_status( $response_body ){ 
 
-		// if ( is_object( $response_body ) && ! empty( $response_body ) ) { 
-
-		// 	$status = $response_body->status; 
-
-		// 	return ( $status === 'valid' || $status === 'deactivated' ) ? true: false; 
-
-		// } else { 
-
-		// 	return false; 
-
-		// }
-
-
 		if ( is_object( $response_body ) && ! empty( $response_body ) ) { 
 
 			$status = $response_body->status; 
@@ -456,8 +442,6 @@ class WC_Software_License_Client {
 		} 
 
 		return false; 
-		
-
 
 	}  // check_response_status() 
 
@@ -669,6 +653,15 @@ class WC_Software_License_Client {
 			$this->slug . '_license_activation'
 		); 
 
+		// License expires 
+		add_settings_field(
+			'license_expires',  
+			__( 'License Expires', $this->text_domain ), 
+			array( $this, 'license_expires_field' ), 
+			$this->option_name, 
+			$this->slug . '_license_activation'
+		); 
+
 		// Deactivate license checkbox 
 		add_settings_field(
 			'deactivate_license',  
@@ -761,6 +754,16 @@ class WC_Software_License_Client {
 	} // license_status_field() 
 
 	/**
+	 * License acivated field 
+	 *
+	 * @since 1.0.0 
+	 * @access public 
+	 */
+	public function license_expires_field(){ 
+		echo $this->license_details[ 'license_expires' ]; 
+	}	
+
+	/**
 	 * License deactivate checkbox 
 	 *
 	 * @since 1.0.0 
@@ -785,33 +788,36 @@ class WC_Software_License_Client {
 		$options 	= $this->license_details; 
 		$type 		= null; 
 		$message 	= null; 
+		$expires 	= ''; 
+
+		$this->log( $options[ 'license_status' ] ); 
 
 		foreach ( $options as $key => $value ) {
 				
     		if ( 'license_key' === $key ){ 
 
-    			if ( ! array_key_exists( 'deactivate_license', $input ) ){
+    			if ( 'valid' === $options[ 'license_status' ] ) continue; 
 
-    				$this->log('activating...'); 
+    			if ( ! array_key_exists( 'deactivate_license', $input ) && 'deactivated' === $options[ 'license_status' ] ) {
+
     				$this->license_details[ 'license_key' ] = $input[ $key ]; 
-
-					$response = $this->server_request( 'activate' ); 
+					$response 								= $this->server_request( 'activate' ); 
 
 					if ( $response !== null ){ 
 
 						if ( $this->check_response_status( $response ) ){ 
 							
-							$options[ $key ] = $input[ $key ]; 
-							$options[ 'license_status' ] = $response->status; 
-							$type 		= 'updated'; 
-							$message 	= __( 'License Activated', 'wpsls' ); 
+							$options[ $key ] 				= $input[ $key ]; 
+							$options[ 'license_status' ] 	= $response->status; 
+							$options[ 'license_expires' ] 	= $response->expires; 
+							$type 							= 'updated'; 
+							$message 						= __( 'License Activated', 'wpsls' ); 
 
 						} else { 
 
 							$type 		= 'error'; 
 							$message 	=  __( 'Invalid License', 'wpsls' ); 
 						}
-
 
 						add_settings_error( 
 							 $this->option_name, 
@@ -833,16 +839,17 @@ class WC_Software_License_Client {
     			if ( $response !== null ){ 
 
     				if ( $this->check_response_status( $response ) ){ 
-    				$options[ $key ] = $input[ $key ]; 
-    				$options[ 'license_status' ] = $response->status; 
-    				$type 		= 'updated'; 
-					$message 	= __( 'License Deactivated', 'wpsls' ); 
+	    				$options[ $key ] 				= $input[ $key ]; 
+	    				$options[ 'license_status' ] 	= $response->status; 
+	    				$options[ 'license_expires' ] 	= ''; 
+	    				$type 							= 'updated'; 
+						$message 						= __( 'License Deactivated', 'wpsls' ); 
+
 	    			} else { 
 
 	    				$type 		= 'updated'; 
 						$message 	= __( 'Unable to deactivate license. Please deactivate on the store.', 'wpsls' ); 
-
-	    				
+	
 	    			}
 
 	    			add_settings_error( 
@@ -859,6 +866,14 @@ class WC_Software_License_Client {
 					$options[ 'license_status' ] = 'inactive'; 
     			} else { 
     				$options[ 'license_status' ] = $options[ 'license_status' ]; 
+    			}
+    			
+    		} elseif( 'license_expires' === $key ){ 
+
+    			if ( empty( $options[ 'license_expires' ] ) ) { 
+					$options[ 'license_expires' ] =  '';
+    			} else { 
+    				$options[ 'license_expires' ] = date( 'Y-m-d', strtotime( $options[ 'license_expires' ] ) ); 
     			}
     			
     		}
