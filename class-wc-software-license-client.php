@@ -271,7 +271,8 @@ class WC_Software_License_Client {
 
 		$server_response = $this->server_request( 'check_update' ); 
 
-		$plugin_update_info = $server_response->software_details; 
+		// commented out because need to fix server response on server side. 
+		// $plugin_update_info = $server_response->software_details; 
 
 		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ) { 
 
@@ -327,6 +328,7 @@ class WC_Software_License_Client {
 		$request_info[ 'slug' ] 				= $this->slug; 
 		$request_info[ 'license_key' ] 			= $this->license_details[ 'license_key' ]; 
 		$request_info[ 'domain' ]				= $this->domain; 
+		$request_info[ 'version' ]				= $this->version; 
 
 		// Allow filtering the request info for plugins 
 		$request_info = apply_filters( 'wcsl_request_info_' . $this->slug, $request_info ); 
