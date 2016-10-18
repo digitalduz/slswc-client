@@ -180,37 +180,33 @@ class WC_Software_License_Client {
 		$this->plugin_file			= plugin_basename( $plugin_file ); 
 		$this->update_interval		= $update_interval; 
 		$this->debug 				= defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $debug; 
-		$this->slug 				= empty( $slug ) ? basename( $this->plugin_file, '.php' ) : $slug; 	
+		$this->slug 				= empty( $slug ) ? basename( $this->plugin_file, '.php' ) : $slug; 
 		$this->option_name 			= $this->slug . '_license_manager'; 
 		$this->domain 				= str_ireplace( array( 'http://', 'https://' ), '', home_url() );
 		$this->license_details 		= get_option( $this->option_name ); 
 		$this->license_manager_url 	= esc_url( admin_url( 'options-general.php?page='. $this->slug . '_license_manager' ) ); 
-
 
 		// Get the license server host 
 		$this->license_server_host 	= @parse_url( $this->license_server_url, PHP_URL_HOST ); 
 
 		// Initilize wp-admin interfaces
 		add_action( 'admin_init', 								array( $this, 'check_install' ) );
-		add_filter( 'plugin_row_meta', 							array( $this, 'check_for_update_link' ), 10, 2 ); 
 		add_action( 'admin_menu', 								array( $this, 'add_license_menu' ) ); 
 		add_action( 'admin_init', 								array( $this, 'add_license_settings' ) ); 
 		// Internal methods 		
 		add_filter( 'http_request_host_is_external', 			array( $this, 'fix_update_host' ), 10, 2 ); 
 
 		// Only allow updates if they have a valid license key need 
-		// todo: check if the license is expired 
 		if ( 'valid' === $this->license_details[ 'license_status' ] ){ 
 
 			add_filter( 'pre_set_site_transient_update_plugins',	array( $this, 'update_check') ); 
 			add_filter( 'plugins_api', 								array( $this, 'add_plugin_info' ), 10, 3 ); 
+			add_filter( 'plugin_row_meta', 							array( $this, 'check_for_update_link' ), 10, 2 ); 
 			
 			add_action( 'admin_init', 								array( $this, 'process_manual_update_check' ) ); 
 			add_action( 'all_admin_notices',						array( $this, 'output_manual_update_check_result' ) ); 
 
 		} 
-
-		
 
 	} // __construct()
 
@@ -218,6 +214,7 @@ class WC_Software_License_Client {
 	/**
 	 * Check the installation and configure any defaults that are required 
 	 * @since 1.0.0 
+	 * @todo move this to a plugin activation hook 
 	 */
 	public function check_install(){ 
 
@@ -265,20 +262,17 @@ class WC_Software_License_Client {
 	 */
 	public function update_check( $transient ){ 
 
-		if ( empty( $transient->checked ) ) {
-			return $transient;
-		}
+		// if ( empty( $transient->checked ) ) {
+		// 	return $transient;
+		// }
 
 		$server_response = $this->server_request( 'check_update' ); 
+		$this->log( $server_response ); 
 
-		// commented out because need to fix server response on server side. 
-		// $plugin_update_info = $server_response->software_details; 
+		if ( isset( $server_response ) && is_object( $server_response->software_details ) ) { 
 
-		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ) { 
-
-			$new_version = (string) $plugin_update_info->new_version; 
-
-			if ( isset( $new_version ) ){ 
+			$plugin_update_info = $server_response->software_details; 
+			if ( isset( $plugin_update_info->new_version ) ){ 
 				if ( version_compare( $new_version, $this->version, '>' ) ){ 
 					$transient->response[ $this->plugin_file ] = $plugin_update_info; 
 				}
@@ -334,7 +328,7 @@ class WC_Software_License_Client {
 		$request_info = apply_filters( 'wcsl_request_info_' . $this->slug, $request_info ); 
 
 		// Build the server url api end point fix url build to support the WordPress API 
-		$server_request_url = esc_url_raw( $this->license_server_url . '/wp-json/wpsls/v1/' . $action . '?' . http_build_query( $request_info ) ); 
+		$server_request_url = esc_url_raw( $this->license_server_url . 'wp-json/wpsls/v1/' . $action . '?' . http_build_query( $request_info ) ); 
 
 		// Options to parse the wp_safe_remote_get() call 
 		$request_options = array(  'timeout' => 20 ); 
@@ -366,7 +360,7 @@ class WC_Software_License_Client {
 			add_settings_error( 
 						 $this->option_name, 
 						 esc_attr( 'settings_updated' ),
-						 sprintf( __( 'There was a problem communicating with the server. %s', $this->text_domain ), $result->get_error_message() ), 
+						 $result->get_error_message(), 
 						 'error'
 			); 
 
@@ -395,6 +389,19 @@ class WC_Software_License_Client {
 
 			if ( !isset( $response[ 'response'][ 'code'] ) ){ 
 				return new WP_Error( 'wcsl_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', $this->text_domain ) ); 
+			}
+
+			if ( $response[ 'response'][ 'code'] == 400 ) { 
+
+				$body = json_decode( $response[ 'body' ] );
+				foreach ( $body->data->params as $param => $message ) {
+					return new WP_Error( 'wcsl_validation_failed', sprintf( __( 'There was a problem with your license: %s', $this->text_domain ), $message ) ); 
+				}
+				
+			}
+
+			if ( $response[ 'response'][ 'code'] == 500 ) { 
+				return new WP_Error( 'wcsl_internal_server_error', sprintf( __( 'There was a problem with the license server: HTTP response code is : %s', $this->text_domain ), $response['response']['code' ] ) ); 
 			}
 
 			if ( $response[ 'response'][ 'code'] !== 200 ){ 
@@ -741,15 +748,19 @@ class WC_Software_License_Client {
 	 */
 	public function license_status_field(){ 
 
-		$activated 		= $this->license_details[ 'license_status' ]; 
+		// $activated 		= $this->license_details[ 'license_status' ]; 
 
-		if ( 'valid' === $activated ){ 
-			_e( 'Valid', $this->text_domain ); 
-		} elseif ( 'inactive' === $activated ){ 
-			_e( 'Inactive', $this->text_domain ); 
-		} elseif ( 'deactivated' === $activated ){ 
-			_e( 'Deactivated', $this->text_domain ); 
-		}
+		$license_labels = $this->license_status_types();
+
+		_e( $license_labels[ $this->license_details[ 'license_status' ] ] ); 
+
+		// if ( 'valid' === $activated ){ 
+		// 	_e( 'Valid', $this->text_domain ); 
+		// } elseif ( 'inactive' === $activated ){ 
+		// 	_e( 'Inactive', $this->text_domain ); 
+		// } elseif ( 'deactivated' === $activated ){ 
+		// 	_e( 'Deactivated', $this->text_domain ); 
+		// }
 
 	} // license_status_field() 
 
@@ -797,6 +808,7 @@ class WC_Software_License_Client {
     			if ( 'valid' === $options[ 'license_status' ] ) continue; 
 
     			// Check to make sure this doesn't fail when trying to activate twice. 
+    			// check to make sure that the license key sending is the same as the one we have stored in the db 
 
     			if ( ! array_key_exists( 'deactivate_license', $input ) || 'deactivated' !== $options[ 'license_status' ] ) {
 
@@ -811,12 +823,12 @@ class WC_Software_License_Client {
 							$options[ 'license_status' ] 	= $response->status; 
 							$options[ 'license_expires' ] 	= $response->expires; 
 							$type 							= 'updated'; 
-							$message 						= __( 'License Activated', 'wpsls' ); 
+							$message 						= __( 'License Activated', $this->text_domain ); 
 
 						} else { 
 
 							$type 		= 'error'; 
-							$message 	=  __( 'Invalid License', 'wpsls' ); 
+							$message 	=  __( 'Invalid License', $this->text_domain ); 
 						}
 
 						add_settings_error( 
@@ -843,12 +855,12 @@ class WC_Software_License_Client {
 	    				$options[ 'license_status' ] 	= $response->status; 
 	    				$options[ 'license_expires' ] 	= ''; 
 	    				$type 							= 'updated'; 
-						$message 						= __( 'License Deactivated', 'wpsls' ); 
+						$message 						= __( 'License Deactivated', $this->text_domain ); 
 
 	    			} else { 
 
 	    				$type 		= 'updated'; 
-						$message 	= __( 'Unable to deactivate license. Please deactivate on the store.', 'wpsls' ); 
+						$message 	= __( 'Unable to deactivate license. Please deactivate on the store.', $this->text_domain ); 
 	
 	    			}
 
@@ -883,6 +895,26 @@ class WC_Software_License_Client {
 		return $options; 
 
 	} // validate_license() 	
+
+	/**
+	 * The available license status types
+	 * 
+	 * @since 1.0.0 
+	 * @access public 
+	 */
+	public function license_status_types(){ 
+
+		return apply_filters( 'wcsl_license_status_types',  array( 
+				'valid'		=> __( 'Valid', $this->text_domain ), 
+				'invalid'	=> __( 'Invalid', $this->text_domain ), 
+				'inactive'	=> __( 'Inactive', $this->text_domain ), 
+				'active'	=> __( 'Active', $this->text_domain ), 
+				'expiring'	=> __( 'Expiring', $this->text_domain ), 
+				'expired'	=> __( 'Expired', $this->text_domain )
+			)
+		); 
+
+	} // software_types() 
 
 
 } // WC_Software_License_Client 
