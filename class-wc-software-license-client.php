@@ -442,11 +442,7 @@ class WC_Software_License_Client {
 			$license_status_types 	= $this->license_status_types(); 
 			$status 				= $response_body->status; 
 
-			if ( array_key_exists( $status, $license_status_types ) ) { 
-				return true; 
-			} else { 
-				return false; 
-			}
+			return ( array_key_exists( $status, $license_status_types ) ) ? true : false; 
 		} 
 
 		return false; 
@@ -929,13 +925,14 @@ class WC_Software_License_Client {
 	public function license_status_types(){ 
 
 		return apply_filters( 'wcsl_license_status_types',  array( 
-				'valid'			=> __( 'Valid', $this->text_domain ), 
-				'deactivated'	=> __( 'Deactivated', $this->text_domain ), 
-				'invalid'		=> __( 'Invalid', $this->text_domain ), 
-				'inactive'		=> __( 'Inactive', $this->text_domain ), 
-				'active'		=> __( 'Active', $this->text_domain ), 
-				'expiring'		=> __( 'Expiring', $this->text_domain ), 
-				'expired'		=> __( 'Expired', $this->text_domain )
+				'valid'				=> __( 'Valid', $this->text_domain ), 
+				'deactivated'		=> __( 'Deactivated', $this->text_domain ), 
+				'max_activations'	=> __( 'Max Activations reached', $this->text_domain ), 
+				'invalid'			=> __( 'Invalid', $this->text_domain ), 
+				'inactive'			=> __( 'Inactive', $this->text_domain ), 
+				'active'			=> __( 'Active', $this->text_domain ), 
+				'expiring'			=> __( 'Expiring', $this->text_domain ), 
+				'expired'			=> __( 'Expired', $this->text_domain )
 			)
 		); 
 
