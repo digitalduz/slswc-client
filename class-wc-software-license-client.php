@@ -523,7 +523,7 @@ class WC_Software_License_Client {
 			// Check for updates
 			$server_response = $this->server_request();  
 
-			if ( $this->check_license(  json_decode( wp_remote_retrieve_body( $server_response ) ) ) ){ 
+			if ( $this->check_license( $server_response ) ){ 
 
 				$plugin_update_info = $server_response->software_details; 
 				
