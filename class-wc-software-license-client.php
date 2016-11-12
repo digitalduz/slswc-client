@@ -9,7 +9,7 @@
  * To integrate this into your software product include the following code in your MAIN plugin file, do not attempt 
  * to add this code in any other file but your main plugin file. 
  * 
- *  require_once plugin_dir_path( __FILE__ ) . '../wc-software-license-client/class-wc-software-license-client.php'; 
+ *  require_once plugin_dir_path( __FILE__ ) . 'path/to/wc-software-license-client/class-wc-software-license-client.php'; 
  *
  *	function wcslc_instance(){ 
  *
