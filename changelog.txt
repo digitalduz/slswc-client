@@ -1,0 +1,5 @@
+Changelog for WC Software License Client 
+
+Version 1.0.0 - 16th November 2016
+
+* First Release 
