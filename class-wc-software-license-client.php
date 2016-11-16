@@ -738,7 +738,7 @@ class WC_Software_License_Client {
 		</form>
 	</div>
 
-	<?
+	<?php 
 	} // license_page() 
 
 	/**
