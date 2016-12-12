@@ -298,22 +298,27 @@ class WC_Software_License_Client {
 	 * @param object Plugin API arguments. 
 	 * @return object  
 	 */
-	public function add_plugin_info( $result, $action, $args ){ 
+	public function add_plugin_info( $result, $action = null, $args = null ){ 
 
-		$version = get_site_transient( 'update_plugins' ); 
+		// Is this about our plugin? 
+		if ( isset( $args->slug ) ){ 
 
-		// 	// Is this about our plugin? 
-		if ( isset( $args->slug ) && $args->slug != $this->slug ){ 
-			return false; 				
-		} 
+			if ( $args->slug != $this->slug ){ 
+				return $result; 		
+			}
+
+		} else { 
+			return $result; 
+		}
 
 		$server_response = $this->server_request();  
 		$plugin_update_info = $server_response->software_details; 
 
 		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && $plugin_update_info !== false ){ 
-
-			return $plugin_update_info; 
+			return $plugin_update_info;
 		}
+
+		return $result; 
 		
 	} // add_plugin_info() 
 
