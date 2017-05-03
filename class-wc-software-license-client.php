@@ -9,7 +9,7 @@
  * To integrate this into your software product include the following code in your MAIN plugin file, do not attempt 
  * to add this code in any other file but your main plugin file. 
  *
- * 		// Required Paramenters 
+ * 		// Required Parameters 
  * 		 
  *		 @param string  required $license_server_url - The base url to your woocommerce shop 
  *		 @param string  required $version - the software version currently running 
@@ -262,7 +262,7 @@ class WC_Software_License_Client {
 		
   	
 		echo '<div class="error notice is-dismissible"><p>'. 
-			sprintf( __( 'The %s license key has not been activated, so you will be unable to get automatic updates or support! %sClick here%s to activate your support and updates license key.', 'wcvendors-pro' ), $this->plugin_nice_name, '<a href="' . $this->license_manager_url . '">', '</a>' ) . 
+			sprintf( __( 'The %s license key has not been activated, so you will be unable to get automatic updates or support! %sClick here%s to activate your support and updates license key.', $text_domain ), $this->plugin_nice_name, '<a href="' . $this->license_manager_url . '">', '</a>' ) . 
 		'</p></div>'; 
 
 	} // license_inactive() 
@@ -275,7 +275,7 @@ class WC_Software_License_Client {
 
 		if ( ! current_user_can( 'manage_options' ) ) return; 	
 
-		echo '<div class="error notice is-dismissible"><p>'. sprintf( __( '%s has detected you are running on your localhost. The license activation system has been disabled. ', 'wcvendors-pro' ), $this->plugin_nice_name ) . '</p></div>'; 
+		echo '<div class="error notice is-dismissible"><p>'. sprintf( __( '%s has detected you are running on your localhost. The license activation system has been disabled. ', $text_domain ), $this->plugin_nice_name ) . '</p></div>'; 
 
 	} // license_localhost() 
 
