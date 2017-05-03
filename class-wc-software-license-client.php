@@ -48,7 +48,7 @@ class WC_Software_License_Client {
 	 *
 	 * @var object
 	 */
-	protected static $instance = null;
+	private static $instances = array();
 
 	/**
 	 * Version - current plugin version 
@@ -150,12 +150,11 @@ class WC_Software_License_Client {
 	 */
 	public static function get_instance( $license_server_url, $version, $text_domain, $plugin_file, $plugin_nice_name, $slug = '', $update_interval = 12, $debug = false ){
 
-		// If the single instance hasn't been set, set it now.
-		if ( null == self::$instance ) {
-			self::$instance = new self( $license_server_url, $version, $text_domain, $plugin_file,  $plugin_nice_name, $slug, $update_interval, $debug );
-		}
+		if ( !array_key_exists( $text_domain, self::$instances ) ) {
+			 self::$instances[ $text_domain ] = new self( $license_server_url, $version, $text_domain, $plugin_file,  $plugin_nice_name, $slug, $update_interval, $debug );
+		} 
 
-		return self::$instance;
+		return self::$instances;
 
 	} // get_instance()
 
@@ -189,24 +188,34 @@ class WC_Software_License_Client {
 		// Get the license server host 
 		$this->license_server_host 	= @parse_url( $this->license_server_url, PHP_URL_HOST ); 
 
-		// Initilize wp-admin interfaces
-		add_action( 'admin_init', 								array( $this, 'check_install' ) );
-		add_action( 'admin_menu', 								array( $this, 'add_license_menu' ) ); 
-		add_action( 'admin_init', 								array( $this, 'add_license_settings' ) ); 
+		// Don't run the license activation code if running on local host.
+		$whitelist = apply_filters( 'wcv_localhost_whitelist', array( '127.0.0.1', '::1' ) );
 
-		// Internal methods 		
-		add_filter( 'http_request_host_is_external', 			array( $this, 'fix_update_host' ), 10, 2 ); 
+    	if ( in_array( $_SERVER[ 'REMOTE_ADDR' ], $whitelist ) ){ 
 
-		// Only allow updates if they have a valid license key need 
-		if ( 'active' === $this->license_details[ 'license_status' ] ){ 
+    		add_action( 'admin_notices', array( $this, 'license_localhost' ) ); 
 
-			add_filter( 'pre_set_site_transient_update_plugins',	array( $this, 'update_check') ); 
-			add_filter( 'plugins_api', 								array( $this, 'add_plugin_info' ), 10, 3 ); 
-			add_filter( 'plugin_row_meta', 							array( $this, 'check_for_update_link' ), 10, 2 ); 
-			
-			add_action( 'admin_init', 								array( $this, 'process_manual_update_check' ) ); 
-			add_action( 'all_admin_notices',						array( $this, 'output_manual_update_check_result' ) ); 
+    	} else { 
 
+			// Initilize wp-admin interfaces
+			add_action( 'admin_init', 								array( $this, 'check_install' ) );
+			add_action( 'admin_menu', 								array( $this, 'add_license_menu' ) ); 
+			add_action( 'admin_init', 								array( $this, 'add_license_settings' ) ); 
+
+			// Internal methods 		
+			add_filter( 'http_request_host_is_external', 			array( $this, 'fix_update_host' ), 10, 2 ); 
+
+			// Only allow updates if they have a valid license key need 
+			if ( 'active' === $this->license_details[ 'license_status' ] ){ 
+
+				add_filter( 'pre_set_site_transient_update_plugins',	array( $this, 'update_check') ); 
+				add_filter( 'plugins_api', 								array( $this, 'add_plugin_info' ), 10, 3 ); 
+				add_filter( 'plugin_row_meta', 							array( $this, 'check_for_update_link' ), 10, 2 ); 
+				
+				add_action( 'admin_init', 								array( $this, 'process_manual_update_check' ) ); 
+				add_action( 'all_admin_notices',						array( $this, 'output_manual_update_check_result' ) ); 
+
+			} 
 		} 
 
 	} // __construct()
@@ -247,13 +256,24 @@ class WC_Software_License_Client {
 
 		if ( ! current_user_can( 'manage_options' ) ) return; 
 		
-		// Add a check so if this plugin is running on localhost display a different message that means updates won't work  
-
+  	
 		echo '<div class="error notice is-dismissible"><p>'. 
 			sprintf( __( 'The %s license key has not been activated, so you will be unable to get automatic updates or support! %sClick here%s to activate your support and updates license key.', 'wcvendors-pro' ), $this->plugin_nice_name, '<a href="' . $this->license_manager_url . '">', '</a>' ) . 
 		'</p></div>'; 
 
 	} // license_inactive() 
+
+
+	/**
+	 * Display the localhost detection notice 
+	 */
+	public function license_localhost(){ 
+
+		if ( ! current_user_can( 'manage_options' ) ) return; 	
+
+		echo '<div class="error notice is-dismissible"><p>'. sprintf( __( '%s has detected you are running on your localhost. The license activation system has been disabled. ', 'wcvendors-pro' ), $this->plugin_nice_name ) . '</p></div>'; 
+
+	} // license_localhost() 
 
 	/**
 	 * Check for updates with the license server 
@@ -729,7 +749,7 @@ class WC_Software_License_Client {
 		<form action='options.php' method='post'>
 			<div class="main">
 				<div class="notice update">
-				<?php printf( __( 'Please Note: If your license is active on another website you will need to deactivate this in your my account page before being able to activate it on this site. If you have problems activating the license key try deactivating and then activating %s in your plugins menu again.', $this->text_domain ), $this->plugin_nice_name ); ?>
+				<?php printf( __( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', $this->text_domain ), $this->plugin_nice_name ); ?>
 				</div>
 
 				<?php //settings_errors(); ?>
@@ -743,7 +763,7 @@ class WC_Software_License_Client {
 		</form>
 	</div>
 
-	<?php 
+	<?php
 	} // license_page() 
 
 	/**
