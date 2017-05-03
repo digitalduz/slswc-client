@@ -8,20 +8,24 @@
  * 
  * To integrate this into your software product include the following code in your MAIN plugin file, do not attempt 
  * to add this code in any other file but your main plugin file. 
+ *
+ * 		// Required Paramenters 
+ * 		 
+ *		 @param string  required $license_server_url - The base url to your woocommerce shop 
+ *		 @param string  required $version - the software version currently running 
+ *		 @param string  required $text_domain - the text domain of the plugin - do we need this? 
+ *		 @param string  required $plugin_file - path to the plugin file or directory, relative to the plugins directory
+ *		 @param string  required $plugin_nice_name - A nice name for the plugin for use in messages 
+ * 
+ * 	 	 // Optional Parameters 		
+ *		 @param string optional $slug - the plugin slug if your class file name is different to the specified slug on the WooCommerce Product 
+ *		 @param integer optional $update_interval - time in hours between update checks 
+ *		 @param bool optional $debug - enable debugging in the client library. 
  * 
  *  require_once plugin_dir_path( __FILE__ ) . 'path/to/wc-software-license-client/class-wc-software-license-client.php'; 
  *
  *	function wcslc_instance(){ 
- *
- *		 // * @param string  required $license_server_url - The base url to your woocommerce shop 
- *		 // * @param string  required $version - the software version currently running 
- *		 // * @param string  required $text_domain - the text domain of the plugin - do we need this? 
- *		 // * @param string  required $plugin_file - path to the plugin file or directory, relative to the plugins directory
- *		 // * @param string  required $plugin_nice_name - A nice name for the plugin for use in messages 
- *		 // * @param integer optional $update_interval - time in hours between update checks 
- *		
  *		return WC_Software_License_Client::get_instance( 'http://yourshopurl.here.com', 1.0.0, 'your-text-domain', __FILE__, 'My Cool Plugin' ); 
- *
  *	} // wcslc_instance()
  *
  *	wcslc_instance(); 
