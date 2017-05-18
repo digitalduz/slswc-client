@@ -31,7 +31,7 @@
  *	wcslc_instance(); 
  * 
  *
- * @version  	1.0.0 
+ * @version  	1.0.1 
  * @since      	1.0.0
  * @package    	WC_Software_License_Client
  * @author     	Jamie Madden <support@wcvendors.com>
