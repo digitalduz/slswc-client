@@ -195,7 +195,7 @@ class WC_Software_License_Client {
 		// Don't run the license activation code if running on local host.
 		$whitelist = apply_filters( 'wcv_localhost_whitelist', array( '127.0.0.1', '::1' ) );
 
-    	if ( in_array( $_SERVER[ 'REMOTE_ADDR' ], $whitelist ) ){ 
+    	if ( in_array( $_SERVER[ 'SERVER_ADDR' ], $whitelist ) ){ 
 
     		add_action( 'admin_notices', array( $this, 'license_localhost' ) ); 
 
