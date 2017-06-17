@@ -556,7 +556,7 @@ class WC_Software_License_Client {
 
 				$plugin_update_info = $server_response->software_details; 
 				
-				if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) 	){ 
+				if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ){ 
 						
 					if ( version_compare( ( string ) $plugin_update_info->new_version, ( string ) $this->version, '>' ) ){ 
 
