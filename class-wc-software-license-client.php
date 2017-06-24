@@ -301,6 +301,8 @@ class WC_Software_License_Client {
 
 				if ( isset( $plugin_update_info->new_version ) ){ 
 					if ( version_compare( $plugin_update_info->new_version, $this->version, '>' ) ){ 
+						// Required to cast as array due to how object is returned from api 
+						$plugin_update_info->sections = ( array ) $plugin_update_info->sections; 
 						$transient->response[ $this->plugin_file ] = $plugin_update_info; 
 					}
 
@@ -337,6 +339,8 @@ class WC_Software_License_Client {
 
 		$server_response = $this->server_request();  
 		$plugin_update_info = $server_response->software_details; 
+		// Required to cast as array due to how object is returned from api 
+		$plugin_update_info->sections = ( array ) $plugin_update_info->sections;
 
 		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && $plugin_update_info !== false ){ 
 			return $plugin_update_info;
