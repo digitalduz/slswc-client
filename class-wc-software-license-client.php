@@ -246,8 +246,12 @@ class WC_Software_License_Client {
 
 		}
 
-		if ( $this->license_details == '' || $this->license_details[ 'license_status' ] == 'inactive' || $this->license_details[ 'license_status' ] == 'deactivated' || $this->license_details[ 'license_status' ] == 'expired' ){ 
-			add_action( 'admin_notices', array( $this, 'license_inactive' ) );  
+		if ( $this->license_details == '' || $this->license_details[ 'license_status' ] == 'inactive' || $this->license_details[ 'license_status' ] == 'deactivated' ){ 
+			add_action( 'admin_notices', array( $this, 'license_inactive' ) );
+		}
+
+		if ( 'expired' == $this->license_details[ 'license_status' ] &&  'active' === $this->license_details[ 'license_status' ] ) {
+			add_action( 'admin_notices', array( $this, 'license_inactive' ) );
 		}
 
 	} // check_install() 
