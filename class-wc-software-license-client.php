@@ -213,6 +213,7 @@ class WC_Software_License_Client {
 			if ( 'active' === $this->license_details[ 'license_status' ] ){ 
 
 				add_filter( 'pre_set_site_transient_update_plugins',	array( $this, 'update_check') ); 
+				add_action( 'pre_set_site_transient_update_themes', 	array( $this, 'update_themes' ), 21, 1 );
 				add_filter( 'plugins_api', 								array( $this, 'add_plugin_info' ), 10, 3 ); 
 				add_filter( 'plugin_row_meta', 							array( $this, 'check_for_update_link' ), 10, 2 ); 
 				
@@ -314,6 +315,45 @@ class WC_Software_License_Client {
 		return $transient; 
 
 	} // update_check() 
+
+	public function update_themes_check( $transient ) {
+		
+		if ( empty( $transient->checked ) ) {
+			return $transient;
+		}
+	
+		error_log( print_r( $transient, true ) );
+	
+		$server_response = $this->server_request( 'check_update' );
+		
+		error_log( "Server response: $server_response" );
+		error_log( print_r( $server_response , true ));
+	
+		if ( $this->check_license( $server_response ) ){ 
+	
+			if ( isset( $server_response ) && is_object( $server_response->software_details ) ) { 
+	
+				$theme_update_info = $server_response->software_details; 
+	
+				if ( isset( $theme_update_info->new_version ) ){ 
+					if ( version_compare( $theme_update_info->new_version, $this->version, '>' ) ){ 
+						// Required to cast as array due to how object is returned from api 
+						$theme_update_info->sections = ( array ) $plugin_update_info->sections; 
+						
+						
+						// Theme name
+						$transient->response[ $this->plugin_file ] = $plugin_update_info; 
+					}
+	
+				}
+	
+			}
+		} else{
+			error_log("The license not checked: " . print_r( $server_response, true ) );
+		}
+	
+		return $transient;
+	}
 
 	/**
 	 * Add the plugin information to the WordPress Update API 
