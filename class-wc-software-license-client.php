@@ -31,7 +31,7 @@
  *	wcslc_instance(); 
  * 
  *
- * @version  	1.0.1 
+ * @version  	1.0.2
  * @since      	1.0.0
  * @package    	WC_Software_License_Client
  * @author     	Jamie Madden <support@wcvendors.com>
@@ -55,39 +55,39 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 
 		/**
 		 * Version - current plugin version 
-		 * @since 1.0.0 
+		 * @since 1.0.2 
 		 */
 		public $version; 
 
 		/**
 		 * License URL - The base URL for your woocommerce install 
-		 * @since 1.0.0 
+		 * @since 1.0.2 
 		 */
 		public $license_server_url; 
 
 		/**
 		 * Slug - the plugin slug to check for updates with the server 
-		 * @since 1.0.0 
+		 * @since 1.0.2 
 		 */
 		public $slug; 
 
 		/**
 		 * Plugin text domain 
-		 * @since 1.0.0 
+		 * @since 1.0.2 
 		 */
 		public $text_domain;
 
 		/**
 		 * Don't allow cloning 
 		 *
-		 * @since 1.0.0
+		 * @since 1.0.2
 		 */
 		private function __clone() {}
 
 		/**
 		 * Don't allow unserializing instances of this class
 		 *
-		 * @since 1.0.0 
+		 * @since 1.0.2
 		 */
 		private function __wakeup() {}
 
@@ -96,8 +96,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 *
 		 * @param   string $license_server_url
 		 * @return  object
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public static function get_instance( $license_server_url, $slug, $text_domain ){
 
@@ -112,7 +112,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		/**
 		 * Initialize the class actions 
 		 * 
-		 * @since 1.0.0 
+		 * @since 1.0.2 
+		 * @version 1.0.2
 		 * @param string  $license_server_url - The base url to your woocommerce shop 
 		 * @param string  $products - The list of locally installed products
 		 */
@@ -133,8 +134,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		/**
 		 * Add the admin menu to the dashboard 
 		 *
-		 * @since 1.0.0 
-		 * @access public 
+		 * @since   1.0.2
+		 * @version 1.0.2
+		 * @access  public 
 		 */
 		public function add_admin_menu(){
 			
@@ -151,8 +153,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * List all products installed on this server.
 		 *
 		 * @return	void
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function show_installed_products() {
 
@@ -241,8 +243,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 *
 		 * @param  array $products
 		 * @return void
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function licenses_form( $products ) {
 			?>
@@ -299,6 +301,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 			<?php
 		}
 
+		/**
+		 * Licenses rows output
+		 *
+		 * @param   array $products
+		 * @return  void
+		 * @since   1.0.2
+		 * @version 1.0.2
+		 */
 		public function licenses_rows( $products ) {
 			
 			foreach( $products as $product ) :
@@ -346,8 +356,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 *
 		 * @param string $type
 		 * @return void
-		 * @since   1.0.4
-		 * @version 1.0.4
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function list_products( $products ) {
 			?>
@@ -444,8 +454,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Output API Settings form
 		 *
 		 * @return void
-		 * @since   1.0.4
-		 * @version 1.0.4
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function api_form() {
 			?>
@@ -511,8 +521,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Output the product ratings
 		 *
 		 * @return void
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function output_ratings( $args ) {
 			wp_star_rating($args);
@@ -526,8 +536,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 *
 		 * @param   $version - The version to compare with installed WordPress version
 		 * @return  void
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function show_compatible( $version ) {
 			global $wp_version;
@@ -554,9 +564,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		/**
 		 * The available license status types
 		 * 
-		 * @since 1.0.1 
-		 * @version 1.0.1
-		 * @access public 
+		 * @since   1.0.2 
+		 * @version 1.0.2
+		 * @access  public 
 		 */
 		public function license_status_types(){ 
 
@@ -578,8 +588,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Connect to the api server using API keys
 		 *
 		 * @return  array
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function connect() {
 			$keys       = $this->get_api_keys();
@@ -596,8 +606,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Add the product to the list
 		 *
 		 * @return	void
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function add_product( $product ) {
 
@@ -631,8 +641,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 *
 		 * @param	string $slug
 		 * @return	array	
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function get_remote_product( $slug = '' ) {
 
@@ -649,8 +659,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Get a user's purchased products
 		 *
 		 * @return  array $products
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function get_my_products() {
 			$request_info = array_merge(
@@ -669,8 +679,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Get all public products
 		 *
 		 * @return  array
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function get_public_products() {
 			$keys         = $this->get_api_keys();
@@ -688,8 +698,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Default product data
 		 *
 		 * @return  array
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function default_product_details() {
 			/** if ( $this->software_type = 'plugin' ) {
@@ -715,8 +725,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Get installed products
 		 *
 		 * @return	array	$products
-		 * @since	1.0.1
-		 * @version	1.0.1
+		 * @since	1.0.2
+		 * @version	1.0.2
 		 */
 		public function get_products( $type = 'plugins' ) {
 			$this->delete_products();
@@ -737,8 +747,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Get the API Keys stored in database
 		 *
 		 * @return  array
-		 * @since   1.0.1
-		 * @version 1.0.1
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function get_api_keys() {
 			return array(
@@ -752,8 +762,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * Delete the products from cache and from database
 		 *
 		 * @return  void
-		 * @since   1.0.4
-		 * @version 1.0.4
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function delete_products() {
 			delete_option('slswc_products');
@@ -768,7 +778,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 
 		/**
 		 * Send a request to the server 
-		 * @param $action string activate|deactivate|check_update
+		 * @param   $action string activate|deactivate|check_update
+		 * @since   1.0.2
+		 * @version 1.0.2
 		 */
 		public function server_request( $action = 'check_update', $request_info = array() ){ 
 
@@ -822,8 +834,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		/**
 		 * Validate the license server response to ensure its valid response not what the response is 
 		 * 
-		 * @since 1.0.0 
-		 * @access public 
+		 * @since   1.0.0 
+		 * @version 1.0.2
+		 * @access  public 
 		 * @param WP_Error | Array The response or WP_Error 
 		 */
 		public function validate_response( $response ){ 
@@ -874,9 +887,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		/**
 		 * Validate the license server response to ensure its valid response not what the response is 
 		 * 
-		 * @since 1.0.0 
-		 * @access public 
-		 * @param object $response_body
+		 * @since   1.0.2
+		 * @version 1.0.2 
+		 * @access  public 
+		 * @param   object $response_body
 		 */
 		public function check_response_status( $response_body ){ 
 
@@ -980,8 +994,8 @@ class WC_Software_License_Client {
 	 * The current environment on which the client is install.
 	 *
 	 * @var		string
-	 * @since	1.0.1
-	 * @version	1.0.1
+	 * @since	1.0.2
+	 * @version	1.0.2
 	 */
 	private $environment;
 
@@ -989,8 +1003,8 @@ class WC_Software_License_Client {
 	 * Holds instance of WC_Software_License_Client_Manager class
 	 *
 	 * @var     WC_Software_License_Client_Manager
-	 * @since   1.0.1
-	 * @version 1.0.1
+	 * @since   1.0.2
+	 * @version 1.0.2
 	 */
 	public $client_manager;
 
@@ -998,8 +1012,8 @@ class WC_Software_License_Client {
 	 * Whether to show the builtin settings page
 	 *
 	 * @var     bool
-	 * @since   1.0.1
-	 * @version 1.0.1
+	 * @since   1.0.2
+	 * @version 1.0.2
 	 */
 	public $show_settings_page;
 
@@ -1021,7 +1035,7 @@ class WC_Software_License_Client {
 	 * Return an instance of this class.
 	 *
 	 * @since   1.0.0 
-	 * @version 1.0.1
+	 * @version 1.0.2
 	 * @param   string  $license_server_url - The base url to your woocommerce shop 
 	 * @param   string  $base_file - path to the plugin file or directory, relative to the plugins directory
 	 * @param   string  $sofware_type - the type of software this is. plugin|theme, default: plugin 
@@ -1042,7 +1056,7 @@ class WC_Software_License_Client {
 	 * Initialize the class actions 
 	 * 
 	 * @since   1.0.0 
-	 * @version 1.0.1
+	 * @version 1.0.2
 	 * @param   string  $license_server_url - The base url to your woocommerce shop 
 	 * @param   string  $base_file - path to the plugin file or directory, relative to the plugins directory
 	 * @param   string  $sofware_type - the type of software this is. plugin|theme, default: plugin 
@@ -1146,7 +1160,8 @@ class WC_Software_License_Client {
 
 	/**
 	 * Check the installation and configure any defaults that are required 
-	 * @since 1.0.0 
+	 * @since   1.0.0 
+	 * @version 1.0.0
 	 * @todo move this to a plugin activation hook 
 	 */
 	public function check_install(){ 
@@ -1238,8 +1253,8 @@ class WC_Software_License_Client {
 	 *
 	 * @param 	mixed $transient
 	 * @return 	void
-	 * @since	1.0.1
-	 * @version	1.0.1
+	 * @since	1.0.2
+	 * @version	1.0.2
 	 */
 	public function theme_update_check( $transient ) {
 		
@@ -1313,6 +1328,16 @@ class WC_Software_License_Client {
 		
 	} // add_plugin_info() 
 
+	/**
+	 * Add the theme information to the theme update API.
+	 *
+	 * @param   bool $override
+	 * @param   string $action
+	 * @param   array $args
+	 * @return  void
+	 * @since   1.0.2
+	 * @version 1.0.2
+	 */
 	public function add_theme_info( $override, $action, $args ) {
 		error_log( "Override:: $override");
 		error_log( "Action:: $action");
@@ -1641,8 +1666,8 @@ class WC_Software_License_Client {
 	 * Add the product to the list
 	 *
 	 * @return	void
-	 * @since	1.0.1
-	 * @version	1.0.1
+	 * @since	1.0.2
+	 * @version	1.0.2
 	 */
 	public function add_product() {
 
@@ -1914,8 +1939,8 @@ class WC_Software_License_Client {
 	 * @param   string $file_or_slug - Plugin file or theme slug
 	 * @param   string $type - Product type. plugin|theme
 	 * @return  array 
-	 * @since   1.0.1
-	 * @version 1.0.1
+	 * @since   1.0.2
+	 * @version 1.0.2
 	 */
 	public function get_file_information( $file_or_slug, $type = 'plugin' ) {
 		$data = array();
