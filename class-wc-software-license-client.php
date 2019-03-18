@@ -1067,6 +1067,8 @@ class WC_Software_License_Client {
 		$args = wp_parse_args( $args, wp_parse_args( self::get_default_args(), self::get_file_information( $base_file, $software_type) ) );
 
 		$text_domain = $args['text_domain'];
+		error_log("Text domain as array_key:: $text_domain");
+		error_log("Get instance args:: " .print_r( $args, true ) );
 		if ( ! array_key_exists( $text_domain, self::$instances ) ) {
 			self::$instances[ $text_domain ] = new self( $license_server_url, $base_file, $software_type, $args );
 		} 
@@ -1154,6 +1156,7 @@ class WC_Software_License_Client {
 				}else{
 					add_action( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );				 
 					add_filter( 'themes_api',                           array( $this, 'add_theme_info'), 10, 3);
+					add_filter( 'theme_row_meta',                       array( $this, 'check_for_theme_update_link' ), 10, 1 );
 				}
 				
 				add_action( 'admin_init',           array( $this, 'process_manual_update_check' ) ); 
@@ -1459,6 +1462,31 @@ class WC_Software_License_Client {
 
 	} // check_for_update_link() 
 
+	public function check_for_theme_update_link( $meta, $stylesheet, $theme ) 
+	{
+		if ( $this->name === $theme->get( 'Name' ) ) {
+
+			$theme_update_link_url = wp_nonce_url( 
+				add_query_arg(
+					array( 
+						'wcsl_check_for_update' => 1, 
+						'wcsl_slug'				=> $this->slug 
+					), 
+					self_admin_url( 'plugins.php' ) 
+				), 
+				'wcsl_check_for_update'
+			); 
+
+			$theme_update_link_text = apply_filters(
+				'slswc_theme_update_link_text_'. $this->slug,
+				__( 'Check for updates', $this->text_domain )
+			);
+
+			$meta[] = sprintf( '<a href="%s">%s</a>', esc_attr( $theme_update_link_url ), $theme_update_link_text );
+		}
+		return $meta;
+	}
+
 	/**
 	 * Process the manual check for update if check for update is clicked on the plugins page. 
 	 * 
@@ -1660,11 +1688,7 @@ class WC_Software_License_Client {
 			array( $this, 'license_deactivate_field' ), 
 			$this->option_name, 
 			$this->slug . '_license_activation'
-		); 
-
-		// This is a staging server checkbox 
-		// The plugin can be activated on the main domain and a staging server, 
-		// Requires: MUST be a subdomain of your live site
+		);
 
 	} // add_license_page() 
 
@@ -1999,10 +2023,10 @@ class WC_Software_License_Client {
 				'network'     => $plugin['Network'],
 
 				// SLS WC Headers
-				'slswc'		       => ! empty( $plugin['SLSWC'] )? $plugin['SLSWC']: '',
-				'requires_wp'      => ! empty( $plugin['RequiresWP'])? $plugin['RequiresWP']: '',
-				'tested_wp'        => ! empty( $plugin['TestedWP'])? $plugin['TestedWP']: '',
-				'DocumentationURL' => ! empty( $plugin['DocumentationURL'])? $plugin['DocumentationURL']: '',
+				'slswc'		       => ! empty( $plugin['SLSWC'] ) ? $plugin['SLSWC']: '',
+				'required_wp'      => ! empty( $plugin['RequiredWP'] ) ? $plugin['RequiredWP']: '',
+				'compatible_to'    => ! empty( $plugin['CompatibleTo'] ) ? $plugin['CompatibleTo']: '',
+				'DocumentationURL' => ! empty( $plugin['DocumentationURL'] ) ? $plugin['DocumentationURL']: '',
 			);
 		}
 		elseif( 'theme' === $type ) {
@@ -2025,9 +2049,9 @@ class WC_Software_License_Client {
 				'domain_path' => $theme->get( 'DomainPath' ),
 				// SLS WC Headers
 				'slswc'		       => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ): '',
-				'requires_wp'      => ! empty( $theme->get( 'RequiresWP' ) )? $theme->get( 'RequiresWP' ): '',
-				'tested_wp'        => ! empty( $theme->get( 'TestedWP' ) )? $theme->get( 'TestedWP' ): '',
-				'DocumentationURL' => ! empty( $theme->get( 'DocumentationURL' ) )? $theme->get(  'DocumentationURL' ): '',
+				'required_wp'      => ! empty( $theme->get( 'RequiredWP' ) )? $theme->get( 'RequiredWP' ): '',
+				'compatible_to'    => ! empty( $theme->get( 'CompatibleTo' ) )? $theme->get( 'CompatibleTo' ): '',
+				'documentation_url'=> ! empty( $theme->get( 'DocumentationURL' ) )? $theme->get(  'DocumentationURL' ): '',
 			);
 		}
 		
@@ -2048,8 +2072,8 @@ class WC_Software_License_Client {
 
 		$new_extra_headers = array(
 			'SLSWC'             => __('SLSWC', $this->text_domain ),
-			'RequiresWP'        => __( 'Requires WP', $this->text_domain ),
-			'TestedWP'          => __( 'Tested WP', $this->text_domain ),
+			'RequiredWP'         => __( 'Required WP', $this->text_domain ),
+			'CompatibleTo'      => __( 'Compatible To', $this->text_domain ),
 			'Documentation URL' => __( 'Documentation URL', $this->text_domain )
 		);
 
