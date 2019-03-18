@@ -50,7 +50,8 @@ function test_slswc_client_for_plugin() {
     return WC_Software_License_Client::get_instance( 'http://example.com/', __FILE__ );
 }
 
-test_slswc_client_for_plugin();```
+test_slswc_client_for_plugin();
+```
 
 And for a theme:
 
