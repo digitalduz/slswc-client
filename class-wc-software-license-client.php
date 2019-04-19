@@ -25,7 +25,7 @@
  *  require_once plugin_dir_path( __FILE__ ) . 'path/to/wc-software-license-client/class-wc-software-license-client.php'; 
  *
  *	function wcslc_instance(){ 
- *		return WC_Software_License_Client::get_instance( 'http://yourshopurl.here.com', 1.0.0, 'your-text-domain', __FILE__, 'My Cool Plugin' ); 
+ *		return WC_Software_License_Client::get_instance( 'http://yourshopurl.here.com', 1.0.0 ); 
  *	} // wcslc_instance()
  *
  *	wcslc_instance(); 
@@ -169,9 +169,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 */
 		public function show_installed_products() {
 
-			if ( ! empty( $this->get_api_keys() && $this->is_connected() ) ) {
+			if ( ! empty( $this->get_api_keys() ) && $this->is_connected() ) {
 				$this->products = $this->get_my_products();
-			}else{
+			} else {
 				$this->products = $this->get_local_products();
 			}
 
@@ -198,7 +198,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 					$save_consumer_key    = update_option( 'slswc_consumer_key', esc_attr( $_POST['consumer_key' ] ) );
 					$save_consumer_secret = update_option( 'slswc_consumer_secret', esc_attr( $_POST['consumer_secret'] ) );
 
-					if ($save_username && $save_consumer_key && $save_consumer_secret) {
+					if ( $save_username && $save_consumer_key && $save_consumer_secret ) {
 						?><p class="updated">API Settings saved</p><?php
 					}
 				}
@@ -514,7 +514,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 			$keys = $this->get_api_keys();
 			?>
 			<h2><?php _e('API Settings', $this->text_domain ); ?></h2>
-			
 
 			<?php if ( empty( $keys ) && ! $this->is_connected() ): ?>
 			
@@ -625,7 +624,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 			$compatibility = version_compare( $version, $wp_version, '>' ) ? __('Compatible', $this->text_domain): __('Not compatible', $this->text_domain);
 			?>
 			<strong><?php echo esc_attr( $compatibility ); ?></strong>
-			<?php _e( ' with your version of WordPress', $this->text_domain ); 
+			<?php _e( ' with your version of WordPress', $this->text_domain );
 		}
 
 		/**
@@ -701,11 +700,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 				return;
 			}
 
-			$type_key = $product['type'] . 's';
+			$type_key = $product[ 'type' ] . 's';
 
-			$products	= $this->get_local_products();
+			$products = $this->get_local_products();			
 			
-			if ( ! empty( $products[$type_key][ $product['slug'] ] ) ) {
+			if ( array_key_exists( $product['slug'], $products ) ) {
 				return;
 			}
 
@@ -713,13 +712,20 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 			if ( $remote_product ) {
 				$product = array_merge( $product, (array) $remote_product );
 			}
+
+			if ( ! array_key_exists( $type_key, $products ) ) {
+				$products[ $type_key ] = array();
+			}
 		
-			if ( empty( $products[ $type_key ][$product['slug']] ) ) {
-				$products[$type_key][ $product['slug'] ]	= $product;
+			if ( ! array_key_exists( $product[ 'slug' ], $products[ $type_key ] ) ) {
+				$products[ $type_key ][ $product['slug'] ] = $product;
 
 				update_option( 'slswc_products', $products );
 				set_transient( 'slswc_products', $products, apply_filters( 'slswc_product_cache_expiry', 12 * HOUR_IN_SECONDS ) );
 			}
+
+			//error_log( "Product of type:: " . print_r( $products[ $type_key ], true ) );
+			//error_log( "Updated products:: " . print_r( $products, true ) );
 		}
 
 		/**
@@ -850,10 +856,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 		 * @version 1.0.2
 		 */
 		public function get_api_keys() {
-			return array(
-				'username'        => get_option( 'slswc_api_username' ),
-				'consumer_key'    => get_option( 'slswc_consumer_key' ),
-				'consumer_secret' => get_option( 'slswc_consumer_secret' ),
+			return array_filter(
+				array(
+					'username'        => get_option( 'slswc_api_username' ),
+					'consumer_key'    => get_option( 'slswc_consumer_key' ),
+					'consumer_secret' => get_option( 'slswc_consumer_secret' ),
+				)
 			);
 		}
 
@@ -1017,6 +1025,72 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ):
 			return false; 
 
 		}  // check_response_status()
+
+		/**
+		 * Install a product.
+		 *
+		 * @param string $slug Product slug.
+		 *
+		 * @throws Exception If unable to proceed with product installation.
+		 * @since   1.0.4
+		 * @version 1.0.4
+		 */
+		public static function product_background_installer( $slug ) {
+			// Explicitly clear the event.
+			wp_clear_scheduled_hook( 'woocommerce_theme_background_installer', func_get_args() );
+
+			if ( ! empty( $slug ) ) {
+				// Suppress feedback.
+				ob_start();
+				$product = array();// get product download details
+				$type    = $pruduct['type'];
+				try {
+					
+					if ( $product ) {
+						require_once ABSPATH . 'wp-admin/includes/file.php';
+						include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+						include_once ABSPATH . 'wp-admin/includes/theme.php';
+						include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+
+						WP_Filesystem();
+
+						$skin     = new Automatic_Upgrader_Skin();
+
+						if ( 'theme' === $product['type'] ) {
+							$upgrader = new Theme_Upgrader( $skin );
+						} else {
+							$upgrader = new Plugin_Upgrader( $skin );
+						}
+						
+						$result   = $upgrader->install( $api->download_link );
+
+						if ( is_wp_error( $result ) ) {
+							throw new Exception( $result->get_error_message() );
+						} elseif ( is_wp_error( $skin->result ) ) {
+							throw new Exception( $skin->result->get_error_message() );
+						} elseif ( is_null( $result ) ) {
+							throw new Exception( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+						}
+					}
+
+					//switch_theme( $theme_slug );
+				} catch ( Exception $e ) {
+					WC_Admin_Notices::add_custom_notice(
+						$slug . '_install_error',
+						sprintf(
+							// translators: 1: theme slug, 2: error message, 3: URL to install theme manually.
+							__( '%1$s could not be installed (%2$s). <a href="%3$s">Please install it manually by clicking here.</a>', 'woocommerce' ),
+							$slug,
+							$e->getMessage(),
+							esc_url( admin_url( 'update.php?action=install-' . $type . '&' . $type . '=' . $slug . '&_wpnonce=' . wp_create_nonce( 'install-' . $type . '_' . $slug ) ) )
+						)
+					);
+				}
+
+				// Discard feedback.
+				ob_end_clean();
+			}
+		}
 	}
 endif;
 
@@ -1824,7 +1898,7 @@ class WC_Software_License_Client {
 			'type'          => $this->software_type,
 		);
 
-		$product = wp_parse_args( $product, $this->get_file_information( $product['file'] ) );
+		$product = wp_parse_args( $product, $this->get_file_information( $product['file'] ), $product['type'] );
 
 		$this->client_manager->add_product( $product );
 	}	
@@ -2136,9 +2210,9 @@ class WC_Software_License_Client {
 				// SLS WC Headers
 				'slswc'		       => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ): '',
 				'slug'             => ! empty( $theme->get( 'Slug') ) ? $theme->get('Slug'):$theme->get('TextDomain'),
-				'required_wp'      => ! empty( $theme->get( 'RequiredWP' ) )? $theme->get( 'RequiredWP' ): '',
-				'compatible_to'    => ! empty( $theme->get( 'CompatibleTo' ) )? $theme->get( 'CompatibleTo' ): '',
-				'documentation_url'=> ! empty( $theme->get( 'DocumentationURL' ) )? $theme->get(  'DocumentationURL' ): '',
+				'required_wp'      => ! empty( $theme->get( 'RequiredWP' ) ) ? $theme->get( 'RequiredWP' ): '',
+				'compatible_to'    => ! empty( $theme->get( 'CompatibleTo' ) ) ? $theme->get( 'CompatibleTo' ): '',
+				'documentation_url'=> ! empty( $theme->get( 'DocumentationURL' ) ) ? $theme->get(  'DocumentationURL' ): '',
 			);
 		}
 		
