@@ -1642,7 +1642,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 					if ( isset( $plugin_update_info->new_version ) ) {
 						if ( version_compare( $plugin_update_info->new_version, $this->version, '>' ) ) {
-							// Required to cast as array due to how object is returned from api
+							// Required to cast as array due to how object is returned from api.
 							$plugin_update_info->sections              = (array) $plugin_update_info->sections;
 							$transient->response[ $this->plugin_file ] = $plugin_update_info;
 						}
@@ -2212,8 +2212,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						$response                             = $this->server_request( 'activate' );
 
 						if ( $response !== null ) {
-
-							error_log( 'Response:: ' . print_r( $response, true ) );
 
 							if ( $this->client_manager->check_response_status( $response ) ) {
 
