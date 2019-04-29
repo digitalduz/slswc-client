@@ -139,8 +139,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$this->slug               = $slug;
 			$this->text_domain        = $text_domain;
 
-			$this->delete_products();
-
 			$this->products = $this->get_local_products();
 
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
@@ -267,7 +265,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					if ( empty( $products ) ) {
 						continue;
 					}
-					
+
 					$merged_products = array();
 					foreach ( $products as $slug => $details ) {
 						$merged_products[ $slug ] = array_merge( (array) $details, (array) $local_products[ $slug ] );
@@ -811,10 +809,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 
 			$type_key = $product['type'] . 's';
-
 			$products = $this->get_local_products();
 
-			if ( array_key_exists( $product['slug'], $products ) ) {
+			if ( ! array_key_exists( $type_key, $products ) ) {
+				$products[ $type_key ] = array();
+			}
+			if ( array_key_exists( $product['slug'], $products[ $type_key ] ) ) {
 				return;
 			}
 
@@ -823,15 +823,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$product = array_merge( $product, (array) $remote_product );
 			}
 
-			if ( ! array_key_exists( $type_key, $products ) ) {
-				$products[ $type_key ] = array();
+			if ( 'plugin' === $product['type'] ) {
+				$products['plugins'][ $product['slug'] ] = $product;
+			} elseif ( 'theme' === $product['type'] ) {
+				$products['themes'][ $product['slug'] ] = $product;
 			}
 
-			if ( ! array_key_exists( $product['slug'], $products[ $type_key ] ) ) {
-				$products[ $type_key ][ $product['slug'] ] = $product;
-
-				$this->save_products( $products );
-			}
+			$this->save_products( $products );
 		}
 
 		/**
@@ -1524,8 +1522,9 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				// Validate license on save.
 				add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ) );
 
-				// Only allow updates if they have a valid license key need.
-				if ( 'active' === $this->license_details['license_status'] ) {
+				// Only allow updates if they have a valid license key.
+				// Or API keys are set to check for updates.
+				if ( 'active' === $this->license_details['license_status'] || $this->client_manager->is_connected() ) {
 					if ( 'plugin' === $this->software_type ) {
 
 						add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
@@ -1749,7 +1748,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$args->version  = $this->version;
 			$request_string = prepare_request( $action, $args );
 			$request        = $this->server_request( $action, $args );
-			error_log( 'Theme info check:: ' . print_r( $request, true ) );
+			
 			if ( is_wp_error( $request ) ) {
 				$result = new WP_Error(
 					'themes_api_failed',
@@ -1767,8 +1766,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					);
 				}
 			}
-
-			error_log( 'Theme update result:: ' . print_r( $result, true ) );
 
 			return $result;
 		}
