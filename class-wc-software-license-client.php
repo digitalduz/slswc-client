@@ -264,6 +264,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
 				foreach ( $user_products as $key => $products ) {
 
+					if ( empty( $products ) ) {
+						continue;
+					}
+					
 					$merged_products = array();
 					foreach ( $products as $slug => $details ) {
 						$merged_products[ $slug ] = array_merge( (array) $details, (array) $local_products[ $slug ] );
@@ -371,7 +375,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			</style>
 			<?php
 
-			if ( ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( $_POST['save_licenses_nonce'], 'save_licenses' ) ) {
+			if ( ! empty( $_POST['licenses'] ) && ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( $_POST['save_licenses_nonce'], 'save_licenses' ) ) {
 
 				foreach ( $_POST['licenses'] as $slug => $license_details ) {
 					$license_details = wp_parse_args(
