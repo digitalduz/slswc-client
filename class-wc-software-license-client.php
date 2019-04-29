@@ -145,7 +145,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 			add_action( 'wp_ajax_slswc_install_product', array( $this, 'product_background_installer' ) );
-			
+
 			if ( $this->is_products_page() ) {
 				add_action( 'admin_footer', array( $this, 'admin_footer_script' ) );
 			}
@@ -163,7 +163,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$page    = 'slswc_license_manager';
 			$is_page = isset( $_GET['page'] ) && $page === $_GET['page'] ? true : false;
 			$is_tab  = isset( $_GET['tab'] ) && in_array( wp_unslash( $_GET['tab'] ), $tabs, true ) ? true : false;
-			
+
 			if ( is_admin() && $is_page && $is_tab ) {
 				return true;
 			}
@@ -254,11 +254,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 */
 		public function show_installed_products() {
 			$user_products = array();
-			
+
 			if ( ! empty( $this->get_api_keys() ) && $this->is_connected() ) {
 				$user_products = (array) $this->get_my_products();
 			}
-			
+
 			$local_products = $this->get_local_products();
 
 			if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
@@ -285,7 +285,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<h1><?php _e( 'Licensed Plugins and Themes.', $this->text_domain ); ?></h1>
 				<?php
 
-				if ( isset( $_POST['save_api_keys_check'] ) 
+				if ( isset( $_POST['save_api_keys_check'] )
 					&& ! empty( esc_attr( $_POST['save_api_keys_check'] ) )
 					&& wp_verify_nonce( esc_attr( $_POST['save_api_keys_nonce'] ), 'save_api_keys' )
 					) {
@@ -783,8 +783,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				update_option( 'slswc_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
 
 				$this->products = $connection->products;
-				$products = wp_parse_args( $this->get_local_products(), $connection->products );
-				
+				$products       = wp_parse_args( $this->get_local_products(), $connection->products );
+
 				$this->save_products( $products );
 
 				return true;
@@ -1069,12 +1069,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		} // server_request()
 
 		/**
-		 * Validate the license server response to ensure its valid response not what the response is
+		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.2
 		 * @access  public
-		 * @param WP_Error | Array The response or WP_Error
+		 * @param WP_Error|Array $response The response or WP_Error.
 		 */
 		public function validate_response( $response ) {
 
@@ -1085,12 +1085,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					return new WP_Error( $response->get_error_code(), sprintf( __( 'HTTP Error: %s', $this->text_domain ), $response->get_error_message() ) );
 				}
 
-				// There was a problem with the initial request
+				// There was a problem with the initial request.
 				if ( ! isset( $response['response']['code'] ) ) {
 					return new WP_Error( 'wcsl_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', $this->text_domain ) );
 				}
 
-				// There is a validation error on the server side, output the problem
+				// There is a validation error on the server side, output the problem.
 				if ( $response['response']['code'] == 400 ) {
 
 					$body = json_decode( $response['body'] );
@@ -1144,12 +1144,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 
 		/**
-		 * Validate the license server response to ensure its valid response not what the response is
+		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 * @access  public
-		 * @param   object $response_body
+		 * @param   object $response_body The data returned.
 		 */
 		public function check_response_status( $response_body ) {
 
@@ -1168,14 +1168,23 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Install a product.
 		 *
-		 * @param string $slug Product slug.
+		 * @param string $slug    Product slug.
+		 * @param string $package The product download url.
 		 *
 		 * @since   1.0.4
 		 * @version 1.0.4
 		 */
-		public static function product_background_installer( $slug='', $package = '' ) {
+		public static function product_background_installer( $slug = '', $package = '' ) {
 			// Explicitly clear the event.
 			wp_clear_scheduled_hook( 'woocommerce_theme_background_installer', func_get_args() );
+
+			if ( wp_verify_nonce( esc_attr( $_POST['nonce'] ), 'slswc_client_install_product' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => esc_attr__( 'Failed to install product. Security token invalid.', $this->text_domain )
+					)
+				);
+			}
 
 			$download_link = esc_url( $_POST['package'] );
 			$slug          = esc_attr( $_POST['slug'] );
@@ -1185,7 +1194,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( ! empty( $download_link ) ) {
 				// Suppress feedback.
 				ob_start();
-				
+
 				try {
 
 					require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -1212,7 +1221,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					} elseif ( is_null( $result ) ) {
 						wp_send_json_error(
 							array(
-								'message' => 'Unable to connect to the filesystem. Please confirm your credentials.'
+								'message' => 'Unable to connect to the filesystem. Please confirm your credentials.',
 							)
 						);
 					}
@@ -1233,7 +1242,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					);
 				}
 
-				wp_send_json_error( array( 'message' => "Gone all this way" ) );
+				wp_send_json_error( array( 'message' => 'Gone all this way.' ) );
 
 				// Discard feedback.
 				ob_end_clean();
@@ -1241,7 +1250,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			wp_send_json(
 				array(
-					'message' => __( 'Failed to install product. Download link not provided or is invalid.', $this->text_domain )
+					'message' => __( 'Failed to install product. Download link not provided or is invalid.', $this->text_domain ),
 				)
 			);
 		}
@@ -2203,7 +2212,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						if ( $response !== null ) {
 
-							error_log("Response:: " . print_r( $response, true ) );
+							error_log( 'Response:: ' . print_r( $response, true ) );
 
 							if ( $this->client_manager->check_response_status( $response ) ) {
 
