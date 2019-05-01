@@ -251,32 +251,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.2
 		 */
 		public function show_installed_products() {
-			$user_products = array();
-
-			if ( ! empty( $this->get_api_keys() ) && $this->is_connected() ) {
-				$user_products = (array) $this->get_my_products();
-			}
-
-			$local_products = $this->get_local_products();
-
-			if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
-				foreach ( $user_products as $key => $products ) {
-
-					if ( empty( $products ) ) {
-						continue;
-					}
-
-					$merged_products = array();
-					foreach ( $products as $slug => $details ) {
-						$merged_products[ $slug ] = array_merge( (array) $details, (array) $local_products[ $slug ] );
-					}
-
-					$this->products[ $key ] = $merged_products;
-				}
-			}
-
-			$products = apply_filters( 'slswc_products', $this->products );
-
 			$license_admin_url = admin_url( 'admin.php?page=slswc_license_manager' );
 			$tab               = isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( $_GET['tab'] ) : '';
 			?>
@@ -290,7 +264,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				if ( isset( $_POST['save_api_keys_check'] )
 					&& ! empty( esc_attr( $_POST['save_api_keys_check'] ) )
 					&& wp_verify_nonce( esc_attr( $_POST['save_api_keys_nonce'] ), 'save_api_keys' )
-					) {
+					)
+				{
 					$save_username        = update_option( 'slswc_api_username', esc_attr( $_POST['username'] ) );
 					$save_consumer_key    = update_option( 'slswc_consumer_key', esc_attr( $_POST['consumer_key'] ) );
 					$save_consumer_secret = update_option( 'slswc_consumer_secret', esc_attr( $_POST['consumer_secret'] ) );
@@ -309,6 +284,22 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				if ( ! empty( $_POST['disconnect_nonce'] ) && wp_verify_nonce( $_POST['disconnect_nonce'], 'disconnect' ) ) {
 					update_option( slswc()->prefix . 'api_connected', 'no' );
 				}
+
+				// Get the products to display.
+				$user_products = array();
+				$product       = array();
+
+				if ( ! empty( $this->get_api_keys() ) && $this->is_connected() ) {
+					$user_products = (array) $this->get_my_products();
+				}
+
+				$local_products = $this->get_local_products();
+				if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
+					$products = recursive_parse_args( $local_products, $user_products );
+				}
+				$products = empty( $products ) ? $local_products : $products;
+
+				$this->products = apply_filters( 'slswc_products', $products );
 
 				?>
 				<h2 class="nav-tab-wrapper">
@@ -332,16 +323,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 				<?php if ( 'licenses' === $tab || empty( $tab ) ) : ?>
 				<div id="licenses">
-					<?php $this->licenses_form( $products ); ?>
+					<?php $this->licenses_form( $this->products ); ?>
 				</div>
 				<?php elseif ( 'plugins' === $tab ) : ?>
 				<div id="plugins">
-					<?php $this->list_products( $products['plugins'] ); ?>
+					<?php $this->list_products( $this->products['plugins'] ); ?>
 				</div>
 
 				<?php elseif ( 'themes' === $tab ) : ?>
 				<div id="themes">			
-					<?php $this->list_products( $products['themes'] ); ?>
+					<?php $this->list_products( $this->products['themes'] ); ?>
 				</div>	
 				<?php else : ?>
 				<div id="api">
@@ -376,13 +367,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( ! empty( $_POST['licenses'] ) && ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( $_POST['save_licenses_nonce'], 'save_licenses' ) ) {
 
 				foreach ( $_POST['licenses'] as $slug => $license_details ) {
-					$license_details = wp_parse_args(
+					$license_details = recursive_parse_args(
 						$license_details,
 						array(
 							'license_status'  => 'inactive',
 							'license_key'     => '',
 							'license_expires' => '',
 							'current_version' => $this->version,
+							'activate_plugin' => 1,
 							'environment'     => 0,
 						)
 					);
@@ -400,7 +392,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							<th><?php _e( 'License Key', $this->text_domain ); ?></th>
 							<th><?php _e( 'License Status', $this->text_domain ); ?></th>
 							<th><?php _e( 'License Expires', $this->text_domain ); ?></th>
-							<th><?php _e( 'Deactivate', $this->text_domain ); ?></th>
+							<th><?php _e( 'Activate / Deactivate', $this->text_domain ); ?></th>
 							<th><?php _e( 'Environment', $this->text_domain ); ?></th>
 							<?php do_action( 'slswc_after_licenses_column_headings' ); ?>
 							<!--<th><?php _e( 'Action', $this->text_domain ); ?></th>-->
@@ -785,7 +777,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				update_option( 'slswc_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
 
 				$this->products = $connection->products;
-				$products       = wp_parse_args( $this->get_local_products(), $connection->products );
+				$products       = recursive_parse_args( $this->get_local_products(), $connection->products );
 
 				$this->save_products( $products );
 
@@ -814,6 +806,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( ! array_key_exists( $type_key, $products ) ) {
 				$products[ $type_key ] = array();
 			}
+
 			if ( array_key_exists( $product['slug'], $products[ $type_key ] ) ) {
 				return;
 			}
@@ -1002,6 +995,26 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public function is_connected() {
 			$is_connected = get_option( 'slswc_api_connected', 'no' );
 			return 'yes' === $is_connected ? true : false;
+		}
+
+		/**
+		 * Recursively merge two arrays.
+		 *
+		 * @param array $args User defined args
+		 * @param array $defaults Default args
+		 * @return array $new_args The two array merged into one.
+		 */
+		public static function recursive_parse_args( $args, $defaults ) {
+			$args     = (array) $args;
+			$new_args = (array) $defaults;
+			foreach ( $args as $key => $value ) {
+				if ( is_array( $value ) && isset( $new_args[ $key ] ) ) {
+					$new_args[ $key ] = recursive_parse_args( $value, $new_args[ $key ] );
+				} else {
+					$new_args[ $key ] = $value;
+				}
+			}
+			return $new_args;
 		}
 
 		/**
@@ -1439,7 +1452,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public static function get_instance( $license_server_url, $base_file, $software_type = 'plugin', $args = array() ) {
 
-			$args = wp_parse_args( $args, wp_parse_args( self::get_default_args(), self::get_file_information( $base_file, $software_type ) ) );
+			$args = recursive_parse_args( $args, recursive_parse_args( self::get_default_args(), self::get_file_information( $base_file, $software_type ) ) );
 
 			$text_domain = $args['text_domain'];
 			if ( ! array_key_exists( $text_domain, self::$instances ) ) {
@@ -1566,13 +1579,12 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function check_install() {
 
-			// Set defaults
+			// Set defaults.
 			if ( empty( $this->license_details ) ) {
 				$default_license_options = array(
 					'license_status'     => 'inactive',
 					'license_key'        => '',
 					'license_expires'    => '',
-					'deactivate_license' => '',
 					'current_version'    => $this->version,
 					'environment'        => $this->environment,
 				);
@@ -1687,7 +1699,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					}
 				}
 			} else {
-				error_log( 'License not verified for theme: ' . print_r( $server_response, true ) );
+				error_log( 'License not verified for theme.' ) );
 			}
 
 			return $transient;
@@ -1716,7 +1728,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			$server_response    = $this->server_request();
 			$plugin_update_info = $server_response->software_details;
-			// Required to cast as array due to how object is returned from api
+			
+			// Required to cast as array due to how object is returned from api.
 			$plugin_update_info->sections = (array) $plugin_update_info->sections;
 
 			if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && $plugin_update_info !== false ) {
@@ -2108,7 +2121,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				'type'        => $this->software_type,
 			);
 
-			$product = wp_parse_args( $product, $this->get_file_information( $product['plugin_file'] ), $product['type'] );
+			$product = recursive_parse_args( $product, $this->get_file_information( $product['plugin_file'] ), $product['type'] );
 
 			$this->client_manager->add_product( $product );
 		}
@@ -2219,12 +2232,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 								$options['license_status']  = $response->status;
 								$options['license_expires'] = $response->expires;
 
-								if ( $response->status === 'valid' || $response->status === 'active' ) {
+								if ( 'valid' === $response->status || 'active' === $response->status ) {
 									$type    = 'updated';
 									$message = __( 'License activated.', $this->text_domain );
 								} else {
 									$type    = 'error';
-									$message = $response->message;
+									$messages = $this->license_status_types();
+									$message  = $messages[ $response->status ];
 								}
 							} else {
 
@@ -2392,7 +2406,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					'domain_path'       => $plugin['DomainPath'],
 					'network'           => $plugin['Network'],
 
-					// SLS WC Headers
+					// SLS WC Headers.
 					'slswc'             => ! empty( $plugin['SLSWC'] ) ? $plugin['SLSWC'] : '',
 					'slug'              => ! empty( $plugin['Slug'] ) ? $plugin['Slug'] : $plugin['TextDomain'],
 					'required_wp'       => ! empty( $plugin['RequiredWP'] ) ? $plugin['RequiredWP'] : '',
@@ -2511,3 +2525,29 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 	} // WC_Software_License_Client
 
 endif;
+
+/**
+ * Helper functions.
+ */
+
+if ( ! function_exists( 'recursive_parse_args' ) ) {
+	/**
+	 * Recursively merge two arrays.
+	 *
+	 * @param array $args User defined args
+	 * @param array $defaults Default args
+	 * @return array $new_args The two array merged into one.
+	 */
+	function recursive_parse_args( $args, $defaults ) {
+		$args     = (array) $args;
+		$new_args = (array) $defaults;
+		foreach ( $args as $key => $value ) {
+			if ( is_array( $value ) && isset( $new_args[ $key ] ) ) {
+				$new_args[ $key ] = recursive_parse_args( $value, $new_args[ $key ] );
+			} else {
+				$new_args[ $key ] = $value;
+			}
+		}
+		return $new_args;
+	}
+}
