@@ -1699,7 +1699,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					}
 				}
 			} else {
-				error_log( 'License not verified for theme.' ) );
+				error_log( 'License not verified for theme.' );
 			}
 
 			return $transient;
