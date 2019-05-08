@@ -56,35 +56,35 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @var object
 		 */
 		private static $instance = null;
-
+	
 		/**
 		 * Version - current plugin version.
 		 *
 		 * @since 1.0.2
 		 */
-		public $version;
-
+		public static $version;
+	
 		/**
 		 * License URL - The base URL for your woocommerce install.
 		 *
 		 * @since 1.0.2
 		 */
-		public $license_server_url;
-
+		public static $license_server_url;
+	
 		/**
 		 * The plugin slug to check for updates with the server.
 		 *
 		 * @since 1.0.2
 		 */
-		public $slug;
-
+		public static $slug;
+	
 		/**
 		 * Plugin text domain.
 		 *
 		 * @since 1.0.2
 		 */
-		public $text_domain;
-
+		public static $text_domain;
+	
 		/**
 		 * List of products
 		 *
@@ -92,22 +92,22 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.4
 		 * @version 1.0.4
 		 */
-		public $products;
-
+		public static $products;
+	
 		/**
 		 * Don't allow cloning
 		 *
 		 * @since 1.0.2
 		 */
 		private function __clone() {}
-
+	
 		/**
 		 * Don't allow unserializing instances of this class
 		 *
 		 * @since 1.0.2
 		 */
 		private function __wakeup() {}
-
+	
 		/**
 		 * Return instance of this class
 		 *
@@ -117,15 +117,19 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.2
 		 */
 		public static function get_instance( $license_server_url, $slug, $text_domain ) {
-
+	
+			self::$license_server_url = $license_server_url;
+			self::$slug               = $slug;
+			self::$text_domain        = $text_domain;
+	
 			if ( null === self::$instance ) {
-				self::$instance = new self( $license_server_url, $slug, $text_domain );
+				self::$instance = new self( self::$license_server_url, self::$slug, self::$text_domain );
 			}
-
+	
 			return self::$instance;
-
+	
 		} // get_instance()
-
+	
 		/**
 		 * Initialize the class actions
 		 *
@@ -135,20 +139,20 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param string $products - The list of locally installed products
 		 */
 		private function __construct( $license_server_url, $slug, $text_domain ) {
-			$this->license_server_url = $license_server_url;
-			$this->slug               = $slug;
-			$this->text_domain        = $text_domain;
-
-			$this->products = $this->get_local_products();
-
+			self::$license_server_url = $license_server_url;
+			self::$slug               = $slug;
+			self::$text_domain        = $text_domain;
+	
+			self::$products = self::get_local_products();
+	
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 			add_action( 'wp_ajax_slswc_install_product', array( $this, 'product_background_installer' ) );
-
-			if ( $this->is_products_page() ) {
+	
+			if ( self::is_products_page() ) {
 				add_action( 'admin_footer', array( $this, 'admin_footer_script' ) );
 			}
 		}
-
+	
 		/**
 		 * Check if the current page is a product list page.
 		 *
@@ -156,19 +160,19 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.2
 		 * @since   1.0.2
 		 */
-		public function is_products_page() {
+		public static function is_products_page() {
 			$tabs    = array( 'plugins', 'themes' );
 			$page    = 'slswc_license_manager';
 			$is_page = isset( $_GET['page'] ) && $page === $_GET['page'] ? true : false;
 			$is_tab  = isset( $_GET['tab'] ) && in_array( wp_unslash( $_GET['tab'] ), $tabs, true ) ? true : false;
-
+	
 			if ( is_admin() && $is_page && $is_tab ) {
 				return true;
 			}
-
+	
 			return false;
 		}
-
+	
 		/**
 		 * Add script to admin footer.
 		 *
@@ -176,9 +180,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.2
 		 * @since   1.0.2
 		 */
-		public function admin_footer_script() { ?>
+		public static function admin_footer_script() { ?>
 		<script type="text/javascript">
 			jQuery( function( $ ){
+				$('#')
 				$('.slswc-install-now').on( 'click', function(e){
 					e.preventDefault();
 					
@@ -189,8 +194,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					var type    = $(this).data('type');
 					
 					var label   = $(this).html();
-
-					var action_label= "<?php esc_attr_e( 'Processing', $this->text_domain ); ?>";
+	
+					var action_label= "<?php esc_attr_e( 'Processing', self::$text_domain ); ?>";
 					
 					$(this).html('<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" /> ' + action_label );
 					
@@ -224,7 +229,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Output Functions
 		 * ------------------------------------------------------------------
 		 */
-
+	
 		/**
 		 * Add the admin menu to the dashboard
 		 *
@@ -233,16 +238,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @access  public
 		 */
 		public function add_admin_menu() {
-
+	
 			$page = add_options_page(
-				__( 'License Manager', $this->text_domain ),
-				__( 'License Manager', $this->text_domain ),
+				__( 'License Manager', self::$text_domain ),
+				__( 'License Manager', self::$text_domain ),
 				'manage_options',
 				'slswc_license_manager',
 				array( $this, 'show_installed_products' )
 			);
 		}
-
+	
 		/**
 		 * List all products installed on this server.
 		 *
@@ -250,17 +255,17 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function show_installed_products() {
+		public static function show_installed_products() {
 			$license_admin_url = admin_url( 'admin.php?page=slswc_license_manager' );
 			$tab               = isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( $_GET['tab'] ) : '';
 			?>
 			<div class="wrap">
 				<div class="notice update">
-					<?php echo __( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', $this->text_domain ); ?>
+					<?php echo __( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', self::$text_domain ); ?>
 				</div>
-				<h1><?php _e( 'Licensed Plugins and Themes.', $this->text_domain ); ?></h1>
+				<h1><?php  esc_attr_e( 'Licensed Plugins and Themes.', self::$text_domain ); ?></h1>
 				<?php
-
+	
 				if ( isset( $_POST['save_api_keys_check'] )
 					&& ! empty( esc_attr( $_POST['save_api_keys_check'] ) )
 					&& wp_verify_nonce( esc_attr( $_POST['save_api_keys_nonce'] ), 'save_api_keys' )
@@ -269,81 +274,81 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					$save_username        = update_option( 'slswc_api_username', esc_attr( $_POST['username'] ) );
 					$save_consumer_key    = update_option( 'slswc_consumer_key', esc_attr( $_POST['consumer_key'] ) );
 					$save_consumer_secret = update_option( 'slswc_consumer_secret', esc_attr( $_POST['consumer_secret'] ) );
-
+	
 					if ( $save_username && $save_consumer_key && $save_consumer_secret ) {
 						?>
 						<p class="updated">API Settings saved</p>
 						<?php
 					}
 				}
-
+	
 				if ( ! empty( $_POST['connect_nonce'] ) && wp_verify_nonce( $_POST['connect_nonce'], 'connect' ) ) {
-					$connect = $this->connect();
+					$connect = self::connect();
 				}
-
+	
 				if ( ! empty( $_POST['disconnect_nonce'] ) && wp_verify_nonce( $_POST['disconnect_nonce'], 'disconnect' ) ) {
 					update_option( slswc()->prefix . 'api_connected', 'no' );
 				}
-
+	
 				// Get the products to display.
 				$user_products = array();
 				$product       = array();
-
-				if ( ! empty( $this->get_api_keys() ) && $this->is_connected() ) {
-					$user_products = (array) $this->get_my_products();
+	
+				if ( ! empty( self::get_api_keys() ) && self::is_connected() ) {
+					$user_products = (array) self::get_my_products();
 				}
-
-				$local_products = $this->get_local_products();
+	
+				$local_products = self::get_local_products();
 				if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
 					$products = recursive_parse_args( $local_products, $user_products );
 				}
 				$products = empty( $products ) ? $local_products : $products;
-
-				$this->products = apply_filters( 'slswc_products', $products );
-
+	
+				self::$products = apply_filters( 'slswc_products', $products );
+	
 				?>
 				<h2 class="nav-tab-wrapper">
 					<a href="<?php echo $license_admin_url; ?>&tab=licenses"
 						class="nav-tab <?php echo ( $tab == 'licenses' || empty( $tab ) ) ? 'nav-tab-active' : ''; ?>">
-						<?php _e( 'Licenses' ); ?>
+						<?php  esc_attr_e( 'Licenses' ); ?>
 					</a>
 					<a href="<?php echo $license_admin_url; ?>&tab=plugins"
 						class="nav-tab <?php echo ( $tab == 'plugins' ) ? 'nav-tab-active' : ''; ?>">
-						<?php _e( 'Plugins', $this->text_domain ); ?>
+						<?php  esc_attr_e( 'Plugins', self::$text_domain ); ?>
 					</a>
 					<a href="<?php echo $license_admin_url; ?>&tab=themes"
 						class="nav-tab <?php echo ( $tab == 'themes' ) ? 'nav-tab-active' : ''; ?>">
-						<?php _e( 'Themes', $this->text_domain ); ?>
+						<?php  esc_attr_e( 'Themes', self::$text_domain ); ?>
 					</a>
 					<a href="<?php echo $license_admin_url; ?>&tab=api"
 						class="nav-tab <?php echo ( $tab == 'api' ) ? 'nav-tab-active' : ''; ?>">
-						<?php _e( 'API' ); ?>
+						<?php  esc_attr_e( 'API' ); ?>
 					</a>
 				</h2>
-
+	
 				<?php if ( 'licenses' === $tab || empty( $tab ) ) : ?>
 				<div id="licenses">
-					<?php $this->licenses_form( $this->products ); ?>
+					<?php self::licenses_form( self::$products ); ?>
 				</div>
 				<?php elseif ( 'plugins' === $tab ) : ?>
 				<div id="plugins">
-					<?php $this->list_products( $this->products['plugins'] ); ?>
+					<?php self::list_products( self::$products['plugins'] ); ?>
 				</div>
-
+	
 				<?php elseif ( 'themes' === $tab ) : ?>
 				<div id="themes">			
-					<?php $this->list_products( $this->products['themes'] ); ?>
+					<?php self::list_products( self::$products['themes'] ); ?>
 				</div>	
 				<?php else : ?>
 				<div id="api">
-					<?php $this->api_form(); ?>
+					<?php self::api_form(); ?>
 				</div>
-
+	
 			</div>
 			<?php
 			endif;
 		}
-
+	
 		/**
 		 * Output licenses form
 		 *
@@ -352,7 +357,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function licenses_form( $products ) {
+		public static function licenses_form( $products ) {
 			?>
 			<style>
 			.licenses-table{margin-top: 9px;}
@@ -363,9 +368,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 			</style>
 			<?php
-
+	
 			if ( ! empty( $_POST['licenses'] ) && ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( $_POST['save_licenses_nonce'], 'save_licenses' ) ) {
-
+	
 				foreach ( $_POST['licenses'] as $slug => $license_details ) {
 					$license_details = recursive_parse_args(
 						$license_details,
@@ -373,8 +378,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'license_status'  => 'inactive',
 							'license_key'     => '',
 							'license_expires' => '',
-							'current_version' => $this->version,
-							'activate_plugin' => 1,
+							'current_version' => self::$version,
 							'environment'     => 0,
 						)
 					);
@@ -388,25 +392,25 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<table class="form-table licenses-table widefat" >
 					<thead>
 						<tr>
-							<th><?php _e( 'Product Name', $this->text_domain ); ?></th>
-							<th><?php _e( 'License Key', $this->text_domain ); ?></th>
-							<th><?php _e( 'License Status', $this->text_domain ); ?></th>
-							<th><?php _e( 'License Expires', $this->text_domain ); ?></th>
-							<th><?php _e( 'Activate / Deactivate', $this->text_domain ); ?></th>
-							<th><?php _e( 'Environment', $this->text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'Product Name', self::$text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'License Key', self::$text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'License Status', self::$text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'License Expires', self::$text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'Deactivate', self::$text_domain ); ?></th>
+							<th><?php  esc_attr_e( 'Environment', self::$text_domain ); ?></th>
 							<?php do_action( 'slswc_after_licenses_column_headings' ); ?>
-							<!--<th><?php _e( 'Action', $this->text_domain ); ?></th>-->
+							<!--<th><?php  esc_attr_e( 'Action', self::$text_domain ); ?></th>-->
 						</tr>
 					</thead>
 					<tbody>
 						<?php
 						if ( ! empty( $products['plugins'] ) ) :
-							$this->licenses_rows( $products['plugins'] );
+							self::licenses_rows( $products['plugins'] );
 							do_action( 'slswc_after_plugins_licenses_list' );
 							endif;
-
+	
 						if ( ! empty( $products['themes'] ) ) :
-							$this->licenses_rows( $products['themes'] );
+							self::licenses_rows( $products['themes'] );
 							do_action( 'slswc_after_themes_licenses_list' );
 							endif;
 						?>
@@ -419,7 +423,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			</form>
 			<?php
 		}
-
+	
 		/**
 		 * Licenses rows output
 		 *
@@ -428,7 +432,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function licenses_rows( $products ) {
+		public static function licenses_rows( $products ) {
 
 			foreach ( $products as $product ) :
 				$option_name  = $product['slug'] . '_license_manager';
@@ -447,7 +451,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						/>
 					</td>
 					<td class="license-field">
-						<?php $this->license_status_field( $license_info['license_status'] ); ?>
+						<?php self::license_status_field( $license_info['license_status'] ); ?>
 						<input type="hidden"
 							   name="licenses[<?php echo $slug; ?>][license_status]"
 							   id="<?php echo $slug; ?>_license_status"
@@ -455,7 +459,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						/>
 					</td>
 					<td class="license-field">
-						<?php _e( $license_info['license_expires'] ); ?>
+						<?php  esc_attr_e( $license_info['license_expires'] ); ?>
 						<input type="hidden"
 							   name="licenses[<?php echo $slug; ?>][license_expires]"
 							   id="<?php echo $slug; ?>_license_expires"
@@ -466,7 +470,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						<input type="checkbox"
 								name="licenses[<?php echo $slug; ?>][deactivate_license]"
 								id="<?php echo $slug; ?>[deactivate_license]"
-								value="1"
 								<?php checked( 1, $action ); ?>
 						/>
 					</td>
@@ -476,14 +479,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								id="<?php echo $slug; ?>[environment]"
 								value="live"
 								<?php checked( 'live', $license_info['environment'] ); ?>
-						/> <?php _e( 'Live', $this->text_domain ); ?>
-
+						/> <?php  esc_attr_e( 'Live', self::$text_domain ); ?>
+	
 						<input type="radio"
 								name="licenses[<?php echo $slug; ?>][environment]"
 								id="<?php echo $slug; ?>[environment]"
 								value="staging"
 								<?php checked( 'staging', $license_info['environment'] ); ?>
-						/> <?php _e( 'Staging', $this->text_domain ); ?>
+						/> <?php  esc_attr_e( 'Staging', self::$text_domain ); ?>
 					</td>
 					<?php do_action( 'slswc_after_license_column', $product ); ?>
 					<!--<td>
@@ -494,7 +497,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			<?php
 			endforeach;
 		}
-
+	
 		/**
 		 * Output a list of products
 		 *
@@ -503,26 +506,26 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function list_products( $products ) {
-
+		public static function list_products( $products ) {
+	
 			$products = is_array( $products ) ? $products : (array) $products;
 			?>
 			<div class="wp-list-table widefat plugin-install">				
 				<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
 				<div class="plugins-popular-tags-wrapper">
-					<h2 class="screen-reader-text"><?php _e( 'Plugins List', $this->text_domain ); ?></h2>
+					<h2 class="screen-reader-text"><?php  esc_attr_e( 'Plugins List', self::$text_domain ); ?></h2>
 					<div id="the-list">
 						<?php foreach ( $products as $product ) : ?>
 						<?php
-
+	
 						$product = is_array( $product ) ? $product : (array) $product;
-
+	
 						$installed = file_exists( $product['plugin_file'] ) || is_dir( $product['plugin_file'] ) ? true : false;
-
+	
 						$name_version = esc_attr( $product['name'] ) . ' ' . esc_attr( $product['version'] );
 						$action_class = $installed ? 'update' : 'install';
-						$action_label = $installed ? __( 'Update Now', $this->text_domain ) : __( 'Install Now' );
-
+						$action_label = $installed ? __( 'Update Now', self::$text_domain ) : __( 'Install Now' );
+	
 						do_action( 'slswc_before_products_list', $products );
 						?>
 						<div class="plugin-card plugin-card-<?php echo $product['slug']; ?>">
@@ -541,8 +544,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 											<a  class="slswc-<?php echo $action_class; ?>-now button aria-button-if-js"
 												data-package="<?php echo $product['download_url']; ?>"
 												data-slug="<?php echo $product['slug']; ?>"
-												href="<?php echo admin_url( "/update.php?action=upgrade-product&amp;product={$this->slug}&amp;_wpnonce=" . wp_create_nonce( 'install_product' ) ); ?>"
-												aria-label="<?php echo sprintf( __( 'Update %s now', $this->text_domain ), esc_attr( $name_version ) ); ?>"
+												href="<?php echo admin_url( "/update.php?action=upgrade-product&amp;product=" . self::$slug . "&amp;_wpnonce=" . wp_create_nonce( 'install_product' ) ); ?>"
+												aria-label="<?php echo sprintf( __( 'Update %s now', self::$text_domain ), esc_attr( $name_version ) ); ?>"
 												data-name="<?php echo esc_attr( $name_version ); ?>"
 												role="button"
 												type="<?php echo $product['type']; ?>">
@@ -551,9 +554,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 										</li>
 										<li>
 											<a href="#" class="thickbox open-plugin-details-modal"
-												aria-label="<?php echo sprintf( __( 'More information about %s', $this->text_domain ), esc_attr( $name_version ) ); ?>"
+												aria-label="<?php echo sprintf( __( 'More information about %s', self::$text_domain ), esc_attr( $name_version ) ); ?>"
 												data-title="<?php echo esc_attr( $name_version ); ?>">
-												<?php _e( 'More Details', $this->text_domain ); ?>
+												<?php  esc_attr_e( 'More Details', self::$text_domain ); ?>
 											</a>
 										</li>
 									</ul>
@@ -566,7 +569,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							<div class="plugin-card-bottom">							
 								<div class="vers column-rating">
 									<?php
-										$this->output_ratings(
+										self::output_ratings(
 											array(
 												'rating' => $product['average_rating'],
 												'number' => $product['reviews_count'],
@@ -579,11 +582,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 									<?php echo human_time_diff( strtotime( $product['updated'] ), current_time( 'timestamp' ) ); ?> ago.
 								</div>
 								<div class="column-downloaded">
-									<?php printf( __( '%s Active Installations', $this->text_domain ), $product['activations'] ); ?> 
+									<?php printf( __( '%s Active Installations', self::$text_domain ), $product['activations'] ); ?> 
 								</div>
 								<div class="column-compatibility">
 									<span class="compatibility-compatible">
-										<?php $this->show_compatible( $product['compatible_to'] ); ?>
+										<?php self::show_compatible( $product['compatible_to'] ); ?>
 									</span>
 								</div>
 							</div>
@@ -594,13 +597,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				</div>
 				<?php else : ?>
 					<div class="no-products">
-						<p><?php _e( 'It seems you currently do not have any products yet.', $this->text_domain ); ?></p>
+						<p><?php  esc_attr_e( 'It seems you currently do not have any products yet.', self::$text_domain ); ?></p>
 					</div>
 				<?php endif; ?>
 			</div>
 			<?php
 		}
-
+	
 		/**
 		 * Output API Settings form
 		 *
@@ -608,15 +611,15 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function api_form() {
-			$keys = $this->get_api_keys();
+		public static function api_form() {
+			$keys = self::get_api_keys();
 			?>
-			<h2><?php _e( 'API Settings', $this->text_domain ); ?></h2>
-
-			<?php if ( empty( $keys ) && ! $this->is_connected() ) : ?>
+			<h2><?php  esc_attr_e( 'API Settings', self::$text_domain ); ?></h2>
+	
+			<?php if ( empty( $keys ) && ! self::is_connected() ) : ?>
 			
 			<p class="about-text">
-				<?php _e( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', $this->text_domain ); ?>
+				<?php  esc_attr_e( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', self::$text_domain ); ?>
 			</p>
 			
 			<form name="api-keys" method="post" action="">
@@ -625,7 +628,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<table class="form-table">
 					<tbody>
 						<tr>
-							<th><?php _e( 'Username', '' ); ?></th>
+							<th><?php  esc_attr_e( 'Username', '' ); ?></th>
 							<td>
 								<input type="text"
 										name="username"
@@ -634,7 +637,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							</td>
 						</tr>
 						<tr>
-							<th><?php _e( 'Consumer Key', '' ); ?></th>
+							<th><?php  esc_attr_e( 'Consumer Key', '' ); ?></th>
 							<td>
 								<input type="password"
 										name="consumer_key"
@@ -643,7 +646,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							</td>
 						</tr>
 						<tr>
-							<th><?php _e( 'Consumer Secret', '' ); ?></th>
+							<th><?php  esc_attr_e( 'Consumer Secret', '' ); ?></th>
 							<td>
 								<input type="password"
 										name="consumer_secret"
@@ -666,31 +669,31 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					</tbody>
 				</table>
 			</form>
-			<?php elseif ( ! empty( $keys ) && ! $this->is_connected() ) : ?>
+			<?php elseif ( ! empty( $keys ) && ! self::is_connected() ) : ?>
 				<form name="connect" method="post" action="">
 					<?php wp_nonce_field( 'connect', 'connect_nonce' ); ?>
 					<input type="submit"
 							id="connect"
 							class="button button-primary"
-							value="<?php _e( 'Connect', $this->text_domain ); ?>"
+							value="<?php  esc_attr_e( 'Connect', self::$text_domain ); ?>"
 					/>
 				</form>
 				
 			<?php else : ?>
-				<p><?php _e( 'Your account is connected.', $this->text_domain ); ?></p>
-				<p><?php _e( 'You should be able to see a list of your purchased products and get convenient automatic updates.', $this->text_domain ); ?></p>
+				<p><?php  esc_attr_e( 'Your account is connected.', self::$text_domain ); ?></p>
+				<p><?php  esc_attr_e( 'You should be able to see a list of your purchased products and get convenient automatic updates.', self::$text_domain ); ?></p>
 				<form name="disconnect" method="post" action="">
 					<?php wp_nonce_field( 'disconnect', 'disconnect_nonce' ); ?>
 					<input type="submit"
 							id="disconnect"
 							class="button button-primary"
-							value="<?php _e( 'Disconnect', $this->text_domain ); ?>"
+							value="<?php  esc_attr_e( 'Disconnect', self::$text_domain ); ?>"
 					/>
 				</form>
 			<?php endif; ?>
 			<?php
 		}
-
+	
 		/**
 		 * Output the product ratings
 		 *
@@ -698,13 +701,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function output_ratings( $args ) {
+		public static function output_ratings( $args ) {
 			wp_star_rating( $args );
 			?>
 			<span class="num-ratings" aria-hidden="true">(<?php echo esc_attr( $args['number'] ); ?>)</span>
 			<?php
 		}
-
+	
 		/**
 		 * Show compatibility message
 		 *
@@ -713,15 +716,15 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function show_compatible( $version ) {
+		public static function show_compatible( $version ) {
 			global $wp_version;
-			$compatibility = version_compare( $version, $wp_version, '>' ) ? __( 'Compatible', $this->text_domain ) : __( 'Not compatible', $this->text_domain );
+			$compatibility = version_compare( $version, $wp_version, '>' ) ? __( 'Compatible', self::$text_domain ) : __( 'Not compatible', self::$text_domain );
 			?>
 			<strong><?php echo esc_attr( $compatibility ); ?></strong>
 			<?php
-			_e( ' with your version of WordPress', $this->text_domain );
+			 esc_attr_e( ' with your version of WordPress', self::$text_domain );
 		}
-
+	
 		/**
 		 * License acivated field
 		 *
@@ -729,13 +732,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since 1.0.1
 		 * @access public
 		 */
-		public function license_status_field( $status ) {
-
-			$license_labels = $this->license_status_types();
-
-			_e( $license_labels[ $status ] );
+		public static function license_status_field( $status ) {
+	
+			$license_labels = self::license_status_types();
+	
+			 esc_attr_e( $license_labels[ $status ] );
 		}
-
+	
 		/**
 		 * The available license status types
 		 *
@@ -743,24 +746,24 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.2
 		 * @access  public
 		 */
-		public function license_status_types() {
-
+		public static function license_status_types() {
+	
 			return apply_filters(
 				'wcsl_license_status_types',
 				array(
-					'valid'           => __( 'Valid', $this->text_domain ),
-					'deactivated'     => __( 'Deactivated', $this->text_domain ),
-					'max_activations' => __( 'Max Activations reached', $this->text_domain ),
-					'invalid'         => __( 'Invalid', $this->text_domain ),
-					'inactive'        => __( 'Inactive', $this->text_domain ),
-					'active'          => __( 'Active', $this->text_domain ),
-					'expiring'        => __( 'Expiring', $this->text_domain ),
-					'expired'         => __( 'Expired', $this->text_domain ),
+					'valid'           => __( 'Valid', self::$text_domain ),
+					'deactivated'     => __( 'Deactivated', self::$text_domain ),
+					'max_activations' => __( 'Max Activations reached', self::$text_domain ),
+					'invalid'         => __( 'Invalid', self::$text_domain ),
+					'inactive'        => __( 'Inactive', self::$text_domain ),
+					'active'          => __( 'Active', self::$text_domain ),
+					'expiring'        => __( 'Expiring', self::$text_domain ),
+					'expired'         => __( 'Expired', self::$text_domain ),
 				)
 			);
-
+	
 		}
-
+	
 		/**
 		 * Connect to the api server using API keys
 		 *
@@ -768,25 +771,25 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function connect() {
-			$keys       = $this->get_api_keys();
-			$connection = $this->server_request( 'connect', $keys );
-
+		public static function connect() {
+			$keys       = self::get_api_keys();
+			$connection = self::server_request( 'connect', $keys );
+	
 			if ( $connection->connected && 'ok' === $connection->status ) {
 				update_option( 'slswc_api_connected', apply_filters( 'slswc_api_connected', 'yes' ) );
 				update_option( 'slswc_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
-
-				$this->products = $connection->products;
-				$products       = recursive_parse_args( $this->get_local_products(), $connection->products );
-
-				$this->save_products( $products );
-
+	
+				self::$products = $connection->products;
+				$products       = recursive_parse_args( self::get_local_products(), $connection->products );
+	
+				self::save_products( $products );
+	
 				return true;
 			}
-
+	
 			return false;
 		}
-
+	
 		/**
 		 * Add the product to the list.
 		 *
@@ -794,26 +797,26 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function add_product( $product ) {
-
+		public static function add_product( $product ) {
+	
 			if ( empty( $product ) ) {
 				return;
 			}
 
 			$type_key = $product['type'] . 's';
-			$products = $this->get_local_products();
-
+			$products = self::get_local_products();
+	
 			if ( ! array_key_exists( $type_key, $products ) ) {
 				$products[ $type_key ] = array();
 			}
-
+	
 			if ( array_key_exists( $product['slug'], $products[ $type_key ] ) ) {
 				return;
 			}
-
-			$remote_product = $this->get_remote_product( $product['slug'] );
+	
+			$remote_product = self::get_remote_product( $product['slug'] );
 			if ( $remote_product ) {
-				$product = array_merge( $product, (array) $remote_product );
+				$product = recursive_parse_args( $product, $remote_product );
 			}
 
 			if ( 'plugin' === $product['type'] ) {
@@ -821,10 +824,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			} elseif ( 'theme' === $product['type'] ) {
 				$products['themes'][ $product['slug'] ] = $product;
 			}
-
-			$this->save_products( $products );
+	
+			self::save_products( $products );
 		}
-
+	
 		/**
 		 * Get more details about the product from the license server.
 		 *
@@ -833,21 +836,21 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function get_remote_product( $slug = '' ) {
-
+		public static function get_remote_product( $slug = '' ) {
+	
 			$request_info = array(
-				'slug' => empty( $slug ) ? $this->slug : $slug,
+				'slug' => empty( $slug ) ? self::$slug : $slug,
 			);
-
-			$response = $this->server_request( 'product', $request_info );
-
+	
+			$response = self::server_request( 'product', $request_info );
+	
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->product;
 			}
-
+	
 			return false;
 		}
-
+	
 		/**
 		 * Get a user's purchased products
 		 *
@@ -855,21 +858,21 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function get_my_products() {
+		public static function get_my_products() {
 			$request_info = array_merge(
-				$this->get_api_keys(),
+				self::get_api_keys(),
 				array()
 			);
-
-			$response = $this->server_request( 'myproducts', $request_info );
-
+	
+			$response = self::server_request( 'myproducts', $request_info );
+	
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->products;
 			}
-
+	
 			return false;
 		}
-
+	
 		/**
 		 * Get all public products
 		 *
@@ -877,20 +880,20 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function get_public_products() {
+		public static function get_public_products() {
 			$request_info = array_merge(
-				$this->get_api_keys()
+				self::get_api_keys()
 			);
-
-			$response = $this->server_request( 'products', $request_info );
-
+	
+			$response = self::server_request( 'products', $request_info );
+	
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->products;
 			}
-
+	
 			return false;
 		}
-
+	
 		/**
 		 * Default product data
 		 *
@@ -898,7 +901,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function default_product_details() {
+		public static function default_product_details() {
 			return array(
 				'description'        => '',
 				'thumbnail'          => '',
@@ -913,7 +916,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				'environment'        => '',
 			);
 		}
-
+	
 		/**
 		 * Get installed products
 		 *
@@ -921,27 +924,24 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function get_local_products( $type = 'plugins' ) {
-			$products = get_transient( 'slswc_products' );
-			if ( false === $products ) {
-				$products = get_option( 'slswc_products' );
-				set_transient( 'slswc_products', $products, apply_filters( 'slswc_product_cache_expiry', 12 * HOUR_IN_SECONDS ) );
-			}
-
+		public static function get_local_products( $type = 'plugins' ) {
+			
+			$products = get_option( 'slswc_products' );
+	
 			if ( empty( $products ) ) {
 				$products = array(
 					'plugins' => array(),
 					'themes'  => array(),
 				);
 			}
-
+	
 			if ( ! empty( $type ) && ! empty( $products[ $type ] ) ) {
 				return $products[ $type ];
 			}
-
+	
 			return $products;
 		}
-
+	
 		/**
 		 * Get the API Keys stored in database
 		 *
@@ -949,7 +949,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function get_api_keys() {
+		public static function get_api_keys() {
 			return array_filter(
 				array(
 					'username'        => get_option( 'slswc_api_username' ),
@@ -958,7 +958,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				)
 			);
 		}
-
+	
 		/**
 		 * Delete the products from cache and from database
 		 *
@@ -966,25 +966,26 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function delete_products() {
+		public static function delete_products() {
 			delete_option( 'slswc_products' );
 			delete_transient( 'slswc_products' );
 		}
-
+	
 		/**
 		 * Save a list of products to the database.
 		 *
 		 * @param array $products List of products to save.
 		 * @return void
 		 */
-		public function save_products( $products = array() ) {
+		public static function save_products( $products = array() ) {
 			if ( empty( $products ) ) {
-				$products = $this->products;
+				$products = self::$products;
 			}
 			update_option( 'slswc_products', $products );
-			set_transient( 'slswc_products', $products, apply_filters( 'slswc_products_cache_expiry', 12 * HOUR_IN_SECONDS ) );
+			//delete_transient( 'slswc_products' );
+			//set_transient( 'slswc_products', $products, apply_filters( 'slswc_products_cache_expiry', 12 * HOUR_IN_SECONDS ) );
 		}
-
+	
 		/**
 		 * Check if the account is connected to the api
 		 *
@@ -992,11 +993,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function is_connected() {
+		public static function is_connected() {
 			$is_connected = get_option( 'slswc_api_connected', 'no' );
 			return 'yes' === $is_connected ? true : false;
 		}
-
+	
 		/**
 		 * Recursively merge two arrays.
 		 *
@@ -1016,13 +1017,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 			return $new_args;
 		}
-
+	
 		/**
 		 * ---------------------------------------------------------------------------------
 		 * Server Request Functions
 		 * ---------------------------------------------------------------------------------
 		 */
-
+	
 		/**
 		 * Send a request to the server
 		 *
@@ -1030,20 +1031,22 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public function server_request( $action = 'check_update', $request_info = array() ) {
+		public static function server_request( $action = 'check_update', $request_info = array(), $domain = '' ) {
 
+			$domain = empty( $domain ) ? self::$license_server_url : $domain;
+	
 			// Allow filtering the request info for plugins.
-			$request_info = apply_filters( 'wcsl_request_info_' . $this->slug, $request_info );
-
+			$request_info = apply_filters( 'wcsl_request_info_' . self::$slug, $request_info );
+	
 			// Build the server url api end point fix url build to support the WordPress API.
-			$server_request_url = esc_url_raw( $this->license_server_url . 'wp-json/slswc/v1/' . $action . '?' . http_build_query( $request_info ) );
-
+			$server_request_url = esc_url_raw( $domain . 'wp-json/slswc/v1/' . $action . '?' . http_build_query( $request_info ) );
+	
 			// Options to parse the wp_safe_remote_get() call.
 			$request_options = array( 'timeout' => 30 );
-
+	
 			// Allow filtering the request options.
-			$request_options = apply_filters( 'wcsl_request_options_' . $this->slug, $request_options );
-
+			$request_options = apply_filters( 'wcsl_request_options_' . self::$slug, $request_options );
+	
 			// Query the license server.
 			$endpoint_actions = apply_filters( 'slswc_client_post_actions', array( 'connect', 'add_domain', 'remove_domain' ) );
 			if ( in_array( $action, $endpoint_actions, true ) ) {
@@ -1051,38 +1054,38 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			} else {
 				$response = wp_safe_remote_get( $server_request_url, $request_options );
 			}
-
+	
 			// Validate that the response is valid not what the response is.
-			$result = $this->validate_response( $response );
-
+			$result = self::validate_response( $response );
+	
 			// Check if there is an error and display it if there is one, otherwise process the response.
 			if ( ! is_wp_error( $result ) ) {
-
+	
 				$response_body = json_decode( wp_remote_retrieve_body( $response ) );
-
+	
 				// Check the status of the response.
-				$continue = $this->check_response_status( $response_body );
-
+				$continue = self::check_response_status( $response_body );
+	
 				if ( $continue ) {
 					return $response_body;
 				}
 			} else {
-
+	
 				// Display the error message in admin.
 				add_settings_error(
-					$this->slug . '_license_manager',
+					self::$slug . '_license_manager',
 					esc_attr( 'settings_updated' ),
 					$result->get_error_message(),
 					'error'
 				);
-
+	
 				// Return null to halt the execution.
 				return null;
-
+	
 			}
-
+	
 		} // server_request()
-
+	
 		/**
 		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
@@ -1091,73 +1094,73 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @access  public
 		 * @param WP_Error|Array $response The response or WP_Error.
 		 */
-		public function validate_response( $response ) {
-
+		public static function validate_response( $response ) {
+	
 			if ( ! empty( $response ) ) {
-
+	
 				// Can't talk to the server at all, output the error.
 				if ( is_wp_error( $response ) ) {
-					return new WP_Error( $response->get_error_code(), sprintf( __( 'HTTP Error: %s', $this->text_domain ), $response->get_error_message() ) );
+					return new WP_Error( $response->get_error_code(), sprintf( __( 'HTTP Error: %s', self::$text_domain ), $response->get_error_message() ) );
 				}
-
+	
 				// There was a problem with the initial request.
 				if ( ! isset( $response['response']['code'] ) ) {
-					return new WP_Error( 'wcsl_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', $this->text_domain ) );
+					return new WP_Error( 'wcsl_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', self::$text_domain ) );
 				}
-
+	
 				// There is a validation error on the server side, output the problem.
 				if ( $response['response']['code'] == 400 ) {
-
+	
 					$body = json_decode( $response['body'] );
-
+	
 					foreach ( $body->data->params as $param => $message ) {
 						return new WP_Error(
 							'wcsl_validation_failed',
 							sprintf(
 								// translators: %s: Error/response message.
-								__( 'There was a problem with your license: %s', $this->text_domain ),
+								__( 'There was a problem with your license: %s', self::$text_domain ),
 								$message
 							)
 						);
 					}
 				}
-
+	
 				// The server is broken.
 				if ( $response['response']['code'] == 500 ) {
 					return new WP_Error(
 						'wcsl_internal_server_error',
 						sprintf(
 							// translators: %s: the http repsonse code from the server.
-							__( 'There was a problem with the license server: HTTP response code is : %s', $this->text_domain ),
+							__( 'There was a problem with the license server: HTTP response code is : %s', self::$text_domain ),
 							$response['response']['code']
 						)
 					);
 				}
-
+	
 				if ( $response['response']['code'] !== 200 ) {
 					return new WP_Error(
 						'wcsl_unexpected_response_code',
 						sprintf(
-							__( 'HTTP response code is : % s, expecting ( 200 )', $this->text_domain ),
+							__( 'HTTP response code is : % s, expecting ( 200 )', self::$text_domain ),
 							$response['response']['code']
 						)
 					);
 				}
-
+	
 				if ( empty( $response['body'] ) ) {
 					return new WP_Error(
 						'wcsl_no_response',
-						__( 'The server returned no response.', $this->text_domain )
+						__( 'The server returned no response.', self::$text_domain )
 					);
 				}
-
+	
 				return true;
-
+	
 			}
-
+	
 		} // validate_response()
-
-
+	
+	
 		/**
 		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
@@ -1166,20 +1169,20 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @access  public
 		 * @param   object $response_body The data returned.
 		 */
-		public function check_response_status( $response_body ) {
-
+		public static function check_response_status( $response_body ) {
+	
 			if ( is_object( $response_body ) && ! empty( $response_body ) ) {
-
-				$license_status_types = $this->license_status_types();
+	
+				$license_status_types = self::license_status_types();
 				$status               = $response_body->status;
-
+	
 				return ( array_key_exists( $status, $license_status_types ) || 'ok' === $status ) ? true : false;
 			}
-
+	
 			return false;
-
+	
 		}  // check_response_status()
-
+	
 		/**
 		 * Install a product.
 		 *
@@ -1192,43 +1195,43 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public static function product_background_installer( $slug = '', $package = '' ) {
 			// Explicitly clear the event.
 			wp_clear_scheduled_hook( 'woocommerce_theme_background_installer', func_get_args() );
-
+	
 			if ( wp_verify_nonce( esc_attr( $_POST['nonce'] ), 'slswc_client_install_product' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => esc_attr__( 'Failed to install product. Security token invalid.', $this->text_domain )
+						'message' => esc_attr__( 'Failed to install product. Security token invalid.', self::$text_domain )
 					)
 				);
 			}
-
+	
 			$download_link = esc_url( $_POST['package'] );
 			$slug          = esc_attr( $_POST['slug'] );
 			$name          = esc_attr( $_POST['name'] );
 			$product_type  = esc_attr( $_POST['type'] );
-
+	
 			if ( ! empty( $download_link ) ) {
 				// Suppress feedback.
 				ob_start();
-
+	
 				try {
-
+	
 					require_once ABSPATH . 'wp-admin/includes/file.php';
 					include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 					include_once ABSPATH . 'wp-admin/includes/theme.php';
 					include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-
+	
 					WP_Filesystem();
-
+	
 					$skin = new Automatic_Upgrader_Skin();
-
+	
 					if ( 'theme' === $product_type ) {
 						$upgrader = new Theme_Upgrader( $skin );
 					} else {
 						$upgrader = new Plugin_Upgrader( $skin );
 					}
-
+	
 					$result = $upgrader->install( $download_link );
-
+	
 					if ( is_wp_error( $result ) ) {
 						wp_send_json_error( $result->get_error_message() );
 					} elseif ( is_wp_error( $skin->result ) ) {
@@ -1240,7 +1243,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							)
 						);
 					}
-
+	
 					wp_send_json_success( array( 'result' => $result ) );
 				} catch ( Exception $e ) {
 					wp_send_json_error(
@@ -1248,7 +1251,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'slug'    => $slug . '_install_error',
 							'message' => sprintf(
 								// translators: 1: theme slug, 2: error message, 3: URL to install theme manually.
-								__( '%1$s could not be installed (%2$s). <a href="%3$s">Please install it manually by clicking here.</a>', $this->text_domain ),
+								__( '%1$s could not be installed (%2$s). <a href="%3$s">Please install it manually by clicking here.</a>', self::$text_domain ),
 								$slug,
 								$e->getMessage(),
 								esc_url( admin_url( 'update.php?action=install-' . $product_type . '&' . $product_type . '=' . $slug . '&_wpnonce=' . wp_create_nonce( 'install-' . $product_type . '_' . $slug ) ) )
@@ -1256,16 +1259,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						)
 					);
 				}
-
+	
 				wp_send_json_error( array( 'message' => 'Gone all this way.' ) );
-
+	
 				// Discard feedback.
 				ob_end_clean();
 			}
-
+	
 			wp_send_json(
 				array(
-					'message' => __( 'Failed to install product. Download link not provided or is invalid.', $this->text_domain ),
+					'message' => __( 'Failed to install product. Download link not provided or is invalid.', self::$text_domain ),
 				)
 			);
 		}
@@ -1474,46 +1477,44 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * @param   integer $args - array of additional arguments to override default ones
 		 */
 		private function __construct( $license_server_url, $base_file, $software_type, $args ) {
-
+			
 			if ( empty( $args ) ) {
 				$args = $this->get_file_information( $base_file, $software_type );
 			}
-			extract( $args );
+			// extract( $args );
 
 			$this->base_file          = $base_file;
-			$this->name               = empty( $name ) ? $title : $name;
+			$this->name               = empty( $args['name'] ) ? $args['title'] : $args['name'];
 			$this->license_server_url = trailingslashit( $license_server_url );
-			$this->version            = $version;
-			$this->text_domain        = $text_domain;
-			$this->show_settings_page = $show_settings_page;
+			$this->version            = $args['version'];
+			$this->text_domain        = $args['text_domain'];
+			$this->show_settings_page = $args['show_settings_page'];
 
 			if ( 'plugin' === $software_type ) {
 				$this->plugin_file = plugin_basename( $base_file );
-				$this->slug        = empty( $slug ) ? basename( $this->plugin_file, '.php' ) : $slug;
+				$this->slug        = empty( $args['slug'] ) ? basename( $this->plugin_file, '.php' ) : $args['slug'];
 			} else {
 				$this->theme_file = $base_file;
-				$this->slug       = empty( $slug ) ? basename( $this->theme_file, '.css' ) : $slug;
+				$this->slug       = empty( $args['slug'] ) ? basename( $this->theme_file, '.css' ) : $args['slug'];
 			}
 
-			$this->update_interval = $update_interval;
-			$this->debug           = defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $debug;
+			$this->update_interval = $args['update_interval'];
+			$this->debug           = defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'];
 
 			$this->option_name         = $this->slug . '_license_manager';
 			$this->domain              = trailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
 			$this->license_details     = get_option( $this->option_name );
 			$this->software_type       = $software_type;
-			$this->environment         = $environment;
+			$this->environment         = $args['environment'];
 			$this->license_manager_url = esc_url( admin_url( 'options-general.php?page=slswc_license_manager&tab=licenses' ) );
 
-			$this->client_manager = WC_Software_License_Client_Manager::get_instance( $this->license_server_url, $this->slug, $this->text_domain );
-
-			// Get the license server host
+			// Get the license server host.
 			$this->license_server_host = @parse_url( $this->license_server_url, PHP_URL_HOST );
 
 			// Don't run the license activation code if running on local host.
 			$whitelist = apply_filters( 'wcv_localhost_whitelist', array( '127.0.0.1', '::1' ) );
 
-			if ( isset( $_SERVER['SERVER_ADDR'] ) && in_array( $_SERVER['SERVER_ADDR'], $whitelist ) && ! $debug ) {
+			if ( isset( $_SERVER['SERVER_ADDR'] ) && in_array( $_SERVER['SERVER_ADDR'], $whitelist ) && ! $args['debug'] ) {
 
 				add_action( 'admin_notices', array( $this, 'license_localhost' ) );
 
@@ -1533,11 +1534,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
 
 				// Validate license on save.
-				add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ) );
+				add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ), 99 );
 
-				// Only allow updates if they have a valid license key.
-				// Or API keys are set to check for updates.
-				if ( 'active' === $this->license_details['license_status'] || $this->client_manager->is_connected() ) {
+				/**
+				 * Only allow updates if they have a valid license key.
+				 * Or API keys are set to check for updates.
+				 */
+				if ( 'active' === $this->license_details['license_status'] || 'expiring' === $this->license_details['license_status'] || WC_Software_License_Client_Manager::is_connected() ) {
 					if ( 'plugin' === $this->software_type ) {
 
 						add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
@@ -1552,6 +1555,11 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
 				}
 			}
+
+			global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
+			$slswc_license_server_url = $license_server_url;
+			$slswc_slug               = $args['slug'];
+			$slswc_text_domain        = $args['text_domain'];
 		} // __construct()
 
 		/**
@@ -1698,8 +1706,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						}
 					}
 				}
-			} else {
-				error_log( 'License not verified for theme.' );
 			}
 
 			return $transient;
@@ -1790,22 +1796,22 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function server_request( $action = 'check_update', $request_info = array() ) {
 
-			if ( empty( $request_info ) && ! $this->client_manager->is_connected() ) {
+			if ( empty( $request_info ) && ! WC_Software_License_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
 				$request_info['license_key'] = $this->license_details['license_key'];
 				$request_info['domain']      = $this->domain;
 				$request_info['version']     = $this->version;
 				$request_info['environment'] = $this->environment;
-			} elseif ( $this->client_manager->is_connected() ) {
+			} elseif ( WC_Software_License_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
 				$request_info['domain']      = $this->domain;
 				$request_info['version']     = $this->version;
 				$request_info['environment'] = $this->environment;
 
-				$request_info = array_merge( $request_info, $this->client_manager->get_api_keys() );
+				$request_info = array_merge( $request_info, WC_Software_License_Client_Manager::get_api_keys() );
 			}
 
-			return $this->client_manager->server_request( $action, $request_info );
+			return WC_Software_License_Client_Manager::server_request( $action, $request_info );
 
 		} // server_request()
 
@@ -1880,7 +1886,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			if ( isset( $_GET['wcsl_check_for_update'], $_GET['wcsl_slug'] ) && $_GET['wcsl_slug'] == $this->slug && current_user_can( 'update_plugins' ) && check_admin_referer( 'wcsl_check_for_update' ) ) {
 
-				// Check for updates
+				// Check for updates.
 				$server_response = $this->server_request();
 
 				if ( $this->check_license( $server_response ) ) {
@@ -2121,9 +2127,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				'type'        => $this->software_type,
 			);
 
-			$product = recursive_parse_args( $product, $this->get_file_information( $product['plugin_file'] ), $product['type'] );
-
-			$this->client_manager->add_product( $product );
+			$product = recursive_parse_args( $product, $this->get_file_information( $product['plugin_file'], $product['type'] ) );
+			WC_Software_License_Client_Manager::add_product( $product );
 		}
 
 		/**
@@ -2160,7 +2165,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			$license_labels = $this->license_status_types();
 
-			_e( $license_labels[ $this->license_details['license_status'] ] );
+			 esc_attr_e( $license_labels[ $this->license_details['license_status'] ] );
 
 		} // license_status_field()
 
@@ -2226,7 +2231,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						if ( $response !== null ) {
 
-							if ( $this->client_manager->check_response_status( $response ) ) {
+							if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
 
 								$options[ $key ]            = $input[ $key ];
 								$options['license_status']  = $response->status;
@@ -2265,7 +2270,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 					if ( $response !== null ) {
 
-						if ( $this->client_manager->check_response_status( $response ) ) {
+						if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
 							$options[ $key ]            = $input[ $key ];
 							$options['license_status']  = $response->status;
 							$options['license_expires'] = $response->expires;
@@ -2406,12 +2411,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					'domain_path'       => $plugin['DomainPath'],
 					'network'           => $plugin['Network'],
 
-					// SLS WC Headers.
+					// SLSWC Headers.
 					'slswc'             => ! empty( $plugin['SLSWC'] ) ? $plugin['SLSWC'] : '',
-					'slug'              => ! empty( $plugin['Slug'] ) ? $plugin['Slug'] : $plugin['TextDomain'],
+					'slug'              => ! empty( $plugin['Slug'] ) ? $plugin['Slug'] : '',
 					'required_wp'       => ! empty( $plugin['RequiredWP'] ) ? $plugin['RequiredWP'] : '',
 					'compatible_to'     => ! empty( $plugin['CompatibleTo'] ) ? $plugin['CompatibleTo'] : '',
 					'documentation_url' => ! empty( $plugin['DocumentationURL'] ) ? $plugin['DocumentationURL'] : '',
+					'type'				=> $type,
 				);
 			} elseif ( 'theme' === $type ) {
 				if ( ! function_exists( 'wp_get_theme' ) ) {
@@ -2431,12 +2437,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					'tags'              => $theme->get( 'Tags' ),
 					'text_domain'       => $theme->get( 'TextDomain' ),
 					'domain_path'       => $theme->get( 'DomainPath' ),
-					// SLS WC Headers
+					// SLSWC Headers
 					'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
 					'slug'              => ! empty( $theme->get( 'Slug' ) ) ? $theme->get( 'Slug' ) : $theme->get( 'TextDomain' ),
 					'required_wp'       => ! empty( $theme->get( 'RequiredWP' ) ) ? $theme->get( 'RequiredWP' ) : '',
 					'compatible_to'     => ! empty( $theme->get( 'CompatibleTo' ) ) ? $theme->get( 'CompatibleTo' ) : '',
 					'documentation_url' => ! empty( $theme->get( 'DocumentationURL' ) ) ? $theme->get( 'DocumentationURL' ) : '',
+					'type'				=> $type,
 				);
 			}
 
@@ -2445,27 +2452,37 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		}
 
 		/**
-		 * Add extra plugin/theme headers
+		 * Add extra theme headers.
 		 *
 		 * @param   array $headers
 		 * @return  void
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public static function extra_headers( $current_extra_headers ) {
+		public static function extra_headers( $headers ) {
 
-			$new_extra_headers = array(
-				'SLSWC'             => __( 'SLSWC', $this->text_domain ),
-				'Slug'              => __( 'Slug', $this->text_domain ),
-				'RequiredWP'        => __( 'Required WP', $this->text_domain ),
-				'CompatibleTo'      => __( 'Compatible To', $this->text_domain ),
-				'Documentation URL' => __( 'Documentation URL', $this->text_domain ),
-			);
+			if ( ! in_array( 'SLSWC', $headers ) ) {
+				$headers[] = 'SLSWC';
+			}
 
-			$extra_headers = empty( $current_extra_headers ) ? $new_extra_headers : array_merge( $current_extra_headers, $new_extra_headers );
-			return $extra_headers;
+			if ( ! in_array( 'Slug', $headers ) ) {
+				$headers[] = 'Slug';
+			}
+
+			if ( ! in_array( 'Required WP', $headers ) ) {
+				$headers[] = 'Required WP';
+			}
+
+			if ( ! in_array( 'Compatible To', $headers ) ) {
+				$headers[] = 'Compatible To';
+			}
+
+			if ( ! in_array( 'Documentation URL', $headers ) ) {
+				$headers[] = 'Documentation URL';
+			}
+			
+			return $headers;
 		}
-
 
 		/**
 		 * --------------------------------------------------------------------------
@@ -2515,6 +2532,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 		} // set_license_expires()
 
+		/**
+		 * Save the license details.
+		 *
+		 * @return void
+		 * @version 1.0.0
+		 * @since   1.0.2
+		 */
 		public function save() {
 
 			update_option( $this->option_name, $this->license_details );
@@ -2534,8 +2558,8 @@ if ( ! function_exists( 'recursive_parse_args' ) ) {
 	/**
 	 * Recursively merge two arrays.
 	 *
-	 * @param array $args User defined args
-	 * @param array $defaults Default args
+	 * @param  array $args User defined args.
+	 * @param  array $defaults Default args.
 	 * @return array $new_args The two array merged into one.
 	 */
 	function recursive_parse_args( $args, $defaults ) {
@@ -2551,3 +2575,18 @@ if ( ! function_exists( 'recursive_parse_args' ) ) {
 		return $new_args;
 	}
 }
+
+/**
+ * Fire action hooks and filters.
+ */
+
+/**
+ * Load the license manager class once all plugins are loaded.
+ * 
+ * @version 1.0.2
+ * @since   1.0.2
+ */
+add_action( 'plugins_loaded', function() {
+	global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
+	WC_Software_License_Client_Manager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
+}, 11 );
