@@ -129,8 +129,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				self::$instance = new self( self::$license_server_url, self::$slug, 'slswcclient' );
 			}
 
-			error_log( "Instance:: " . print_r( self::$instance, true ));
-
 			return self::$instance;
 		} // get_instance()
 
@@ -441,7 +439,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$license_info = get_option( $option_name );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 				$slug         = esc_attr( $product['slug'] );
-				$action       = ! empty( $license_info['deactivate_license'] ) ? $license_info['deactivate_license'] : $license_info['activate_license'];
+				$action       = ! empty( $license_info['deactivate_license'] ) ? $license_info['deactivate_license'] : 'activate_license';
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -543,7 +541,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								<div class="action-links">
 									<ul class="plugin-action-buttons">
 										<li>
-											<a  class="slswc-<?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
+											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
 												data-package="<?php echo esc_attr( $product['download_url'] ); ?>"
 												data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
 												href="<?php echo esc_url( admin_url( '/update.php?action=upgrade-product&amp;product=' . $product['slug'] . '&amp;_wpnonce=' . wp_create_nonce( 'install_product' ) ) ); ?>"
@@ -743,6 +741,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public static function license_status_field( $status ) {
 
 			$license_labels = self::license_status_types();
+
+			error_log( "Status:: $status" );
 
 			echo esc_attr( $license_labels[ $status ] );
 		}
@@ -966,9 +966,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			$installed_themes = array();
 			foreach ( $themes as $theme_file => $theme_details ) {
-				if ( $theme_details->get( 'SLSWC' ) && in_array( $theme_details->get( 'SLSWC' ), array( 'plugin', 'theme' ), true ) ) {
+				if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
 
-					$installed_themes[ $theme_details['Slug'] ] =  array(
+					error_log("Theme slug:  " . $theme_details->get( 'Slug' ) );
+
+					
+					$theme_data   = array(
 						'name'              => $theme_details->get( 'Name' ),
 						'theme_url'         => $theme_details->get( 'ThemeURI' ),
 						'description'       => $theme_details->get( 'Description' ),
@@ -988,6 +991,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						'documentation_url' => ! empty( $theme_details->get( 'DocumentationURL' ) ) ? $theme_details->get( 'DocumentationURL' ) : '',
 						'type'              => 'theme',
 					);
+
+					$remote_theme = self::get_remote_product( $theme_data['slug'] );
+	
+					$installed_themes[ $theme_details->get( 'Slug' ) ] = recursive_parse_args( $remote_theme, $theme_data );
 				}
 			}
 
@@ -1010,8 +1017,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$installed_plugins = array();
 
 			foreach ( $plugins as $plugin_file => $plugin_details ) {
-				if ( isset( $plugin_details['SLSWC'] ) && in_array( $plugin_details['SLSWC'], array( 'plugin', 'theme' ), true ) ) {
-					$installed_plugins[ $plugin_details['Slug'] ] = array(
+				if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
+
+					$plugin_data = array(
 						'name'              => $plugin_details['Name'],
 						'title'             => $plugin_details['Title'],
 						'description'       => $plugin_details['Description'],
@@ -1030,6 +1038,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						'documentation_url' => ! empty( $plugin_details['DocumentationURL'] ) ? $plugin_details['DocumentationURL'] : '',
 						'type'              => 'plugin',
 					);
+
+					$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
+
+					$installed_plugins[ $plugin_details['Slug'] ] = recursive_parse_args( $plugin_data, $remote_plugin );
 				}
 			}
 
@@ -1164,14 +1176,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					return $response_body;
 				}
 			} else {
-
+				error_log( "Error:: " . $result->get_error_message() );
 				// Display the error message in admin.
-				add_settings_error(
+				/** add_settings_error(
 					self::$slug . '_license_manager',
 					esc_attr( 'settings_updated' ),
 					$result->get_error_message(),
 					'error'
-				);
+				);*/
 
 				// Return null to halt the execution.
 				return null;
@@ -1613,7 +1625,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 				// Initilize wp-admin interfaces.
 				// add_action( 'admin_init', array( $this, 'add_product' ) );
-				add_action( 'plugins_loaded', array( $this, 'add_product' ), 10 );
+				// add_action( 'plugins_loaded', array( $this, 'add_product' ), 10 );
 				add_action( 'admin_init', array( $this, 'check_install' ) );
 				add_action( 'admin_init', array( $this, 'add_license_settings' ) );
 				add_action( 'admin_menu', array( $this, 'add_license_menu' ) );
@@ -1643,8 +1655,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
 				}
 			}
-
-			error_log("Args:: " . print_r( $args, true ) );
 
 			global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
 			$slswc_license_server_url = $license_server_url;
@@ -2041,8 +2051,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				printf( '<div class="updated notice is-dismissible"><p>%s</p></div>', apply_filters( 'wcsl_manual_check_message_result_' . $this->slug, $admin_notice, $check_result ) );
 			}
 
-		} // output_manual_update_check_result()
-
+		} // output_manual_update_check_result
 
 		/**
 		 * This is for internal purposes to ensure that during development the HTTP requests go through
@@ -2056,7 +2065,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * @param string $host
 		 * @return bool
 		 */
-		private function fix_update_host( $allow, $host ) {
+		public function fix_update_host( $allow, $host ) {
 
 			if ( strtolower( $host ) === strtolower( $this->license_server_url ) ) {
 				return true;
