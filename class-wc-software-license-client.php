@@ -265,9 +265,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 				if ( isset( $_POST['save_api_keys_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_api_keys_nonce'] ) ), 'save_api_keys' ) ) {
 
-					$username        = isset( $_GET['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '';
-					$consumer_key    = isset( $_GET['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '';
-					$consumer_secret = isset( $_GET['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '';
+					$username        = isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '';
+					$consumer_key    = isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '';
+					$consumer_secret = isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '';
 
 					$save_username        = update_option( 'slswc_api_username', $username );
 					$save_consumer_key    = update_option( 'slswc_consumer_key', $consumer_key );
@@ -281,7 +281,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				}
 
 				if ( ! empty( $_POST['connect_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['connect_nonce'] ) ), 'connect' ) ) {
-					$connect = self::connect();
+					$connected = self::connect();
+					if ( $connected ) {
+						?>
+						<p class="updated">
+						<?php
+						esc_attr_e( 'API Connected successfully.', 'slswcclient' );
+						?>
+						</p>
+						<?php
+					}
 				}
 
 				if ( ! empty( $_POST['disconnect_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['disconnect_nonce'] ) ), 'disconnect' ) ) {
@@ -661,10 +670,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			<?php elseif ( ! empty( $keys ) && ! self::is_connected() ) : ?>
 				<form name="connect" method="post" action="">
 					<?php wp_nonce_field( 'connect', 'connect_nonce' ); ?>
+					<p><?php esc_attr_e( 'Click on the button to connect your account now.', 'slswcclient' ); ?></p>
 					<input type="submit"
 							id="connect"
 							class="button button-primary"
-							value="<?php echo esc_attr( 'Connect', 'slswcclient' ); ?>"
+							value="<?php echo esc_attr( 'Connect Account Now', 'slswcclient' ); ?>"
 					/>
 				</form>
 
@@ -1177,14 +1187,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					return $response_body;
 				}
 			} else {
-				error_log( "Error:: " . $result->get_error_message() );
-				// Display the error message in admin.
-				/** add_settings_error(
+				add_settings_error(
 					self::$slug . '_license_manager',
 					esc_attr( 'settings_updated' ),
 					$result->get_error_message(),
 					'error'
-				);*/
+				);
 
 				// Return null to halt the execution.
 				return null;
@@ -1926,7 +1934,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		public function check_license( $response_body ) {
 
 			$status = $response_body->status;
-			error_log( "Check license:: " . print_r( $response_body, true ) );
 
 			if ( 'active' === $status || 'expiring' === $status ) {
 				return true;
@@ -2329,8 +2336,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						$this->license_details['license_key'] = $input[ $key ];
 						$response                             = $this->server_request( 'activate' );
 
-						error_log( "Activate license:: " . print_r( $this->license_details, true ) );
-
 						if ( $response !== null ) {
 
 							if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
@@ -2551,7 +2556,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			return $data;
 
-		}		
+		}
 
 		/**
 		 * --------------------------------------------------------------------------
@@ -2573,7 +2578,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			$this->license_details['license_status'] = $license_status;
 
-		} // set_license_status()
+		} // set_license_status
 
 		/**
 		 * Set the license key
