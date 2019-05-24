@@ -146,7 +146,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			self::$slug               = $slug;
 			self::$text_domain        = $text_domain;
 
-			self::$products = self::get_local_products();
+			//self::$products = self::get_local_products();
 
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 			add_action( 'wp_ajax_slswc_install_product', array( $this, 'product_background_installer' ) );
@@ -287,23 +287,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				if ( ! empty( $_POST['disconnect_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['disconnect_nonce'] ) ), 'disconnect' ) ) {
 					update_option( slswc()->prefix . 'api_connected', 'no' );
 				}
-
-				// Get the products to display.
-				$user_products = array();
-				$product       = array();
-
-				if ( ! empty( self::get_api_keys() ) && self::is_connected() ) {
-					$user_products = (array) self::get_my_products();
-				}
-
-				$local_products = self::get_local_products();
-				if ( ! empty( $user_products ) && ! empty( $local_products ) ) {
-					$products = recursive_parse_args( $local_products, $user_products );
-				}
-				$products = empty( $products ) ? $local_products : $products;
-
-				self::$products = apply_filters( 'slswc_products', $products );
-
 				?>
 				<h2 class="nav-tab-wrapper">
 					<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=licenses"
@@ -326,16 +309,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 				<?php if ( 'licenses' === $tab || empty( $tab ) ) : ?>
 				<div id="licenses">
-					<?php self::licenses_form( self::$products ); ?>
+					<?php self::licenses_form(); ?>
 				</div>
 				<?php elseif ( 'plugins' === $tab ) : ?>
 				<div id="plugins">
-					<?php self::list_products( self::$products['plugins'] ); ?>
+					<?php self::list_products( self::get_local_plugins() ); ?>
 				</div>
 
 				<?php elseif ( 'themes' === $tab ) : ?>
 				<div id="themes">			
-					<?php self::list_products( self::$products['themes'] ); ?>
+					<?php self::list_products( self::get_local_themes() ); ?>
 				</div>	
 				<?php else : ?>
 				<div id="api">
@@ -349,12 +332,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Output licenses form
 		 *
-		 * @param  array $products List of product to display.
-		 * @return void
+		 * @return  void
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public static function licenses_form( $products ) {
+		public static function licenses_form() {
 			?>
 			<style>
 			.licenses-table{margin-top: 9px;}
@@ -404,17 +386,19 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					</thead>
 					<tbody>
 						<?php
-						if ( ! empty( $products['plugins'] ) ) :
-							self::licenses_rows( $products['plugins'] );
+						$plugins = self::get_local_plugins();
+						if ( ! empty( $plugins ) ) :
+							self::licenses_rows( $plugins );
 							do_action( 'slswc_after_plugins_licenses_list' );
 							endif;
 
-						if ( ! empty( $products['themes'] ) ) :
-							self::licenses_rows( $products['themes'] );
+						$themes = self::get_local_themes();
+						if ( ! empty( $themes ) ) :
+							self::licenses_rows( $themes );
 							do_action( 'slswc_after_themes_licenses_list' );
 							endif;
 						?>
-						<?php do_action( 'slswc_after_products_licenses_list', $products ); ?>
+						<?php do_action( 'slswc_after_products_licenses_list', self::get_local_products() ); ?>
 					</tbody>
 				</table>	
 				<p>
@@ -508,7 +492,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 */
 		public static function list_products( $products ) {
 			$products = is_array( $products ) ? $products : (array) $products;
-			error_log( "Products :: " .print_r( $products, true ) );
 			?>
 			<div class="wp-list-table widefat plugin-install">				
 				<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
@@ -541,6 +524,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								<div class="action-links">
 									<ul class="plugin-action-buttons">
 										<li>
+											<?php if ( empty( $product['download_url'] ) ): ?>
+												<?php esc_attr_e( 'Add license or activate API to download.', 'slswcclient' ); ?>
+											<?php else : ?>
 											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
 												data-package="<?php echo esc_attr( $product['download_url'] ); ?>"
 												data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
@@ -548,9 +534,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 												aria-label="<?php echo sprintf( __( 'Update %s now', 'slswcclient' ), esc_attr( $name_version ) ); ?>"
 												data-name="<?php echo esc_attr( $name_version ); ?>"
 												role="button"
-												type="<?php echo $product['type']; ?>">
-												<?php echo $action_label; ?>
+												type="<?php echo esc_attr( $product['type'] ); ?>">
+												<?php echo esc_attr( $action_label ); ?>
 											</a>
+											<?php endif; ?>
 										</li>
 										<li>
 											<a href="#" class="thickbox open-plugin-details-modal"
@@ -742,9 +729,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			$license_labels = self::license_status_types();
 
-			error_log( "Status:: $status" );
-
-			echo esc_attr( $license_labels[ $status ] );
+			echo empty( $status ) ? '' : esc_attr( $license_labels[ $status ] );
 		}
 
 		/**
@@ -851,6 +836,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$request_info = array(
 				'slug' => empty( $slug ) ? self::$slug : $slug,
 			);
+
+			$license_data = get_option( $slug . '_license_manager', null );
+
+			if ( self::is_connected() ) {
+				$request_info = array_merge( $request_info, self::get_api_keys() );
+			} elseif ( null !== $license_data && ! empty( $license_data['license_key'] ) ) {
+				$request_info['license_key'] = $license_data['license_key'];
+			}
 
 			$response = self::server_request( 'product', $request_info );
 
@@ -962,43 +955,46 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 */
 		public static function get_local_themes() {
 
-			$themes = wp_get_themes();
+			$themes = wp_cache_get( 'slswc_themes', 'slswc' );
 
-			$installed_themes = array();
-			foreach ( $themes as $theme_file => $theme_details ) {
-				if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
+			if ( empty( $themes ) ) {
+				$wp_themes = wp_get_themes();
+				$themes    = array();
 
-					error_log("Theme slug:  " . $theme_details->get( 'Slug' ) );
+				foreach ( $wp_themes as $theme_file => $theme_details ) {
+					if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
 
-					
-					$theme_data   = array(
-						'name'              => $theme_details->get( 'Name' ),
-						'theme_url'         => $theme_details->get( 'ThemeURI' ),
-						'description'       => $theme_details->get( 'Description' ),
-						'author'            => $theme_details->get( 'Author' ),
-						'author_url'        => $theme_details->get( 'AuthorURI' ),
-						'version'           => $theme_details->get( 'Version' ),
-						'template'          => $theme_details->get( 'Template' ),
-						'status'            => $theme_details->get( 'Status' ),
-						'tags'              => $theme_details->get( 'Tags' ),
-						'text_domain'       => $theme_details->get( 'TextDomain' ),
-						'domain_path'       => $theme_details->get( 'DomainPath' ),
-						// SLSWC Headers.
-						'slswc'             => ! empty( $theme_details->get( 'SLSWC' ) ) ? $theme_details->get( 'SLSWC' ) : '',
-						'slug'              => ! empty( $theme_details->get( 'Slug' ) ) ? $theme_details->get( 'Slug' ) : $theme_details->get( 'TextDomain' ),
-						'required_wp'       => ! empty( $theme_details->get( 'RequiredWP' ) ) ? $theme_details->get( 'RequiredWP' ) : '',
-						'compatible_to'     => ! empty( $theme_details->get( 'CompatibleTo' ) ) ? $theme_details->get( 'CompatibleTo' ) : '',
-						'documentation_url' => ! empty( $theme_details->get( 'DocumentationURL' ) ) ? $theme_details->get( 'DocumentationURL' ) : '',
-						'type'              => 'theme',
-					);
+						$theme_data = array(
+							'name'              => $theme_details->get( 'Name' ),
+							'theme_url'         => $theme_details->get( 'ThemeURI' ),
+							'description'       => $theme_details->get( 'Description' ),
+							'author'            => $theme_details->get( 'Author' ),
+							'author_url'        => $theme_details->get( 'AuthorURI' ),
+							'version'           => $theme_details->get( 'Version' ),
+							'template'          => $theme_details->get( 'Template' ),
+							'status'            => $theme_details->get( 'Status' ),
+							'tags'              => $theme_details->get( 'Tags' ),
+							'text_domain'       => $theme_details->get( 'TextDomain' ),
+							'domain_path'       => $theme_details->get( 'DomainPath' ),
+							// SLSWC Headers.
+							'slswc'             => ! empty( $theme_details->get( 'SLSWC' ) ) ? $theme_details->get( 'SLSWC' ) : '',
+							'slug'              => ! empty( $theme_details->get( 'Slug' ) ) ? $theme_details->get( 'Slug' ) : $theme_details->get( 'TextDomain' ),
+							'required_wp'       => ! empty( $theme_details->get( 'RequiredWP' ) ) ? $theme_details->get( 'RequiredWP' ) : '',
+							'compatible_to'     => ! empty( $theme_details->get( 'CompatibleTo' ) ) ? $theme_details->get( 'CompatibleTo' ) : '',
+							'documentation_url' => ! empty( $theme_details->get( 'DocumentationURL' ) ) ? $theme_details->get( 'DocumentationURL' ) : '',
+							'type'              => 'theme',
+						);
 
-					$remote_theme = self::get_remote_product( $theme_data['slug'] );
-	
-					$installed_themes[ $theme_details->get( 'Slug' ) ] = recursive_parse_args( $remote_theme, $theme_data );
+						$remote_theme = self::get_remote_product( $theme_data['slug'] );
+
+						$themes[ $theme_details->get( 'Slug' ) ] = recursive_parse_args( $remote_theme, $theme_data );
+					}
 				}
 			}
 
-			return $installed_themes;
+			wp_cache_add( 'slswc_themes', $themes, 'slswc', apply_filters( 'slswc_themes_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+
+			return $themes;
 		}
 
 		/**
@@ -1012,40 +1008,45 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 */
 		public static function get_local_plugins() {
 
-			$plugins = get_plugins();
+			$plugins = wp_cache_get( 'slswc_plugins', 'slswc' );
 
-			$installed_plugins = array();
+			if ( empty( $plugins ) ) {
+				$plugins    = array();
+				$wp_plugins = get_plugins();
 
-			foreach ( $plugins as $plugin_file => $plugin_details ) {
-				if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
+				foreach ( $wp_plugins as $plugin_file => $plugin_details ) {
+					if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
 
-					$plugin_data = array(
-						'name'              => $plugin_details['Name'],
-						'title'             => $plugin_details['Title'],
-						'description'       => $plugin_details['Description'],
-						'author'            => $plugin_details['Author'],
-						'author_uri'        => $plugin_details['AuthorURI'],
-						'version'           => $plugin_details['Version'],
-						'plugin_url'        => $plugin_details['PluginURI'],
-						'text_domain'       => $plugin_details['TextDomain'],
-						'domain_path'       => $plugin_details['DomainPath'],
-						'network'           => $plugin_details['Network'],
-						// SLSWC Headers.
-						'slswc'             => ! empty( $plugin_details['SLSWC'] ) ? $plugin_details['SLSWC'] : '',
-						'slug'              => ! empty( $plugin_details['Slug'] ) ? $plugin_details['Slug'] : $plugin_details['TextDomain'],
-						'required_wp'       => ! empty( $plugin_details['RequiredWP'] ) ? $plugin_details['RequiredWP'] : '',
-						'compatible_to'     => ! empty( $plugin_details['CompatibleTo'] ) ? $plugin_details['CompatibleTo'] : '',
-						'documentation_url' => ! empty( $plugin_details['DocumentationURL'] ) ? $plugin_details['DocumentationURL'] : '',
-						'type'              => 'plugin',
-					);
+						$plugin_data = array(
+							'name'              => $plugin_details['Name'],
+							'title'             => $plugin_details['Title'],
+							'description'       => $plugin_details['Description'],
+							'author'            => $plugin_details['Author'],
+							'author_uri'        => $plugin_details['AuthorURI'],
+							'version'           => $plugin_details['Version'],
+							'plugin_url'        => $plugin_details['PluginURI'],
+							'text_domain'       => $plugin_details['TextDomain'],
+							'domain_path'       => $plugin_details['DomainPath'],
+							'network'           => $plugin_details['Network'],
+							// SLSWC Headers.
+							'slswc'             => ! empty( $plugin_details['SLSWC'] ) ? $plugin_details['SLSWC'] : '',
+							'slug'              => ! empty( $plugin_details['Slug'] ) ? $plugin_details['Slug'] : $plugin_details['TextDomain'],
+							'required_wp'       => ! empty( $plugin_details['RequiredWP'] ) ? $plugin_details['RequiredWP'] : '',
+							'compatible_to'     => ! empty( $plugin_details['CompatibleTo'] ) ? $plugin_details['CompatibleTo'] : '',
+							'documentation_url' => ! empty( $plugin_details['DocumentationURL'] ) ? $plugin_details['DocumentationURL'] : '',
+							'type'              => 'plugin',
+						);
 
-					$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
+						$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
 
-					$installed_plugins[ $plugin_details['Slug'] ] = recursive_parse_args( $plugin_data, $remote_plugin );
+						$plugins[ $plugin_details['Slug'] ] = recursive_parse_args( $plugin_data, $remote_plugin );
+					}
 				}
 			}
 
-			return $installed_plugins;
+			wp_cache_add( 'slswc_plugins', $plugins, 'slswc', apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+
+			return $plugins;
 		}
 
 		/**
@@ -1615,7 +1616,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$this->license_server_host = @parse_url( $this->license_server_url, PHP_URL_HOST );
 
 			// Don't run the license activation code if running on local host.
-			$whitelist = apply_filters( 'wcv_localhost_whitelist', array() ); //array( '127.0.0.1', '::1' ) );
+			$whitelist = apply_filters( 'wcv_localhost_whitelist', array( '127.0.0.1', '::1' ) );
 
 			if ( isset( $_SERVER['SERVER_ADDR'] ) && in_array( sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ), $whitelist, true ) && ! $args['debug'] ) {
 
@@ -1925,6 +1926,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		public function check_license( $response_body ) {
 
 			$status = $response_body->status;
+			error_log( "Check license:: " . print_r( $response_body, true ) );
 
 			if ( 'active' === $status || 'expiring' === $status ) {
 				return true;
@@ -1950,7 +1952,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function check_for_update_link( $links, $file ) {
 
-			// Only modify the plugin meta for our plugin
+			// Only modify the plugin meta for our plugin.
 			if ( $file == $this->plugin_file && current_user_can( 'update_plugins' ) ) {
 
 				$update_link_url = wp_nonce_url(
@@ -2263,7 +2265,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			$license_labels = $this->license_status_types();
 
-			 echo esc_attr( $license_labels[ $this->license_details['license_status'] ] );
+		echo esc_attr( $license_labels[ $this->license_details['license_status'] ] );
 
 		} // license_status_field()
 
@@ -2326,6 +2328,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						$this->license_details['license_key'] = $input[ $key ];
 						$response                             = $this->server_request( 'activate' );
+
+						error_log( "Activate license:: " . print_r( $this->license_details, true ) );
 
 						if ( $response !== null ) {
 
