@@ -376,7 +376,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			echo '<div class="error notice is-dismissible"><p>';
 			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.
-			echo esc_attr( sprintf( __( 'The %1$s license key has not been activated, so you will not be unable to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' ) );
+			echo sprintf( __( 'The %1$s license key has not been activated, so you will not be unable to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
 			echo '</p></div>';
 
 		}
@@ -569,9 +569,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				$request_info = array_merge( $request_info, WC_Software_License_Client_Manager::get_api_keys() );
 			}
 
-			// phpcs:ignore
-			error_log( 'Server request:: ' . $action . "\n" . print_r( $request_info, true ) ); // @toremove
-
 			return WC_Software_License_Client_Manager::server_request( $action, $request_info );
 
 		} // server_request
@@ -611,7 +608,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * @param string $file The name of the plugin file.
 		 */
 		public function check_for_update_link( $links, $file ) {
-
 			// Only modify the plugin meta for our plugin.
 			if ( $file === $this->plugin_file && current_user_can( 'update_plugins' ) ) {
 
@@ -998,8 +994,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						$response                             = $this->server_request( 'activate' );
 
 						// phpcs:ignore
-						error_log( 'Response for validate_license:: ' . print_r( $response, true ) ); // @toremove
-
 						if ( null !== $response ) {
 
 							if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
@@ -1734,7 +1728,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
 								id="<?php echo esc_attr( $slug ); ?>[environment]"
 								value="staging"
-								<?php checked( 'staging', $license_info['environment'] ); ?>
+								<?php checked( 'staging', $license_info['environment'] );  ?>
 						/> <?php echo esc_attr( 'Staging', 'slswcclient' ); ?>
 					</td>
 					<?php do_action( 'slswc_after_license_column', $product ); ?>
@@ -1790,7 +1784,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 									<ul class="plugin-action-buttons">
 										<li>
 											<?php if ( empty( $product['download_url'] ) ) : ?>
-												<?php esc_attr_e( 'Add license or activate API to download.', 'slswcclient' ); ?>
+												<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
 											<?php else : ?>
 											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
 												data-package="<?php echo esc_attr( $product['download_url'] ); ?>"
@@ -2335,18 +2329,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		}
 
 		/**
-		 * Delete the products from cache and from database
-		 *
-		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
-		 */
-		public static function delete_products() {
-			delete_option( 'slswc_products' );
-			delete_transient( 'slswc_products' );
-		}
-
-		/**
 		 * Save a list of products to the database.
 		 *
 		 * @param array $products List of products to save.
@@ -2432,8 +2414,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			// Validate that the response is valid not what the response is.
 			$result = self::validate_response( $response );
-
-			error_log( "Response for $action:: " . print_r( $result, true ) );
 
 			// Check if there is an error and display it if there is one, otherwise process the response.
 			if ( ! is_wp_error( $result ) ) {
