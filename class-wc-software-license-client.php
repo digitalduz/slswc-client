@@ -405,7 +405,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		public function update_check( $transient ) {
 
 			if ( empty( $transient->checked ) ) {
-				return $transient;
+				//return $transient;
 			}
 
 			$server_response = $this->server_request( 'check_update' );
@@ -638,7 +638,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * @access public
 		 */
 		public function process_manual_update_check() {
-
 			// phpcs:ignore
 			if ( isset( $_GET['slswc_check_for_update'] ) && isset( $_GET['slswc_slug'] ) && $_GET['slswc_slug'] === $this->slug && current_user_can( 'update_plugins' ) && check_admin_referer( 'slswc_check_for_update' ) ) {
 
@@ -647,34 +646,37 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 				if ( $this->check_license( $server_response ) ) {
 
-					$plugin_update_info = $server_response->software_details;
+					if ( isset( $server_response ) && is_object( $server_response->software_details ) ) {
 
-					if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ) {
+						$plugin_update_info = $server_response->software_details;
 
-						if ( version_compare( (string) $plugin_update_info->new_version, (string) $this->version, '>' ) ) {
+						if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) ) {
 
-							$update_available = true;
+							if ( version_compare( (string) $plugin_update_info->new_version, (string) $this->version, '>' ) ) {
 
+								$update_available = true;
+
+							} else {
+
+								$update_available = false;
+							}
 						} else {
 
 							$update_available = false;
 						}
-					} else {
 
-						$update_available = false;
+						$status = ( null === $update_available ) ? 'no' : 'yes';
+
+						wp_safe_redirect(
+							add_query_arg(
+								array(
+									'slswc_update_check_result' => $status,
+									'slswc_slug' => $this->slug,
+								),
+								self_admin_url( 'plugins.php' )
+							)
+						);
 					}
-
-					$status = ( null === $update_available ) ? 'no' : 'yes';
-
-					wp_safe_redirect(
-						add_query_arg(
-							array(
-								'slswc_update_check_result' => $status,
-								'slswc_slug' => $this->slug,
-							),
-							self_admin_url( 'plugins.php' )
-						)
-					);
 				}
 			}
 
@@ -872,7 +874,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		<?php
 		} // license_page
 
-		
 		/**
 		 * License activation settings section callback
 		 *
@@ -1501,7 +1502,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 					if ( $save_username && $save_consumer_key && $save_consumer_secret ) {
 						?>
-						<div class="updated"><p><?php echo __( 'API Settings saved', 'slswcclient' ); ?></p></div>
+						<div class="updated"><p><?php esc_attr_e( 'API Settings saved', 'slswcclient' ); ?></p></div>
 						<?php
 					}
 				}
@@ -1670,7 +1671,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					</tbody>
 				</table>	
 				<p>
-					<?php submit_button( __( 'Save Licenses', 'primary' ), 'save_licenses' ); ?>
+					<?php submit_button( __( 'Save Licenses', 'slswcclient' ), 'primary', 'save_licenses' ); ?>
 				</p>
 			</form>
 			<?php
@@ -1820,7 +1821,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								</div>
 								<div class="desc column-description">
 									<p><?php echo esc_attr( $product['description'] ); ?></p>
-									<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_url'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
+									<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
 								</div>
 							</div>
 							<div class="plugin-card-bottom">							
@@ -2077,10 +2078,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public static function get_remote_product( $slug = '' ) {
+		public static function get_remote_product( $slug = '', $type = 'plugin' ) {
 
 			$request_info = array(
 				'slug' => empty( $slug ) ? self::$slug : $slug,
+				'type' => $type,
 			);
 
 			$license_data = get_option( $slug . '_license_manager', null );
@@ -2143,29 +2145,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 
 			return array();
-		}
-
-		/**
-		 * Default product data
-		 *
-		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
-		 */
-		public static function default_product_details() {
-			return array(
-				'description'        => '',
-				'thumbnail'          => '',
-				'author'             => '',
-				'required_wp'        => '',
-				'compatible_to'      => '',
-				'updated'            => '',
-				'description'        => '',
-				'change_log'         => '',
-				'installation'       => '',
-				'documentation_link' => '',
-				'environment'        => '',
-			);
 		}
 
 		/**
@@ -2240,7 +2219,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'theme_url'         => $theme_details->get( 'ThemeURI' ),
 							'description'       => $theme_details->get( 'Description' ),
 							'author'            => $theme_details->get( 'Author' ),
-							'author_url'        => $theme_details->get( 'AuthorURI' ),
+							'author_uri'        => $theme_details->get( 'AuthorURI' ),
 							'version'           => $theme_details->get( 'Version' ),
 							'template'          => $theme_details->get( 'Template' ),
 							'status'            => $theme_details->get( 'Status' ),
@@ -2256,9 +2235,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'type'              => 'theme',
 						);
 
-						$remote_theme = self::get_remote_product( $theme_data['slug'] );
+						$remote_theme = self::get_remote_product( $theme_data['slug'], 'theme' );
 
-						$themes[ $theme_details->get( 'Slug' ) ] = recursive_parse_args( $remote_theme, $theme_data );
+						if ( is_array( $remote_theme ) ) {
+							$theme_data = recursive_parse_args( $remote_theme, $theme_data );
+						}
+
+						$themes[ $theme_details->get( 'Slug' ) ] = $theme_data;
 					}
 				}
 			}
@@ -2311,7 +2294,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
 
-						$plugins[ $plugin_details['Slug'] ] = recursive_parse_args( $plugin_data, $remote_plugin );
+						if ( is_array( $remote_plugin ) ) {
+							$plugin_data = recursive_parse_args( $plugin_data, $remote_plugin );
+						}
+
+						$plugins[ $plugin_details['Slug'] ] = $plugin_data;
 					}
 				}
 			}
