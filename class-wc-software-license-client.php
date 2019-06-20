@@ -1629,9 +1629,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								'license_key'     => '',
 								'license_expires' => '',
 								'current_version' => self::$version,
-								'environment'     => 0,
+								'environment'     => 'live',
 							)
 						);
+
 						update_option( $slug . '_license_manager', $license_details );
 						do_action( "slswc_save_license_{$slug}", $license_details );
 					}
@@ -1692,7 +1693,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$license_info = get_option( $option_name );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 				$slug         = esc_attr( $product['slug'] );
-				$action       = ! empty( $license_info['deactivate_license'] ) ? $license_info['deactivate_license'] : 'activate_license';
+
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -1722,23 +1723,24 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					<td class="license-field">
 						<input type="checkbox"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][deactivate_license]"
-								id="<?php echo esc_attr( $slug ); ?>[deactivate_license]"
-								<?php checked( 1, $action ); ?>
+								value="deactivate_license"
+								id="<?php echo esc_attr( $slug ); ?>_deactivate_license"
+								<?php checked( $license_info['deactivate_license'], 'deactivate_license' ); ?>
 						/>
 					</td>
 					<td class="license-field">
 						<input type="radio"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>[environment]"
+								id="<?php echo esc_attr( $slug ); ?>_environment_live"
 								value="live"
-								<?php checked( 'live', $license_info['environment'] ); ?>
+								<?php checked( $license_info['environment'], 'live' ); ?>
 						/> <?php echo esc_attr( 'Live', 'slswcclient' ); ?>
 
 						<input type="radio"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>[environment]"
+								id="<?php echo esc_attr( $slug ); ?>_environment_staging"
 								value="staging"
-								<?php checked( 'staging', $license_info['environment'] ); ?>
+								<?php checked( $license_info['environment'], 'staging' ); ?>
 						/> <?php echo esc_attr( 'Staging', 'slswcclient' ); ?>
 					</td>
 					<?php do_action( 'slswc_after_license_column', $product ); ?>
