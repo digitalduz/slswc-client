@@ -1769,6 +1769,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<div class="plugins-popular-tags-wrapper">
 					<h2 class="screen-reader-text"><?php echo esc_attr( 'Plugins List', 'slswcclient' ); ?></h2>
 					<div id="the-list">
+						<style>
+							.slswc-product-thumbnail:before {
+								font-size: 128px;
+							}
+						</style>
 						<?php foreach ( $products as $product ) : ?>
 						<?php
 
@@ -1781,6 +1786,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						$action_label = $installed ? __( 'Update Now', 'slswcclient' ) : __( 'Install Now' );
 
 						do_action( 'slswc_before_products_list', $products );
+
+						$thumb_class = $product['type'] === 'theme' ? 'appearance' : 'plugins';
 						?>
 						<div class="plugin-card plugin-card-<?php echo esc_attr( $product['slug'] ); ?>">
 							<div class="plugin-card-top">
@@ -1788,7 +1795,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 									<h3>
 										<a href="#" class="thickbox open-plugin-details-modal">
 											<?php echo esc_attr( $product['name'] ); ?>
-											<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
+											<?php if( $product['thumbnail'] === '' ) : ?>
+												<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
+											<?php else: ?>
+												<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
+											<?php endif; ?>
 										</a>
 									</h3>
 								</div>
@@ -2241,6 +2252,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						if ( is_array( $remote_theme ) ) {
 							$theme_data = recursive_parse_args( $remote_theme, $theme_data );
+						} else {
+							$theme_data = recursive_parse_args( $theme_data, self::default_remote_product( 'theme' ) );
 						}
 
 						$themes[ $theme_details->get( 'Slug' ) ] = $theme_data;
@@ -2296,8 +2309,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
 
-						if ( is_array( $remote_plugin ) ) {
+						if ( ! empty( $remote_plugin ) && 1 == 0 ) {
 							$plugin_data = recursive_parse_args( $plugin_data, $remote_plugin );
+						} else {
+							$plugin_data = recursive_parse_args( $plugin_data, self::default_remote_product() );
 						}
 
 						$plugins[ $plugin_details['Slug'] ] = $plugin_data;
@@ -2308,6 +2323,20 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			wp_cache_add( 'slswc_plugins', $plugins, 'slswc', apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 ) );
 
 			return $plugins;
+		}
+
+		public static function default_remote_product( $type = 'plugin' ) {
+
+			$defaults = array(
+				'thumbnail'      => '',
+				'updated'        => date( 'Y-m-d' ),
+				'reviews_count'  => 0,
+				'average_rating' => 0,
+				'activations'    => 0,
+				'type'           => $type
+			);
+
+			return $defaults;
 		}
 
 		/**
