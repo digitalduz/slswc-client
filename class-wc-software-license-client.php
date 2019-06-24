@@ -1725,7 +1725,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								name="licenses[<?php echo esc_attr( $slug ); ?>][deactivate_license]"
 								value="deactivate_license"
 								id="<?php echo esc_attr( $slug ); ?>_deactivate_license"
-								<?php checked( $license_info['deactivate_license'], 'deactivate_license' ); ?>
+								<?php array_key_exists( 'deactivate_license', $license_info ) ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
 						/>
 					</td>
 					<td class="license-field">
