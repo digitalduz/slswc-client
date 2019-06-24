@@ -1413,7 +1413,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			?>
 		<script type="text/javascript">
 			jQuery( function( $ ){
-				$('.slswc-install-now').on( 'click', function(e){
+				$('.slswc-install-now, .slswc-update-now').on( 'click', function(e){
 					e.preventDefault();
 					let $el = $(this);
 					let package = $(this).data('package');
@@ -1421,6 +1421,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					let slug = $(this).data('slug');
 					let type = $(this).data('type');
 					let label = $(this).html();
+					let nonce = $(this).data('nonce');
 					let action_label = "<?php echo esc_attr( 'Processing', 'slswcclient' ); ?>";
 					$(this).html('<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" /> ' + action_label );
 					$.ajax({
@@ -1430,17 +1431,25 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							package: package,
 							name:    name,
 							slug:    slug,
-							type:    type === '' ? 'plugin': 'theme',
-							nonce:   '<?php echo esc_attr( wp_create_nonce( 'slswc_client_install_product' ) ); ?>'
+							type:    type,
+							nonce:   nonce
 						},
 						dataType: 'json',
 						type: 'POST',
-						success: function( data ) {
-							$el.html( 'Done' );
+						success: function( response ) {
+							if ( response.success ) {								
+								$('#slswc-product-install-message p').html( response.data.message );
+								$('#slswc-product-install-message').addClass('updated').show();
+							} else {								
+								$('#slswc-product-install-message p').html( response.data.message );
+								$('#slswc-product-install-message').addClass('notice-warning').show();
+							}
+							$el.html( '<?php echo __( 'Done', 'slswcclient' ); ?>' );
 							$el.attr('disabled', 'disabled');
 						},
-						error: function( data ) {
-							alert( data.responseJSON.message );
+						error: function( error ) {
+							$('#slswc-product-install-message p').html( error.data.message );
+							$('#slswc-product-install-message').addClass('notice-error').show();
 						}
 					});
 				});
@@ -1487,6 +1496,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<div class="notice update">
 					<?php echo esc_attr( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ); ?>
 				</div>
+				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
 				<h1><?php echo esc_attr( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
 				<?php
 
@@ -1694,6 +1704,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 				$slug         = esc_attr( $product['slug'] );
 
+				error_log( print_r( $license_info, true ) );
+
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -1787,7 +1799,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						do_action( 'slswc_before_products_list', $products );
 
-						$thumb_class = $product['type'] === 'theme' ? 'appearance' : 'plugins';
+						$thumb_class = 'theme' === $product['type'] ? 'appearance' : 'plugins';
 						?>
 						<div class="plugin-card plugin-card-<?php echo esc_attr( $product['slug'] ); ?>">
 							<div class="plugin-card-top">
@@ -1795,7 +1807,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 									<h3>
 										<a href="#" class="thickbox open-plugin-details-modal">
 											<?php echo esc_attr( $product['name'] ); ?>
-											<?php if( $product['thumbnail'] === '' ) : ?>
+											<?php if ( $product['thumbnail'] == '' ) : ?>
 												<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
 											<?php else: ?>
 												<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
@@ -1809,15 +1821,16 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 											<?php if ( empty( $product['download_url'] ) ) : ?>
 												<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
 											<?php else : ?>
-											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
-												data-package="<?php echo esc_attr( $product['download_url'] ); ?>"
+											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now <?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
+												data-package="<?php echo esc_url_raw( $product['download_url'] ); ?>"
 												data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
-												href="<?php echo esc_url( admin_url( '/update.php?action=upgrade-product&amp;product=' . $product['slug'] . '&amp;_wpnonce=' . wp_create_nonce( 'install_product' ) ) ); ?>"
+												href="#"
 												<?php // translators: %s - The license name and version. ?>
-												aria-label="<?php echo esc_attr( sprintf( __( 'Update %s now', 'slswcclient' ) ), esc_attr( $name_version ) ); ?>"
+												aria-label="<?php echo esc_attr( sprintf( __( 'Update %s now', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
 												data-name="<?php echo esc_attr( $name_version ); ?>"
+												data-nonce="<?php echo wp_create_nonce( 'slswc_client_install_' . $product['slug'] ); ?>"
 												role="button"
-												type="<?php echo esc_attr( $product['type'] ); ?>">
+												data-type="<?php echo esc_attr( $product['type'] ); ?>">
 												<?php echo esc_attr( $action_label ); ?>
 											</a>
 											<?php endif; ?>
@@ -2250,10 +2263,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						$remote_theme = self::get_remote_product( $theme_data['slug'], 'theme' );
 
-						if ( is_array( $remote_theme ) ) {
+						if ( ! empty( $remote_theme ) ) {
 							$theme_data = recursive_parse_args( $remote_theme, $theme_data );
 						} else {
-							$theme_data = recursive_parse_args( $theme_data, self::default_remote_product( 'theme' ) );
+							$theme_data = wp_parse_args( $theme_data, self::default_remote_product( 'theme' ) );
 						}
 
 						$themes[ $theme_details->get( 'Slug' ) ] = $theme_data;
@@ -2309,7 +2322,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
 
-						if ( ! empty( $remote_plugin ) && 1 == 0 ) {
+						if ( ! empty( $remote_plugin ) ) {
 							$plugin_data = recursive_parse_args( $plugin_data, $remote_plugin );
 						} else {
 							$plugin_data = recursive_parse_args( $plugin_data, self::default_remote_product() );
@@ -2325,18 +2338,27 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			return $plugins;
 		}
 
+		/**
+		 * Get default remote product data
+		 *
+		 * @param   string $type The software type. Expects plugin, theme or other. Default plugin.
+		 * @return  array $default_data The default product data.
+		 * @version 1.0.2
+		 * @since   1.0.2
+		 */
 		public static function default_remote_product( $type = 'plugin' ) {
 
-			$defaults = array(
+			$default_data = array(
 				'thumbnail'      => '',
 				'updated'        => date( 'Y-m-d' ),
 				'reviews_count'  => 0,
 				'average_rating' => 0,
 				'activations'    => 0,
-				'type'           => $type
+				'type'           => $type,
+				'download_url'   => '',
 			);
 
-			return $defaults;
+			return $default_data;
 		}
 
 		/**
@@ -2577,10 +2599,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.4
 		 */
 		public static function product_background_installer( $slug = '', $package = '' ) {
-			// Explicitly clear the event.
-			wp_clear_scheduled_hook( 'woocommerce_theme_background_installer', func_get_args() );
+			global $wp_filesystem;
 
-			if ( isset( $_POST['nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'slswc_client_install_product' ) ) {
+			$slug = isset( $_REQUEST['slug'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) : '';
+			if ( ! array_key_exists( 'nonce', $_REQUEST )
+			    || array_key_exists( 'nonce', $_REQUEST ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'slswc_client_install_' . $slug ) ) {
 				wp_send_json_error(
 					array(
 						'message' => esc_attr__( 'Failed to install product. Security token invalid.', 'slswcclient' ),
@@ -2589,9 +2612,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 
 			$download_link = isset( $_POST['package'] ) ? sanitize_text_field( wp_unslash( $_POST['package'] ) ) : '';
-			$slug          = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
 			$name          = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
-			$product_type  = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+			$product_type  = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
 
 			if ( ! empty( $download_link ) ) {
 				// Suppress feedback.
@@ -2599,36 +2621,52 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 				try {
 
-					require_once ABSPATH . 'wp-admin/includes/file.php';
-					include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-					include_once ABSPATH . 'wp-admin/includes/theme.php';
-					include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+					$temp_file = download_url( $download_link, 60 );
 
-					WP_Filesystem();
+					if ( ! is_wp_error( $temp_file ) ) {
+						require_once ABSPATH . '/wp-admin/includes/file.php';
+						WP_Filesystem();
 
-					$skin = new Automatic_Upgrader_Skin();
+						if ( 'plugin' === $product_type ) {
+							$destination_dir = WP_CONTENT_DIR .'/plugins';
+						} elseif ( 'theme' === $product_type ) {
+							$destination_dir = WP_CONTENT_DIR .'/themes';
+						} else {
+							$destination_dir = WP_CONTENT_DIR;
+						}
 
-					if ( 'theme' === $product_type ) {
-						$upgrader = new Theme_Upgrader( $skin );
-					} else {
-						$upgrader = new Plugin_Upgrader( $skin );
+						$temp_dir = WP_CONTENT_DIR . '/slswcclient_temp_downloads';
+						if ( ! $wp_filesystem->is_dir( $temp_dir ) ) {
+							$wp_filesystem->mkdir( $temp_dir, FS_CHMOD_DIR );
+						}
+
+						$file_name   = $slug . '.zip';
+						$destination = $temp_dir . $file_name;
+
+						if ( $wp_filesystem->exists( $temp_file ) ) {
+							$wp_filesystem->move( $temp_file, $destination, true );
+						}
+
+						if ( $wp_filesystem->exists( $destination ) ) {
+							$unzipfile = unzip_file( $destination, $destination_dir );
+
+							if ( $unzipfile ) {
+								$deleted = $wp_filesystem->delete( $destination );
+								wp_send_json_success(
+									array(
+										'message' => sprintf( __( 'Successfully installed new version of %s', 'slswcclient' ), $name )
+									)
+								);
+							} else {
+								wp_send_json_error(
+									array(
+										'slug' => $slug,
+										'message' => __( 'Installation failed. There was an error extracting the downloaded file.', 'slswcclient' ),
+									)
+								);
+							}
+						}
 					}
-
-					$result = $upgrader->install( $download_link );
-
-					if ( is_wp_error( $result ) ) {
-						wp_send_json_error( $result->get_error_message() );
-					} elseif ( is_wp_error( $skin->result ) ) {
-						wp_send_json_error( array( 'message' => $results->get_error_message() ) );
-					} elseif ( is_null( $result ) ) {
-						wp_send_json_error(
-							array(
-								'message' => 'Unable to connect to the filesystem. Please confirm your credentials.',
-							)
-						);
-					}
-
-					wp_send_json_success( array( 'result' => $result ) );
 				} catch ( Exception $e ) {
 					wp_send_json_error(
 						array(
@@ -2644,7 +2682,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					);
 				}
 
-				wp_send_json_error( array( 'message' => 'Gone all this way.' ) );
+				wp_send_json_error( array( 'message' => __( 'No action taken.', 'slswcclient' ) ) );
 
 				// Discard feedback.
 				ob_end_clean();
