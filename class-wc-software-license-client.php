@@ -2781,11 +2781,19 @@ if ( ! function_exists( 'slswc_extra_headers' ) ) {
 add_filter( 'extra_plugin_headers', 'slswc_extra_headers' );
 add_filter( 'extra_theme_headers', 'slswc_extra_headers' );
 
-add_action(
-	'plugins_loaded',
-	function() {
+add_action( 'admin_init', 'slswc_client_manager', 12 );
+add_action( 'after_setup_theme', 'slswc_client_manager' );
+
+if ( ! function_exists( 'slswc_client_manager' ) ) {
+	/**
+	 * Load the license client manager.
+	 *
+	 * @return  WC_Software_License_Client_Manager Instance of the client manager
+	 * @version 1.0.2
+	 * @since   1.0.2
+	 */
+	function slswc_client_manager() {
 		global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
-		WC_Software_License_Client_Manager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
-	},
-	12
-);
+		return WC_Software_License_Client_Manager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
+	}
+}
