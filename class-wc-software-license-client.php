@@ -956,8 +956,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function validate_license( $input ) {
 
-			
-
 			$options = $this->license_details;
 			$type    = null;
 			$message = null;
@@ -1005,7 +1003,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 								$message = __( 'Invalid License', 'slswcclient' );
 							}
 
-							self::add_settings_error(
+							add_settings_error(
 								$this->option_name,
 								esc_attr( 'settings_updated' ),
 								$message,
@@ -1039,7 +1037,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						}
 
-						self::add_settings_error(
+						add_settings_error(
 							$this->option_name,
 							esc_attr( 'settings_updated' ),
 							$message,
@@ -1266,7 +1264,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			update_option( $this->option_name, $this->license_details );
 
 		} // save
-
 
 	} // WC_Software_License_Client
 
@@ -1509,6 +1506,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$license_admin_url = admin_url( 'admin.php?page=slswc_license_manager' );
 			// phpcs:ignore
 			$tab = isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['tab'] ) ) ) : '';
+
+			$remote_products = self::get_remote_products();
 			?>
 			<div class="wrap">
 				<div class="notice update">
@@ -1609,12 +1608,22 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				</div>
 				<?php elseif ( 'plugins' === $tab ) : ?>
 				<div id="plugins">
-					<?php self::list_products( self::$plugins ); ?>
+				<?php
+					$remote_plugins = array_key_exists( 'plugins', $remote_products ) ? $remote_products['plugins'] : array();
+					$plugins        = recursive_parse_args( self::$plugins, $remote_plugins );
+					
+					self::list_products( $plugins );
+				?>
 				</div>
 
 				<?php elseif ( 'themes' === $tab ) : ?>
-				<div id="themes">			
-					<?php self::list_products( self::$themes ); ?>
+				<div id="themes">
+				<?php
+					$remote_themes = array_key_exists( 'themes', $remote_products) ? $remote_products['themes'] : array();
+					$plugins = recursive_parse_args( self::$plugins, $remote_themes );
+
+					self::list_products( self::$themes );
+				?>
 				</div>	
 				<?php else : ?>
 				<div id="api">
@@ -2159,20 +2168,51 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
-		public static function get_my_products( $type = '' ) {
-			$request_info = self::get_api_keys();
+		public static function get_remote_products() {
 
-			if ( '' != $type ) {
-				$request_info['type'] = $type;
-			}
+			$licenses = self::get_license_data_for_all();
+			error_log( 'Licenses data for all: ' . print_r( $licenses, true ) );
 
-			$response = self::server_request( 'myproducts', $request_info );
+			$request_info = array();
+
+			$request_info['licenses'] = self::get_license_data_for_all();
+
+			$request_info['api']  = self::is_connected() ? $request_info['api'] = self::get_api_keys() : null;
+			
+			error_log( 'Request info: ' . print_r( $request_info, true ));
+
+			$response = self::server_request( 'products', $request_info );
 
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->products;
 			}
 
 			return array();
+		}
+
+		public static function get_license_data_for_all( $key = '' ) {
+			$all_products      = array();
+			$licenses_data = array();
+
+			if ( '' !== $key ) {
+				$function_name    = "get_local_$key";
+				$all_products[ $key ] = self::$function_name();
+			} else {
+				$all_products['themes']  = self::get_local_themes();
+				$all_products['plugins'] = self::get_local_plugins();
+			}
+
+			foreach( $all_products as $key => $_products ) {
+				foreach( $_products as $slug => $_product ) {
+					$_license_data          = get_option( $slug . '_license_manager' );
+					$licenses_data[ $slug ] = $_license_data;
+				}
+			}
+
+			error_log('Licenses data: ' . print_r( $licenses_data, true));
+
+			$maybe_key = '' !== $key ? $key : '';
+			return apply_filters( 'slswc_client_licence_data_for_all' . $maybe_key, $licenses_data );
 		}
 
 		/**
@@ -2206,42 +2246,17 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @version 1.0.4
 		 * @since   1.0.4
 		 */
-		public static function get_products( $type = '' ) {
-			// $products = self::get_local_products( $type );
+		public static function get_products( $type, $args = array() ) {
 			$function = "get_local_$key";
 			$products = self::$function();
 
-			if ( self::is_connected() ) {
-				$user_purchased_products = self::get_my_products( $type );
+			if ( ! empty( $args ) ) {
+				$user_purchased_products = self::get_remote_products( $type, $args );
 
 				$products = recursive_parse_args( $products, $user_purchased_products );
 			}
 
-			return apply_filters( 'slswc_get_products', $products );
-		}
-
-		/**
-		 * Get installed products.
-		 *
-		 * @since   1.0.2
-		 * @version 1.0.2
-		 *
-		 * @param  string $type The type of product to get.
-		 * @return array  $product The list of products.
-		 */
-		public static function get_local_products( $type = '' ) {
-
-			$plugins = ! empty( self::$plugins ) ? self::$plugins : self::get_local_plugins();
-			$themes  = ! empty( self::$themes ) ? self::$themes :get_local_themes();
-
-			$products['plugins'] = $plugins;
-			$products['themes']  = $themes;
-
-			if ( '' != $type && isset( $products[ $type ] ) ) {
-				$products = $products[ $type ];
-			}
-
-			return $products;
+			return apply_filters( 'slswc_client_get_' . $key, $products );
 		}
 
 		/**
@@ -2286,7 +2301,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'type'              => 'theme',
 						);
 
-						$remote_theme = self::get_remote_product( $theme_data['slug'], 'theme' );
+						$remote_theme = array(); // self::get_remote_product( $theme_data['slug'], 'theme' );
 
 						if ( ! empty( $remote_theme ) ) {
 							$theme_data = recursive_parse_args( $remote_theme, $theme_data );
@@ -2345,7 +2360,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							'type'              => 'plugin',
 						);
 
-						$remote_plugin = self::get_remote_product( $plugin_data['slug'] );
+						$remote_plugin = array(); //self::get_remote_product( $plugin_data['slug'] );
 
 						if ( ! empty( $remote_plugin ) ) {
 							$plugin_data = recursive_parse_args( $plugin_data, $remote_plugin );
@@ -2502,7 +2517,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					return $response_body;
 				}
 			} else {
-				self::add_settings_error(
+				add_settings_error(
 					self::$slug . '_license_manager',
 					esc_attr( 'settings_updated' ),
 					$result->get_error_message(),
@@ -2717,28 +2732,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				array(
 					'message' => __( 'Failed to install product. Download link not provided or is invalid.', 'slswcclient' ),
 				)
-			);
-		}
-
-		/**
-		 * Add settings error.
-		 *
-		 * @param   string $setting
-		 * @param   string $code
-		 * @param   string $message
-		 * @param   string $type
-		 * @return  void
-		 * @version 1.0.4
-		 * @since   1.0.4
-		 */
-		public static function add_settings_error( $setting, $code, $message, $type = 'error' ) {
-			global $wp_settings_errors;
-
-			$wp_settings_errors[] = array(
-				'setting' => $setting,
-				'code'    => $code,
-				'message' => $message,
-				'type'    => $type,
 			);
 		}
 	}
