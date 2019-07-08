@@ -2316,6 +2316,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 */
 		public static function get_local_themes() {
 
+			if ( ! function_exists( 'wp_get_themes' ) ) {
+				return array();
+			}
+
 			$themes = wp_cache_get( 'slswc_themes', 'slswc' );
 
 			if ( empty( $themes ) ) {
@@ -2367,6 +2371,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @since   1.0.2
 		 */
 		public static function get_local_plugins() {
+
+			if ( ! function_exists( 'get_plugins' ) ) {
+				return array();
+			}
 
 			$plugins = wp_cache_get( 'slswc_plugins', 'slswc' );
 
