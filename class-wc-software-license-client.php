@@ -1008,6 +1008,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					} else {
 						$options['license_expires'] = date( 'Y-m-d', strtotime( $options['license_expires'] ) );
 					}
+				} elseif ( 'environment' === $key ) {
+					$options['environment'] = $input['environment'];
 				}
 			}
 
