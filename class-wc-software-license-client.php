@@ -302,7 +302,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
 					} else {
 						add_action( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
-						add_filter( 'themes_api', array( $this, 'add_theme_info' ), 10, 3 );
 					}
 
 					add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
@@ -405,7 +404,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		public function update_check( $transient ) {
 
 			if ( empty( $transient->checked ) ) {
-				//return $transient;
+				return $transient;
 			}
 
 			$server_response = $this->server_request( 'check_update' );
@@ -456,9 +455,10 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						if ( version_compare( $theme_update_info->new_version, $this->version, '>' ) ) {
 							// Required to cast as array due to how object is returned from api.
 							$theme_update_info->sections = (array) $theme_update_info->sections;
-							$theme_update_info->banners  = (array) $plugin_update_info->banners;
+							$theme_update_info->banners  = (array) $theme_update_info->banners;
+							$theme_update_info->url      = $theme_update_info->homepage;
 							// Theme name.
-							$transient->response[ $this->theme_file ] = (array) $theme_update_info;
+							$transient->response[ $this->slug ] = (array) $theme_update_info;
 						}
 					}
 				}
@@ -504,49 +504,6 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		}
 
 		/**
-		 * Add the theme information to the theme update API.
-		 *
-		 * @param   bool   $override Whether to override.
-		 * @param   string $action Action.
-		 * @param   array  $args Arguments.
-		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
-		 */
-		public function add_theme_info( $override, $action, $args ) {
-			global $theme_base, $api_url, $theme_version, $api_url;
-
-			if ( $args->slug !== $theme_base ) {
-				return false;
-			}
-
-			// Get the current version.
-			$args->version  = $this->version;
-			$request_string = prepare_request( $action, $args );
-			$request        = $this->server_request( $action, $args );
-
-			if ( is_wp_error( $request ) ) {
-				$result = new WP_Error(
-					'themes_api_failed',
-					__( 'An unexpected HTTP error occurred. Please retry.', 'slswcclient' ),
-					$request->get_error_message()
-				);
-			} else {
-				$result = unserialize( $request['body'] );
-
-				if ( false === $result ) {
-					$result = new WP_Error(
-						'themes_api_failed',
-						__( 'An unknown error occurred.', 'slswcclient' ),
-						$request['body']
-					);
-				}
-			}
-
-			return $result;
-		}
-
-		/**
 		 * Send a request to the server
 		 *
 		 * @param string $action Action to be taken. Possible balues: activate|deactivate|check_update. Default: check_update.
@@ -556,7 +513,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			if ( empty( $request_info ) && ! WC_Software_License_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
-				$request_info['license_key'] = $this->license_details['license_key'];
+				$request_info['license_key'] = trim( $this->license_details['license_key'] );
 				$request_info['domain']      = $this->domain;
 				$request_info['version']     = $this->version;
 				$request_info['environment'] = $this->environment;
@@ -896,7 +853,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function license_key_field() {
 			$value = ( isset( $this->license_details['license_key'] ) ) ? $this->license_details['license_key'] : '';
-			echo '<input type="text" id="license_key" name="' . esc_attr( $this->option_name ) . '[license_key]" value="' . esc_attr( $value ) . '" />';
+			echo '<input type="text" id="license_key" name="' . esc_attr( $this->option_name ) . '[license_key]" value="' . esc_attr( trim( $value ) ) . '" />';
 
 		} // license_key_field
 
@@ -2177,7 +2134,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( self::is_connected() ) {
 				$request_info = array_merge( $request_info, self::get_api_keys() );
 			} elseif ( null !== $license_data && ! empty( $license_data['license_key'] ) ) {
-				$request_info['license_key'] = $license_data['license_key'];
+				$request_info['license_key'] = trim( $license_data['license_key'] );
 			}
 
 			$response = self::server_request( 'product', $request_info );
