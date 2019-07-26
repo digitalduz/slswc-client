@@ -50,7 +50,7 @@ function test_slswc_client_for_plugin() {
     return WC_Software_License_Client::get_instance( 'http://example.com/', __FILE__ );
 }
 
-test_slswc_client_for_plugin();
+add_action( 'plugins_loaded', 'test_slswc_client_for_plugin', 11 );
 ```
 
 And for a theme:
@@ -61,12 +61,12 @@ function theme_slswc_client() {
     require_once 'includes/class-wc-software-license-client.php';
     return WC_Software_License_Client::get_instance( 'http://example.com', WP_CONTENT_DIR . '/themes/theme-folder-name', 'theme' );	
 }
-theme_slswc_client();
+add_action( 'wp_loaded', 'theme_slswc_client', 11 );
 ```
 
 Add this to `style.css`
 
-```
+```php
 /*
 Theme Name  : Theme Name
 Theme URI   : https://example.test/themes/your-theme-name/
@@ -82,5 +82,6 @@ SLSWC       : theme
 Documentation URL: https://example.test/docs/rigid-theme
 Tested WP   : 5.1
 Requires WP : 5.1
-*/```
+*/
+```
 

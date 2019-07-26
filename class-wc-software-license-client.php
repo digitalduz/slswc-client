@@ -261,7 +261,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$this->debug           = defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'];
 
 			$this->option_name         = $this->slug . '_license_manager';
-			$this->domain              = trailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
+			$this->domain              = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
 			$this->license_details     = get_option( $this->option_name );
 			$this->software_type       = $software_type;
 			$this->environment         = $args['environment'];

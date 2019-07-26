@@ -26,6 +26,6 @@
  */
 function slswc_client() {
 	require_once dirname( __FILE__ ) . '/class-wc-software-license-client.php';
-	return WC_Software_License_Client::get_instance( 'https://slswc.lindeni.co.za/', __FILE__, 'plugin' );
+	return WC_Software_License_Client::get_instance( 'http://example.com/', __FILE__, 'plugin' );
 }
 add_action( 'plugins_loaded', 'slswc_client', 11 );

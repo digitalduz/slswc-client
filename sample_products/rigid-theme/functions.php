@@ -14,8 +14,8 @@
  * @return WC_Software_License_Client
  */
 function theme_slswc_client() {
-	require_once '../../class-wc-software-license-client.php';
-	return WC_Software_License_Client::get_instance( 'http://slswc.lindeni.co.za', WP_CONTENT_DIR . '/themes/rigid-theme', 'theme' );
+	require_once dirname( __FILE__ ) . '/class-wc-software-license-client.php';
+	return WC_Software_License_Client::get_instance( 'http://example.com', WP_CONTENT_DIR . '/themes/rigid-theme', 'theme' );
 }
 
-theme_slswc_client();
+add_action( 'wp_loaded', 'theme_slswc_client', 11 );
