@@ -2492,11 +2492,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$request_options = apply_filters( 'slswc_request_options_' . self::$slug, $request_options );
 
 			// Query the license server.
-			$endpoint_actions = apply_filters( 'slswc_client_post_actions', array( 'connect', 'add_domain', 'remove_domain' ) );
-			if ( in_array( $action, $endpoint_actions, true ) ) {
-				$response = wp_safe_remote_post( $server_request_url, $request_info );
-			} else {
+			$endpoint_get_actions = apply_filters( 'slswc_client_get_actions', array( 'product', 'products' ) );
+			if ( in_array( $action, $endpoint_get_actions, true ) ) {
 				$response = wp_safe_remote_get( $server_request_url, $request_options );
+			} else {
+				$response = wp_safe_remote_post( $server_request_url, $request_options );
 			}
 
 			// Validate that the response is valid not what the response is.
