@@ -373,9 +373,11 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			}
 
 			echo '<div class="error notice is-dismissible"><p>';
-			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.
+			// phpcs:disable
+			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.			
 			echo sprintf( __( 'The %1$s license key has not been activated, so you will not be unable to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
 			echo '</p></div>';
+			// phpcs:enable
 
 		}
 
@@ -1440,7 +1442,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								$('#slswc-product-install-message p').html( response.data.message );
 								$('#slswc-product-install-message').addClass('notice-warning').show();
 							}
-							$el.html( '<?php echo __( 'Done', 'slswcclient' ); ?>' );
+							$el.html( '<?php echo esc_attr( __( 'Done', 'slswcclient' ) ); ?>' );
 							$el.attr('disabled', 'disabled');
 						},
 						error: function( error ) {
@@ -1779,7 +1781,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( in_array( $type, array( 'plugins', 'themes' ) ) ) {
 				$slugs    = array();
 				$licenses = array();
-				foreach( $products as $slug => $details ) {
+				foreach ( $products as $slug => $details ) {
 					$slugs[]           = $slug;
 					$licenses[ $slug ] = $details;
 				}
@@ -1806,7 +1808,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						$product = is_array( $product ) ? $product : (array) $product;
 
 						if ( array_key_exists( $product['slug'], $remote_products ) ) {
-							$product = recursive_parse_args( (array) $remote_products[$product['slug']], $product );
+							$product = recursive_parse_args( (array) $remote_products[ $product['slug'] ], $product );
 						}
 
 						$installed = file_exists( $product['file'] ) || is_dir( $product['file'] ) ? true : false;
@@ -1847,7 +1849,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 												<?php // translators: %s - The license name and version. ?>
 												aria-label="<?php echo esc_attr( sprintf( __( 'Update %s now', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
 												data-name="<?php echo esc_attr( $name_version ); ?>"
-												data-nonce="<?php echo wp_create_nonce( 'slswc_client_install_' . $product['slug'] ); ?>"
+												data-nonce="<?php echo esc_attr( wp_create_nonce( 'slswc_client_install_' . $product['slug'] ) ); ?>"
 												role="button"
 												data-type="<?php echo esc_attr( $product['type'] ); ?>">
 												<?php echo esc_attr( $action_label ); ?>
@@ -2120,6 +2122,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get more details about the product from the license server.
 		 *
 		 * @param   string $slug The software slug.
+		 * @param   string $type The type of software. Expects plugin/theme, default 'plugin'.
 		 * @return  array
 		 * @since   1.0.2
 		 * @version 1.0.2
@@ -2149,10 +2152,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		}
 
 		/**
-		 * Get a user's purchased products
+		 * Get a user's purchased products.
 		 *
 		 * @param   string $type The type of products. Expects plugins|themes, default 'plugins'.
-		 * @return  array  $products The list of products.
+		 * @return  array  $args The arguments to form the query to search for the products.
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
@@ -2199,7 +2202,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Get license data for all locally installed
 		 *
-		 * @param   string $type The type of products to return license details for. Expects `plugins` or `themes`, default empty
+		 * @param   string $type The type of products to return license details for. Expects `plugins` or `themes`, default empty.
 		 * @return  array
 		 * @version 1.0.4
 		 * @since   1.0.4
@@ -2244,7 +2247,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Check if status should be ignored
 		 *
 		 * @param   string $status The status tp check.
-		 * @return  void
+		 * @return  bool
 		 * @version 1.0.2
 		 * @since   1.0.2
 		 */
@@ -2638,9 +2641,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public static function product_background_installer( $slug = '', $package = '' ) {
 			global $wp_filesystem;
 
-			$slug = isset( $_REQUEST['slug'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) : '';
+			$slug = isset( $_REQUEST['slug'] ) ? wp_unslash( sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) ) : '';
 			if ( ! array_key_exists( 'nonce', $_REQUEST )
-			    || array_key_exists( 'nonce', $_REQUEST ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'slswc_client_install_' . $slug ) ) {
+			    || ! empty( $_REQUEST ) &&  array_key_exists( 'nonce', $_REQUEST ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'slswc_client_install_' . $slug ) ) {
 				wp_send_json_error(
 					array(
 						'message' => esc_attr__( 'Failed to install product. Security token invalid.', 'slswcclient' ),
@@ -2665,9 +2668,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						WP_Filesystem();
 
 						if ( 'plugin' === $product_type ) {
-							$destination_dir = WP_CONTENT_DIR .'/plugins';
+							$destination_dir = WP_CONTENT_DIR . '/plugins';
 						} elseif ( 'theme' === $product_type ) {
-							$destination_dir = WP_CONTENT_DIR .'/themes';
+							$destination_dir = WP_CONTENT_DIR . '/themes';
 						} else {
 							$destination_dir = WP_CONTENT_DIR;
 						}
@@ -2690,8 +2693,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							if ( $unzipfile ) {
 								$deleted = $wp_filesystem->delete( $destination );
 								wp_send_json_success(
-									array(
-										'message' => sprintf( __( 'Successfully installed new version of %s', 'slswcclient' ), $name )
+									array(										
+										'message' => sprintf(
+											// @translators: 1 - the name of the plugin/theme.
+											__( 'Successfully installed new version of %s', 'slswcclient' ),
+											$name
+										)
 									)
 								);
 							} else {
