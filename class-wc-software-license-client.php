@@ -1830,7 +1830,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 											<?php echo esc_attr( $product['name'] ); ?>
 											<?php if ( $product['thumbnail'] == '' ) : ?>
 												<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
-											<?php else: ?>
+											<?php else : ?>
 												<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
 											<?php endif; ?>
 										</a>
@@ -2155,7 +2155,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get a user's purchased products.
 		 *
 		 * @param   string $type The type of products. Expects plugins|themes, default 'plugins'.
-		 * @return  array  $args The arguments to form the query to search for the products.
+		 * @param   array  $args The arguments to form the query to search for the products.
+		 * @return  array
 		 * @since   1.0.2
 		 * @version 1.0.2
 		 */
@@ -2643,7 +2644,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			$slug = isset( $_REQUEST['slug'] ) ? wp_unslash( sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) ) : '';
 			if ( ! array_key_exists( 'nonce', $_REQUEST )
-			    || ! empty( $_REQUEST ) &&  array_key_exists( 'nonce', $_REQUEST ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'slswc_client_install_' . $slug ) ) {
+				|| ! empty( $_REQUEST ) && array_key_exists( 'nonce', $_REQUEST )
+				&& isset( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ), 'slswc_client_install_' . $slug ) ) {
 				wp_send_json_error(
 					array(
 						'message' => esc_attr__( 'Failed to install product. Security token invalid.', 'slswcclient' ),
@@ -2693,12 +2695,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							if ( $unzipfile ) {
 								$deleted = $wp_filesystem->delete( $destination );
 								wp_send_json_success(
-									array(										
+									array(
 										'message' => sprintf(
-											// @translators: 1 - the name of the plugin/theme.
+											// translators: %s - the name of the plugin/theme.
 											__( 'Successfully installed new version of %s', 'slswcclient' ),
 											$name
-										)
+										),
 									)
 								);
 							} else {
