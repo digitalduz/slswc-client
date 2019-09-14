@@ -1667,7 +1667,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			?>
 			<form name="licenses-form" action="" method="post">
 				<?php wp_nonce_field( 'save_licenses', 'save_licenses_nonce' ); ?>
-				<table class="form-table licenses-table widefat" >
+				<table class="form-table licenses-table widefat striped" >
 					<thead>
 						<tr>
 							<th><?php echo esc_attr( 'Product Name', 'slswcclient' ); ?></th>
