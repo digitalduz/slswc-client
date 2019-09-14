@@ -1491,7 +1491,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$tab = self::get_tab();
 
 			?>
-			<div class="wrap">
+			<style>
+				.slswc-product-thumbnail:before {font-size: 128px;}
+			</style>
+			<div class="wrap plugin-install-tab">
 				<div class="notice update">
 					<?php echo esc_attr( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ); ?>
 				</div>
@@ -1565,45 +1568,59 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					update_option( 'slswc_api_connected', 'no' );
 				}
 				?>
-				<h2 class="nav-tab-wrapper">
-					<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=licenses"
-						class="nav-tab <?php echo esc_attr( ( 'licenses' === $tab || empty( $tab ) ) ? 'nav-tab-active' : '' ); ?>">
-						<?php echo esc_attr( 'Licenses' ); ?>
-					</a>
-					<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=plugins"
-						class="nav-tab <?php echo ( 'plugins' === $tab ) ? 'nav-tab-active' : ''; ?>">
-						<?php echo esc_attr( 'Plugins', 'slswcclient' ); ?>
-					</a>
-					<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=themes"
-						class="nav-tab <?php echo ( 'themes' === $tab ) ? 'nav-tab-active' : ''; ?>">
-						<?php echo esc_attr( 'Themes', 'slswcclient' ); ?>
-					</a>
-					<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=api"
-						class="nav-tab <?php echo ( 'api' === $tab ) ? 'nav-tab-active' : ''; ?>">
-						<?php echo esc_attr( 'API' ); ?>
-					</a>
-				</h2>
+				<div class="wp-filter">
+					<ul class="filter-links">
+						<li>
+							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=licenses"
+								class="<?php echo esc_attr( ( 'licenses' === $tab || empty( $tab ) ) ? 'current' : '' ); ?>">
+								<?php echo esc_attr( 'Licenses' ); ?>
+							</a>
+						</li>
+						<li>
+							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=plugins"
+								class="<?php echo ( 'plugins' === $tab ) ? 'current' : ''; ?>">
+								<?php echo esc_attr( 'Plugins', 'slswcclient' ); ?>
+							</a>
+						</li>
+						<li>
+							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=themes"
+								class="<?php echo ( 'themes' === $tab ) ? 'current' : ''; ?>">
+								<?php echo esc_attr( 'Themes', 'slswcclient' ); ?>
+							</a>
+						</li>
+						<li>
+							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=api"
+								class="<?php echo ( 'api' === $tab ) ? 'current' : ''; ?>">
+								<?php echo esc_attr( 'API' ); ?>
+							</a>
+						</li>
+					</ul>
+				</div>
+				<br class="clear" />
 
+				<div class="tablenav-top"></div>
 				<?php if ( 'licenses' === $tab || empty( $tab ) ) : ?>
 				<div id="licenses">
 					<?php self::licenses_form(); ?>
 				</div>
+
 				<?php elseif ( 'plugins' === $tab ) : ?>
-				<div id="plugins">
+				<div id="plugins" class="wp-list-table widefat plugin-install">
 				<?php self::list_products( self::$plugins ); ?>
 				</div>
 
 				<?php elseif ( 'themes' === $tab ) : ?>
-				<div id="themes">
+				<div id="themes" class="wp-list-table widefat plugin-install">
 				<?php self::list_products( self::$themes ); ?>
-				</div>	
+				</div>
+				
 				<?php else : ?>
 				<div id="api">
 					<?php self::api_form(); ?>
 				</div>
-			</div>
-			<?php
-			endif;
+				<?php
+				endif; ?>
+				<?php
 		}
 
 		/**
@@ -1791,122 +1808,113 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$remote_products = array();
 			}
 
-			?>
-			<div class="wp-list-table widefat plugin-install">				
-				<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
-				<div class="plugins-popular-tags-wrapper">
-					<h2 class="screen-reader-text"><?php echo esc_attr( 'Plugins List', 'slswcclient' ); ?></h2>
-					<div id="the-list">
-						<style>
-							.slswc-product-thumbnail:before {
-								font-size: 128px;
-							}
-						</style>
-						<?php foreach ( $products as $product ) : ?>
-						<?php
+			?>	
+			<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
+				<h2 class="screen-reader-text"><?php echo esc_attr( 'Plugins List', 'slswcclient' ); ?></h2>
+				<div id="the-list">
+					<?php foreach ( $products as $product ) : ?>
+					<?php
 
-						$product = is_array( $product ) ? $product : (array) $product;
+					$product = is_array( $product ) ? $product : (array) $product;
 
-						if ( array_key_exists( $product['slug'], $remote_products ) ) {
-							$product = recursive_parse_args( (array) $remote_products[ $product['slug'] ], $product );
-						}
+					if ( array_key_exists( $product['slug'], $remote_products ) ) {
+						$product = recursive_parse_args( (array) $remote_products[ $product['slug'] ], $product );
+					}
 
-						$installed = file_exists( $product['file'] ) || is_dir( $product['file'] ) ? true : false;
+					$installed = file_exists( $product['file'] ) || is_dir( $product['file'] ) ? true : false;
 
-						$name_version = esc_attr( $product['name'] ) . ' ' . esc_attr( $product['version'] );
-						$action_class = $installed ? 'update' : 'install';
-						$action_label = $installed ? __( 'Update Now', 'slswcclient' ) : __( 'Install Now' );
+					$name_version = esc_attr( $product['name'] ) . ' ' . esc_attr( $product['version'] );
+					$action_class = $installed ? 'update' : 'install';
+					$action_label = $installed ? __( 'Update Now', 'slswcclient' ) : __( 'Install Now' );
 
-						do_action( 'slswc_before_products_list', $products );
+					do_action( 'slswc_before_products_list', $products );
 
-						$thumb_class = 'theme' === $product['type'] ? 'appearance' : 'plugins';
-						?>
-						<div class="plugin-card plugin-card-<?php echo esc_attr( $product['slug'] ); ?>">
-							<div class="plugin-card-top">
-								<div class="name column-name">
-									<h3>
-										<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
-											class="thickbox open-plugin-details-modal">
-											<?php echo esc_attr( $product['name'] ); ?>
-											<?php if ( $product['thumbnail'] == '' ) : ?>
-												<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
-											<?php else : ?>
-												<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
-											<?php endif; ?>
+					$thumb_class = 'theme' === $product['type'] ? 'appearance' : 'plugins';
+					?>
+					<div class="plugin-card plugin-card-<?php echo esc_attr( $product['slug'] ); ?>">
+						<div class="plugin-card-top">
+							<div class="name column-name">
+								<h3>
+									<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
+										class="thickbox open-plugin-details-modal">
+										<?php echo esc_attr( $product['name'] ); ?>
+										<?php if ( $product['thumbnail'] == '' ) : ?>
+											<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
+										<?php else : ?>
+											<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
+										<?php endif; ?>
+									</a>
+								</h3>
+							</div>
+							<div class="action-links">
+								<ul class="plugin-action-buttons">
+									<li>
+										<?php if ( empty( $product['download_url'] ) ) : ?>
+											<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
+										<?php else : ?>
+										<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now <?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
+											data-package="<?php echo esc_url_raw( $product['download_url'] ); ?>"
+											data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
+											href="#"
+											<?php // translators: %s - The license name and version. ?>
+											aria-label="<?php echo esc_attr( sprintf( __( 'Update %s now', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
+											data-name="<?php echo esc_attr( $name_version ); ?>"
+											data-nonce="<?php echo esc_attr( wp_create_nonce( 'slswc_client_install_' . $product['slug'] ) ); ?>"
+											role="button"
+											data-type="<?php echo esc_attr( $product['type'] ); ?>">
+											<?php echo esc_attr( $action_label ); ?>
 										</a>
-									</h3>
-								</div>
-								<div class="action-links">
-									<ul class="plugin-action-buttons">
-										<li>
-											<?php if ( empty( $product['download_url'] ) ) : ?>
-												<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
-											<?php else : ?>
-											<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now <?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
-												data-package="<?php echo esc_url_raw( $product['download_url'] ); ?>"
-												data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
-												href="#"
-												<?php // translators: %s - The license name and version. ?>
-												aria-label="<?php echo esc_attr( sprintf( __( 'Update %s now', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
-												data-name="<?php echo esc_attr( $name_version ); ?>"
-												data-nonce="<?php echo esc_attr( wp_create_nonce( 'slswc_client_install_' . $product['slug'] ) ); ?>"
-												role="button"
-												data-type="<?php echo esc_attr( $product['type'] ); ?>">
-												<?php echo esc_attr( $action_label ); ?>
-											</a>
-											<?php endif; ?>
-										</li>
-										<li>
-											<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
-												class="thickbox open-plugin-details-modal"
-												<?php // translators: %s - Product name. ?>
-												aria-label="<?php echo esc_attr( sprintf( __( 'More information about %s', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
-												data-title="<?php echo esc_attr( $name_version ); ?>">
-												<?php echo esc_attr( 'More Details', 'slswcclient' ); ?>
-											</a>
-										</li>
-									</ul>
-								</div>
-								<div class="desc column-description">
-									<p><?php echo esc_attr( $product['description'] ); ?></p>
-									<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
-								</div>
+										<?php endif; ?>
+									</li>
+									<li>
+										<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
+											class="thickbox open-plugin-details-modal"
+											<?php // translators: %s - Product name. ?>
+											aria-label="<?php echo esc_attr( sprintf( __( 'More information about %s', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
+											data-title="<?php echo esc_attr( $name_version ); ?>">
+											<?php echo esc_attr( 'More Details', 'slswcclient' ); ?>
+										</a>
+									</li>
+								</ul>
 							</div>
-							<div class="plugin-card-bottom">							
-								<div class="vers column-rating">
-									<?php
-										self::output_ratings(
-											array(
-												'rating' => $product['average_rating'],
-												'number' => $product['reviews_count'],
-											)
-										);
-									?>
-								</div>
-								<div class="column-updated">
-									<strong>Last Updated: </strong>
-									<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'timestamp' ) ); ?> ago.
-								</div>
-								<div class="column-downloaded">
+							<div class="desc column-description">
+								<p><?php echo esc_attr( $product['description'] ); ?></p>
+								<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
+							</div>
+						</div>
+						<div class="plugin-card-bottom">							
+							<div class="vers column-rating">
+								<?php
+									self::output_ratings(
+										array(
+											'rating' => $product['average_rating'],
+											'number' => $product['reviews_count'],
+										)
+									);
+								?>
+							</div>
+							<div class="column-updated">
+								<strong>Last Updated: </strong>
+								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'timestamp' ) ); ?> ago.
+							</div>
+							<div class="column-downloaded">
 								<?php // translators: 1. Number of activations. ?>
-									<?php echo esc_attr( sprintf( __( '%d Active Installations', 'slswcclient' ), $product['activations'] ) ); ?> 
-								</div>
-								<div class="column-compatibility">
-									<?php self::show_compatible( $product['compatible_to'] ); ?>
-								</div>
+								<?php echo esc_attr( sprintf( __( '%d Active Installations', 'slswcclient' ), $product['activations'] ) ); ?> 
 							</div>
-						</div>						
-						<?php endforeach; ?>
-						<?php do_action( 'slswc_after_list_products', $products ); ?>
-					</div>
+							<div class="column-compatibility">
+								<?php self::show_compatible( $product['compatible_to'] ); ?>
+							</div>
+						</div>
+					</div>						
+					<?php endforeach; ?>
+					<?php do_action( 'slswc_after_list_products', $products ); ?>
 				</div>
-				<?php else : ?>
-					<div class="no-products">
-						<p><?php echo esc_attr( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
-					</div>
-				<?php endif; ?>
-			</div>
-			<?php
+			<?php else : ?>
+				<div class="no-products">
+					<p><?php echo esc_attr( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
+				</div>
+			<?php endif; ?>
+		<?php
 		}
 
 		/**
