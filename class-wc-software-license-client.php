@@ -309,10 +309,22 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				}
 			}
 
-			global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
+			global $slswc_license_server_url, $slswc_slug, $slswc_text_domain, $slswc_products;
 			$slswc_license_server_url = trailingslashit( $license_server_url );
 			$slswc_slug               = $args['slug'];
 			$slswc_text_domain        = $args['text_domain'];
+
+			$slswc_products = (array) get_transient( 'slswc_products' );
+
+			$slswc_products[ $slswc_slug ] = array(
+				'slug'               => $slswc_slug,
+				'text_domain'        => $slswc_text_domain,
+				'license_server_url' => $slswc_license_server_url
+			);
+
+			set_transient( 'slswc_products', $slswc_products, HOUR_IN_SECONDS );
+
+			error_log( print_r( $slswc_products, true ) );
 		}
 
 		/**
@@ -2836,6 +2848,53 @@ add_filter( 'extra_theme_headers', 'slswc_extra_headers' );
 
 add_action( 'admin_init', 'slswc_client_manager', 12 );
 add_action( 'after_setup_theme', 'slswc_client_manager' );
+add_action( 'admin_footer', 'slswc_client_admin_script', 11 );
+
+if ( ! function_exists( 'slswc_client_admin_script' ) ) {
+	/**
+	 * Print admin script for SLSWC Client.
+	 *
+	 * @return void
+	 * @version 1.0.2
+	 * @since   1.0.2
+	 */
+	function slswc_client_admin_script() {
+
+		global $slswc_license_server_url, $slswc_slug, $slswc_text_domain, $slswc_products;
+
+		$screen = get_current_screen();
+		if ( 'plugins' !== $screen->id ) {
+			return;
+		}
+
+		?>
+		<script type="text/javascript">
+			jQuery( function( $ ){
+				$( document ).ready( function() {
+					var products = '<?php echo wp_json_encode( $slswc_products ); ?>';
+					var $products = $.parseJSON(products);
+					if( $( document ).find( '#plugin-information' ) && window.frameElement ) {
+						var src = window.frameElement.src;
+						
+						<?php
+						foreach ( $slswc_products as $slug => $details ):
+							if ( ! is_array( $details ) || array_key_exists( 'slug', $details ) ) continue;
+						?>
+						if ( undefined != '<?php echo $slug; ?>' && src.includes( '<?php echo $slug; ?>' ) ) {
+							<?php $url = esc_url_raw( $details['license_server_url'] ) . 'products/' . $slug . '/#reviews'; ?>
+							$( '#plugin-information' ).find( '.fyi-description' ).html( '<?php echo sprintf( __( 'To read all the reviews or write your own visit the <a href="%s">product page</a>.', 'slswcclient' ), $url ); ?>');
+							$( '#plugin-information' ).find( '.counter-label a' ).each( function() {
+								$(this).attr( 'href', '<?php echo $url; ?>' );
+							} );
+						}
+						<?php endforeach; ?>
+					}
+				} );
+			} );
+		</script>
+		<?php
+	}
+}
 
 if ( ! function_exists( 'slswc_client_manager' ) ) {
 	/**
