@@ -2875,16 +2875,17 @@ if ( ! function_exists( 'slswc_client_admin_script' ) ) {
 					var $products = $.parseJSON(products);
 					if( $( document ).find( '#plugin-information' ) && window.frameElement ) {
 						var src = window.frameElement.src;
-						
 						<?php
-						foreach ( $slswc_products as $slug => $details ):
-							if ( ! is_array( $details ) || array_key_exists( 'slug', $details ) ) continue;
+						foreach ( $slswc_products as $slug => $details ) :
+							if ( ! is_array( $details ) || array_key_exists( 'slug', $details ) ) {
+								continue;
+							}
 						?>
-						if ( undefined != '<?php echo $slug; ?>' && src.includes( '<?php echo $slug; ?>' ) ) {
-							<?php $url = esc_url_raw( $details['license_server_url'] ) . 'products/' . $slug . '/#reviews'; ?>
+						if ( undefined != '<?php echo esc_attr( $slug ); ?>' && src.includes( '<?php echo esc_attr( $slug ); ?>' ) ) {
+							<?php $url = esc_url_raw( $details['license_server_url'] ) . 'products/' . esc_attr( $slug ) . '/#reviews'; ?>
 							$( '#plugin-information' ).find( '.fyi-description' ).html( '<?php echo sprintf( __( 'To read all the reviews or write your own visit the <a href="%s">product page</a>.', 'slswcclient' ), $url ); ?>');
 							$( '#plugin-information' ).find( '.counter-label a' ).each( function() {
-								$(this).attr( 'href', '<?php echo $url; ?>' );
+								$(this).attr( 'href', '<?php echo esc_attr( $url ); ?>' );
 							} );
 						}
 						<?php endforeach; ?>
