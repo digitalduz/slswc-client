@@ -258,7 +258,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			}
 
 			$this->update_interval = $args['update_interval'];
-			$this->debug           = defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'];
+			$this->debug           = apply_filters( 'slswc_client_logging', defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'] );
 
 			$this->option_name         = $this->slug . '_license_manager';
 			$this->domain              = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
@@ -314,17 +314,22 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$slswc_slug               = $args['slug'];
 			$slswc_text_domain        = $args['text_domain'];
 
-			$slswc_products = (array) get_transient( 'slswc_products' );
+			$slswc_products = get_transient( 'slswc_products' );
 
 			$slswc_products[ $slswc_slug ] = array(
 				'slug'               => $slswc_slug,
 				'text_domain'        => $slswc_text_domain,
-				'license_server_url' => $slswc_license_server_url
+				'license_server_url' => $slswc_license_server_url,
 			);
+
+			$slswc_products = array_filter( $slswc_products );
 
 			set_transient( 'slswc_products', $slswc_products, HOUR_IN_SECONDS );
 
-			error_log( print_r( $slswc_products, true ) );
+			WC_Software_License_Client_Manager::log( "License Server Url: $license_server_url" );
+			WC_Software_License_Client_Manager::log( "Base file: $base_file" );
+			WC_Software_License_Client_Manager::log( "Software type: $software_type" );
+			WC_Software_License_Client_Manager::log( $args );
 		}
 
 		/**
@@ -708,26 +713,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			return $allow;
 
 		} //fix_update_host
-
-
-		/**
-		 * Class logger so that we can keep our debug and logging information cleaner
-		 *
-		 * @since 1.0.0
-		 * @access public
-		 * @param mixed $data - The data to go to the error log.
-		 */
-		private function log( $data ) {
-			//phpcs:disable
-			if ( is_array( $data ) || is_object( $data ) ) {
-				error_log( __CLASS__ . ' : ' . print_r( $data, true ) );
-			} else {
-				error_log( __CLASS__ . ' : ' . $data );
-			}
-			//phpcs:enable
-
-		} // log
-
+		
 		/**
 		 * Add the admin menu to the dashboard
 		 *
@@ -932,6 +918,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$message = null;
 			$expires = '';
 
+			WC_Software_License_Client_Manager::log(  'Validate license: ' . print_r( $input, true ) );
+
 			foreach ( $options as $key => $value ) {
 
 				if ( 'license_key' === $key ) {
@@ -944,6 +932,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						$this->license_details['license_key'] = $input[ $key ];
 						$response                             = $this->server_request( 'activate' );
+
+						WC_Software_License_Client_Manager::log( $response );
 
 						// phpcs:ignore
 						if ( null !== $response ) {
@@ -968,6 +958,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 								$message = __( 'Invalid License', 'slswcclient' );
 							}
 
+							WC_Software_License_Client_Manager::log( $message );
+
 							add_settings_error(
 								$this->option_name,
 								esc_attr( 'settings_updated' ),
@@ -985,6 +977,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 					$response = $this->server_request( 'deactivate' );
 
+					WC_Software_License_Client_Manager::log( $response );
+
 					if ( null !== $response ) {
 
 						if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
@@ -1000,6 +994,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 							$message = __( 'Unable to deactivate license. Please deactivate on the store.', 'slswcclient' );
 
 						}
+
+						WC_Software_License_Client_Manager::log( $message );
 
 						add_settings_error(
 							$this->option_name,
@@ -1026,6 +1022,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 					$options['environment'] = $input['environment'];
 				}
 			}
+			
+			WC_Software_License_Client_Manager::log( $options );
 
 			return $options;
 
@@ -1084,7 +1082,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function get_license_key() {
 
-			return $this->license_details['license_key('];
+			return $this->license_details['license_key'];
 
 		} // get_license_key
 
@@ -1729,7 +1727,13 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$license_info = get_option( $option_name );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 				$slug         = esc_attr( $product['slug'] );
-
+				
+				//WC_Software_License_Client_Manager::log( 'License details' );
+				//WC_Software_License_Client_Manager::log( $license_info );
+				
+				if ( empty( $license_info ) ) {
+					return;
+				}
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -1820,6 +1824,11 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$remote_products = array();
 			}
 
+			WC_Software_License_Client_Manager::log( 'Local products.' );
+			WC_Software_License_Client_Manager::log( $products );
+			WC_Software_License_Client_Manager::log( 'Remote Products' );
+			WC_Software_License_Client_Manager::log( $remote_products );
+
 			?>	
 			<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
 				<h2 class="screen-reader-text"><?php echo esc_attr( 'Plugins List', 'slswcclient' ); ?></h2>
@@ -1890,7 +1899,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								</ul>
 							</div>
 							<div class="desc column-description">
-								<p><?php echo esc_attr( $product['description'] ); ?></p>
+								<p><?php echo esc_attr( substr( $product['description'], 0, 110 ) ); ?></p>
 								<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
 							</div>
 						</div>
@@ -2128,6 +2137,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$keys       = self::get_api_keys();
 			$connection = self::server_request( 'connect', $keys );
 
+			WC_Software_License_Client_Manager::log( 'Connecting...' );
+			WC_Software_License_Client_Manager::log( 'Connection' );
+
 			if ( $connection && $connection->connected && 'ok' === $connection->status ) {
 				update_option( 'slswc_api_connected', apply_filters( 'slswc_api_connected', 'yes' ) );
 				update_option( 'slswc_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
@@ -2167,6 +2179,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->product;
 			}
+
+			WC_Software_License_Client_Manager::log( 'Get remote product' );
+			WC_Software_License_Client_Manager::log( $response->product );
 
 			return array();
 		}
@@ -2212,6 +2227,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			}
 
 			$response = self::server_request( 'products', $request_info );
+
+			WC_Software_License_Client_Manager::log( 'Getting  remote products' );
+			WC_Software_License_Client_Manager::log( $response );
 
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 				return $response->products;
@@ -2449,6 +2467,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			if ( empty( $products ) ) {
 				$products = self::$products;
 			}
+			WC_Software_License_Client_Manager::log( 'Saving products...' );
+			WC_Software_License_Client_Manager::log( $products );
 			update_option( 'slswc_products', $products );
 		}
 
@@ -2526,6 +2546,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			// Validate that the response is valid not what the response is.
 			$result = self::validate_response( $response );
 
+			//WC_Software_License_Client_Manager::log( 'Server request result' );
+			//WC_Software_License_Client_Manager::log( $result );
+
 			// Check if there is an error and display it if there is one, otherwise process the response.
 			if ( ! is_wp_error( $result ) ) {
 
@@ -2559,6 +2582,9 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param WP_Error|Array $response The response or WP_Error.
 		 */
 		public static function validate_response( $response ) {
+
+			//WC_Software_License_Client_Manager::log( 'Validate response' );
+			//WC_Software_License_Client_Manager::log( $response );
 
 			if ( ! empty( $response ) ) {
 
@@ -2638,6 +2664,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param   object $response_body The data returned.
 		 */
 		public static function check_response_status( $response_body ) {
+			WC_Software_License_Client_Manager::log( 'Check reponse' );
+			WC_Software_License_Client_Manager::log( $response_body );
 
 			if ( is_object( $response_body ) && ! empty( $response_body ) ) {
 
@@ -2760,6 +2788,28 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				)
 			);
 		}
+
+		/**
+		 * Class logger so that we can keep our debug and logging information cleaner
+		 *
+		 * @since 1.0.0
+		 * @access public
+		 * @param mixed $data - The data to go to the error log.
+		 */
+		public static function log( $data ) {
+			$logging_enabled = defined( 'SLSWC_CLIENT_LOGGING' ) && SLSWC_CLIENT_LOGGING ? true : false;
+			if ( apply_filters( 'slswc_client_logging', $logging_enabled ) ) {
+				return;
+			}
+			//phpcs:disable
+			if ( is_array( $data ) || is_object( $data ) ) {
+				error_log( __CLASS__ . ' : ' . print_r( $data, true ) );
+			} else {
+				error_log( __CLASS__ . ' : ' . $data );
+			}
+			//phpcs:enable
+
+		} // log
 	}
 endif;
 
