@@ -208,13 +208,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.2
-		 * @param   string  $license_server_url - The base url to your woocommerce shop.
-		 * @param   string  $base_file - path to the plugin file or directory, relative to the plugins directory.
-		 * @param   string  $software_type - the type of software this is. plugin|theme, default: plugin.
-		 * @param   integer $args - array of additional arguments to override default ones.
+		 * @param   string $license_server_url - The base url to your woocommerce shop.
+		 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
+		 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
+		 * @param   mixed  $args - array of additional arguments to override default ones.
 		 * @return  object A single instance of this class.
 		 */
-		public static function get_instance( $license_server_url, $base_file, $software_type = 'plugin', $args = array() ) {
+		public static function get_instance( $license_server_url, $base_file, $software_type = 'plugin', ...$args ) {
 
 			$args = recursive_parse_args( $args, recursive_parse_args( self::get_default_args(), self::get_file_information( $base_file, $software_type ) ) );
 
@@ -928,11 +928,14 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						continue;
 					}
 
+
+
 					if ( ! array_key_exists( 'deactivate_license', $input ) || 'deactivated' !== $this->get_license_status() ) {
 
 						$this->license_details['license_key'] = $input[ $key ];
 						$response                             = $this->server_request( 'activate' );
 
+						WC_Software_License_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
 						WC_Software_License_Client_Manager::log( $response );
 
 						// phpcs:ignore
