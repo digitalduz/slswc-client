@@ -1509,7 +1509,12 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			</style>
 			<div class="wrap plugin-install-tab">
 				<div class="notice update">
-					<?php echo esc_attr( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site.  IMPORTANT:  If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ); ?>
+					<?php echo esc_attr(
+						sprintf(
+							__( 'Please Note: If your license is active on another website you will need to deactivate this in your %s my downloads page before being able to activate it on this site. IMPORTANT: If this is a development or a staging site dont activate your license. Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ),
+							self::$license_server_url
+						)
+					); ?>
 				</div>
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
 				<h1><?php echo esc_attr( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
