@@ -392,7 +392,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			echo '<div class="error notice is-dismissible"><p>';
 			// phpcs:disable
 			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.			
-			echo sprintf( __( 'The %1$s license key has not been activated, so you will not be unable to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
+			echo sprintf( __( 'The %1$s license key has not been activated, so you will not be able to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
 			echo '</p></div>';
 			// phpcs:enable
 
