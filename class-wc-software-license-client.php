@@ -391,7 +391,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			echo '<div class="error notice is-dismissible"><p>';
 			// phpcs:disable
-			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.			
+			// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.
 			echo sprintf( __( 'The %1$s license key has not been activated, so you will not be able to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
 			echo '</p></div>';
 			// phpcs:enable
@@ -1431,7 +1431,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					let type = $(this).data('type');
 					let label = $(this).html();
 					let nonce = $(this).data('nonce');
-					let action_label = "<?php echo esc_attr( 'Processing', 'slswcclient' ); ?>";
+					let action_label = "<?php esc_attr_e( 'Processing', 'slswcclient' ); ?>";
 					$(this).html('<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" /> ' + action_label );
 					$.ajax({
 						url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
@@ -1446,10 +1446,10 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						dataType: 'json',
 						type: 'POST',
 						success: function( response ) {
-							if ( response.success ) {								
+							if ( response.success ) {
 								$('#slswc-product-install-message p').html( response.data.message );
 								$('#slswc-product-install-message').addClass('updated').show();
-							} else {								
+							} else {
 								$('#slswc-product-install-message p').html( response.data.message );
 								$('#slswc-product-install-message').addClass('notice-warning').show();
 							}
@@ -1517,7 +1517,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					?>
 				</div>
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
-				<h1><?php echo esc_attr( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
+				<h1><?php esc_attr_e( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
 				<?php
 
 				if ( isset( $_POST['save_api_keys_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_api_keys_nonce'] ) ), 'save_api_keys' ) ) {
@@ -1591,25 +1591,25 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						<li>
 							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=licenses"
 								class="<?php echo esc_attr( ( 'licenses' === $tab || empty( $tab ) ) ? 'current' : '' ); ?>">
-								<?php echo esc_attr( 'Licenses' ); ?>
+								<?php esc_attr_e( 'Licenses', 'slswcclient' ); ?>
 							</a>
 						</li>
 						<li>
 							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=plugins"
 								class="<?php echo ( 'plugins' === $tab ) ? 'current' : ''; ?>">
-								<?php echo esc_attr( 'Plugins', 'slswcclient' ); ?>
+								<?php esc_attr_e( 'Plugins', 'slswcclient' ); ?>
 							</a>
 						</li>
 						<li>
 							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=themes"
 								class="<?php echo ( 'themes' === $tab ) ? 'current' : ''; ?>">
-								<?php echo esc_attr( 'Themes', 'slswcclient' ); ?>
+								<?php esc_attr_e( 'Themes', 'slswcclient' ); ?>
 							</a>
 						</li>
 						<li>
 							<a href="<?php echo esc_attr( $license_admin_url ); ?>&tab=api"
 								class="<?php echo ( 'api' === $tab ) ? 'current' : ''; ?>">
-								<?php echo esc_attr( 'API' ); ?>
+								<?php esc_attr_e( 'API', 'slswcclient' ); ?>
 							</a>
 						</li>
 					</ul>
@@ -1631,7 +1631,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<div id="themes" class="wp-list-table widefat plugin-install">
 					<?php self::list_products( self::$themes ); ?>
 				</div>
-				
+
 				<?php else : ?>
 				<div id="api">
 					<?php self::api_form(); ?>
@@ -1689,14 +1689,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<table class="form-table licenses-table widefat striped" >
 					<thead>
 						<tr>
-							<th><?php echo esc_attr( 'Product Name', 'slswcclient' ); ?></th>
-							<th><?php echo esc_attr( 'License Key', 'slswcclient' ); ?></th>
-							<th><?php echo esc_attr( 'License Status', 'slswcclient' ); ?></th>
-							<th><?php echo esc_attr( 'License Expires', 'slswcclient' ); ?></th>
-							<th><?php echo esc_attr( 'Deactivate', 'slswcclient' ); ?></th>
-							<th><?php echo esc_attr( 'Environment', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'Product Name', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'License Key', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'License Status', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'License Expires', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'Deactivate', 'slswcclient' ); ?></th>
+							<th><?php esc_attr_e( 'Environment', 'slswcclient' ); ?></th>
 							<?php do_action( 'slswc_after_licenses_column_headings' ); ?>
-							<!--<th><?php echo esc_attr( 'Action', 'slswcclient' ); ?></th>-->
+							<!--<th><?php esc_attr_e( 'Action', 'slswcclient' ); ?></th>-->
 						</tr>
 					</thead>
 					<tbody>
@@ -1713,7 +1713,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						?>
 						<?php do_action( 'slswc_after_products_licenses_list', self::$plugins, self::$themes ); ?>
 					</tbody>
-				</table>	
+				</table>
 				<p>
 					<?php submit_button( __( 'Save Licenses', 'slswcclient' ), 'primary', 'save_licenses' ); ?>
 				</p>
@@ -1732,17 +1732,17 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public static function licenses_rows( $products ) {
 
 			foreach ( $products as $product ) :
-				$option_name  = $product['slug'] . '_license_manager';
+				$slug         = esc_attr( $product['slug'] );
+				$option_name  = $slug . '_license_manager';
 				$license_info = get_option( $option_name );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
-				$slug         = esc_attr( $product['slug'] );
 
-				// WC_Software_License_Client_Manager::log( 'License details' );
-				// WC_Software_License_Client_Manager::log( $license_info );
-
-				if ( empty( $license_info ) ) {
-					return;
-				}
+				$has_license_info    = empty( $license_info ) ? true : false;
+				$license_key         = $has_license_info ? $license_info['license_key'] : '';
+				$current_version     = $has_license_info ? $license_info['current_version'] : '';
+				$license_status      = $has_license_info ? $license_info['license_status'] : '';
+				$license_expires     = $has_license_info ? $license_info['license_expires'] : '';
+				$license_environment = $has_license_info ? $license_info['environment'] : '';
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -1750,28 +1750,28 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 						<input type="text"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][license_key]"
 								id="<?php echo esc_attr( $slug ); ?>_license_key"
-								value="<?php echo esc_attr( $license_info['license_key'] ); ?>"
+								value="<?php echo esc_attr( $license_key ); ?>"
 						/>
 						<input type="hidden"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][current_version]"
 								id="<?php echo esc_attr( $slug ); ?>_current_version"
-								value="<?php echo esc_attr( $license_info['current_version'] ); ?>"
+								value="<?php echo esc_attr( $license_version ); ?>"
 						/>
 					</td>
 					<td class="license-field">
-						<?php self::license_status_field( $license_info['license_status'] ); ?>
+						<?php self::license_status_field( $license_status ); ?>
 						<input type="hidden"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][license_status]"
 								id="<?php echo esc_attr( $slug ); ?>_license_status"
-								value="<?php echo esc_attr( $license_info['license_status'] ); ?>"
+								value="<?php echo esc_attr( $license_status ); ?>"
 						/>
 					</td>
 					<td class="license-field">
-						<?php echo esc_attr( $license_info['license_expires'] ); ?>
+						<?php echo esc_attr( $license_expires ); ?>
 						<input type="hidden"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][license_expires]"
 								id="<?php echo esc_attr( $slug ); ?>_license_expires"
-								value="<?php echo esc_attr( $license_info['license_expires'] ); ?>"
+								value="<?php echo esc_attr( $license_expires ); ?>"
 						/>
 					</td>
 					<td class="license-field">
@@ -1787,15 +1787,15 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
 								id="<?php echo esc_attr( $slug ); ?>_environment_live"
 								value="live"
-								<?php checked( $license_info['environment'], 'live' ); ?>
-						/> <?php echo esc_attr( 'Live', 'slswcclient' ); ?>
+								<?php checked( $license_environment, 'live' ); ?>
+						/> <?php echo esc_attr( __( 'Live', 'slswcclient' ) ); ?>
 
 						<input type="radio"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
 								id="<?php echo esc_attr( $slug ); ?>_environment_staging"
 								value="staging"
-								<?php checked( $license_info['environment'], 'staging' ); ?>
-						/> <?php echo esc_attr( 'Staging', 'slswcclient' ); ?>
+								<?php checked( $license_environment, 'staging' ); ?>
+						/> <?php echo esc_attr( __( 'Staging', 'slswcclient' ) ); ?>
 					</td>
 					<?php do_action( 'slswc_after_license_column', $product ); ?>
 					<!--<td>
@@ -1839,9 +1839,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			self::log( $remote_products );
 
 			?>
-				
 			<?php if ( ! empty( $products ) && count( $products ) > 0 ) : ?>
-				<h2 class="screen-reader-text"><?php echo esc_attr( 'Plugins List', 'slswcclient' ); ?></h2>
+				<h2 class="screen-reader-text"><?php echo esc_attr( __( 'Plugins List', 'slswcclient' ) ); ?></h2>
 				<div id="the-list">
 					<?php foreach ( $products as $product ) : ?>
 						<?php
@@ -1856,7 +1855,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 						$name_version = esc_attr( $product['name'] ) . ' ' . esc_attr( $product['version'] );
 						$action_class = $installed ? 'update' : 'install';
-						$action_label = $installed ? __( 'Update Now', 'slswcclient' ) : __( 'Install Now' );
+						$action_label = $installed ? __( 'Update Now', 'slswcclient' ) : __( 'Install Now', 'slswcclient' );
 
 						do_action( 'slswc_before_products_list', $products );
 
@@ -1903,7 +1902,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 											<?php // translators: %s - Product name. ?>
 											aria-label="<?php echo esc_attr( sprintf( __( 'More information about %s', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
 											data-title="<?php echo esc_attr( $name_version ); ?>">
-											<?php echo esc_attr( 'More Details', 'slswcclient' ); ?>
+											<?php echo esc_attr( __( 'More Details', 'slswcclient' ) ); ?>
 										</a>
 									</li>
 								</ul>
@@ -1913,7 +1912,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 								<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
 							</div>
 						</div>
-						<div class="plugin-card-bottom">							
+						<div class="plugin-card-bottom">
 							<div class="vers column-rating">
 								<?php
 									self::output_ratings(
@@ -1926,23 +1925,23 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							</div>
 							<div class="column-updated">
 								<strong>Last Updated: </strong>
-								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'timestamp' ) ); ?> ago.
+								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'mysql' ) ); ?> ago.
 							</div>
 							<div class="column-downloaded">
 								<?php // translators: 1. Number of activations. ?>
-								<?php echo esc_attr( sprintf( __( '%d Active Installations', 'slswcclient' ), $product['activations'] ) ); ?> 
+								<?php echo esc_attr( sprintf( __( '%d Active Installations', 'slswcclient' ), $product['activations'] ) ); ?>
 							</div>
 							<div class="column-compatibility">
 								<?php self::show_compatible( $product['compatible_to'] ); ?>
 							</div>
 						</div>
-					</div>						
+					</div>
 					<?php endforeach; ?>
 					<?php do_action( 'slswc_after_list_products', $products ); ?>
 				</div>
 			<?php else : ?>
 				<div class="no-products">
-					<p><?php echo esc_attr( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
+					<p><?php esc_attr_e( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
@@ -1958,7 +1957,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		public static function api_form() {
 			$keys = self::get_api_keys();
 			?>
-			<h2><?php echo esc_attr( 'API Settings', 'slswcclient' ); ?></h2>
+			<h2><?php esc_attr_e( 'API Settings', 'slswcclient' ); ?></h2>
 			<?php if ( empty( $keys ) && ! self::is_connected() ) : ?>
 				<?php
 				$username        = isset( $keys['username'] ) ? $keys['username'] : '';
@@ -1966,7 +1965,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				$consumer_secret = isset( $keys['consumer_secret'] ) ? $keys['consumer_secret'] : '';
 				?>
 			<p class="about-text">
-				<?php echo esc_attr( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', 'slswcclient' ); ?>
+				<?php esc_attr_e( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', 'slswcclient' ); ?>
 			</p>
 			<form name="api-keys" method="post" action="">
 				<?php wp_nonce_field( 'save_api_keys', 'save_api_keys_nonce' ); ?>
@@ -1974,7 +1973,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 				<table class="form-table">
 					<tbody>
 						<tr>
-							<th><?php echo esc_attr( 'Username', '' ); ?></th>
+							<th><?php esc_attr_e( 'Username', 'slswcclient' ); ?></th>
 							<td>
 								<input type="text"
 										name="username"
@@ -1983,7 +1982,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							</td>
 						</tr>
 						<tr>
-							<th><?php echo esc_attr( 'Consumer Key', '' ); ?></th>
+							<th><?php esc_attr_e( 'Consumer Key', 'slswcclient' ); ?></th>
 							<td>
 								<input type="password"
 										name="consumer_key"
@@ -1992,7 +1991,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 							</td>
 						</tr>
 						<tr>
-							<th><?php echo esc_attr( 'Consumer Secret', '' ); ?></th>
+							<th><?php esc_attr_e( 'Consumer Secret', '' ); ?></th>
 							<td>
 								<input type="password"
 										name="consumer_secret"
@@ -2022,7 +2021,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					<input type="submit"
 							id="connect"
 							class="button button-primary"
-							value="<?php echo esc_attr( 'Connect Account Now', 'slswcclient' ); ?>"
+							value="<?php esc_attr_e( 'Connect Account Now', 'slswcclient' ); ?>"
 					/>
 				</form>
 
@@ -2032,19 +2031,19 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 					<input type="submit"
 							id="reset_api_settings"
 							class="button"
-							value="<?php echo esc_attr( 'Reset API Keys', 'slswcclient' ); ?>"
+							value="<?php esc_attr_e( 'Reset API Keys', 'slswcclient' ); ?>"
 					/>
 				</form>
 
 			<?php else : ?>
-				<p><?php echo esc_attr( 'Your account is connected.', 'slswcclient' ); ?></p>
-				<p><?php echo esc_attr( 'You should be able to see a list of your purchased products and get convenient automatic updates.', 'slswcclient' ); ?></p>
+				<p><?php esc_attr_e( 'Your account is connected.', 'slswcclient' ); ?></p>
+				<p><?php esc_attr_e( 'You should be able to see a list of your purchased products and get convenient automatic updates.', 'slswcclient' ); ?></p>
 				<form name="disconnect" method="post" action="">
 					<?php wp_nonce_field( 'disconnect', 'disconnect_nonce' ); ?>
 					<input type="submit"
 							id="disconnect"
 							class="button button-primary"
-							value="<?php echo esc_attr( 'Disconnect', 'slswcclient' ); ?>"
+							value="<?php esc_attr_e( 'Disconnect', 'slswcclient' ); ?>"
 					/>
 				</form>
 			<?php endif; ?>
@@ -2090,7 +2089,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			<span class="compatibility-<?php echo esc_attr( $compatibility_class ); ?>">
 				<strong><?php echo esc_attr( $compatibility_label ); ?></strong>
 				<?php
-				echo esc_attr( ' with your version of WordPress', 'slswcclient' );
+				esc_attr_e( ' with your version of WordPress', 'slswcclient' );
 				?>
 			</span>
 			<?php
@@ -2148,7 +2147,6 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 			$connection = self::server_request( 'connect', $keys );
 
 			self::log( 'Connecting...' );
-			self::log( 'Connection' );
 
 			if ( $connection && $connection->connected && 'ok' === $connection->status ) {
 				update_option( 'slswc_api_connected', apply_filters( 'slswc_api_connected', 'yes' ) );
@@ -2238,7 +2236,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 
 			$response = self::server_request( 'products', $request_info );
 
-			self::log( 'Getting  remote products' );
+			self::log( 'Getting remote products' );
 			self::log( $response );
 
 			if ( is_object( $response ) && 'ok' === $response->status ) {
