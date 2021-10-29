@@ -1,14 +1,6 @@
-Changelog for WC Software License Client 
+Changelog for Software License for WooCommerce Client
 
-Version 1.0.1 - 3rd May 2017
-
-* Updated: Text domain references
-* Updated: integration instructions with class file
-* Added: Ability to have multiple instances of the client library running
-* Fixed: Problem with update api checking
-* Fixed: parse error with short tags turned off
-
-Version 1.0.0 - 16th November 2016
+Version 1.0.0 - 29th October 2021
 
 * First Release 
 

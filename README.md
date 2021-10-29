@@ -1,22 +1,22 @@
-# WC Software License Client 
+# Software License Server for WooCommerce Client 
 
 This is the class file required to be included with your plugin or theme to provide license and update checks. 
 
 ## Usage
 
-First download the `class-wc-software-license-client.php` into a convenient folder in your theme or plugin. You may include the file and initialize it in your plugin's main file or theme's functions.php file. In it's basic form, the license client can be initialized like this:
+First download the `class-slswc-client.php` into a convenient folder in your theme or plugin. You may include the file and initialize it in your plugin's main file or theme's functions.php file. In it's basic form, the license client can be initialized like this:
 
-```WC_Software_License_Client::get_instance( $license_server_url, $base_file, $software_type );```
+```SLSWC_Client::get_instance( $license_server_url, $base_file, $software_type );```
 
 `$license_server_url` - Is the domain of the license server.
 `$base_file` - Is the plugin main file for a plugin or the theme root folder for the a theme
 `$software_type` - Specify if this is a `plugin` or `theme`, default is plugin.
 
 ### Example for plugins:
-`WC_Software_License_Client::get_instance( 'http://example.test/', __FILE__ );`
+`SLSWC_Client::get_instance( 'http://example.test/', __FILE__ );`
 
 ### Example for themes:
-`WC_Software_License_Client::get_instance( 'http://example.test/', WP_CONTENT_DIR . '/themes/theme-directory-name', 'theme' );`
+`SLSWC_Client::get_instance( 'http://example.test/', WP_CONTENT_DIR . '/themes/theme-directory-name', 'theme' );`
 
 ## Advanced Usage
 
@@ -46,8 +46,8 @@ Here is a full example of how to use this in a plugin:
  * Compatiple To: 5.1
  */
 function test_slswc_client_for_plugin() {
-    require_once 'includes/class-wc-software-license-client.php';
-    return WC_Software_License_Client::get_instance( 'http://example.com/', __FILE__ );
+    require_once 'includes/class-slswc-client.php';
+    return SLSWC_Client::get_instance( 'http://example.com/', __FILE__ );
 }
 
 add_action( 'plugins_loaded', 'test_slswc_client_for_plugin', 11 );
@@ -58,8 +58,8 @@ And for a theme:
 Put this in `functions.php`
 ```php
 function theme_slswc_client() {
-    require_once 'includes/class-wc-software-license-client.php';
-    return WC_Software_License_Client::get_instance( 'http://example.com', WP_CONTENT_DIR . '/themes/theme-folder-name', 'theme' );	
+    require_once 'includes/class-slswc-client.php';
+    return SLSWC_Client::get_instance( 'http://example.com', WP_CONTENT_DIR . '/themes/theme-folder-name', 'theme' );	
 }
 add_action( 'wp_loaded', 'theme_slswc_client', 11 );
 ```

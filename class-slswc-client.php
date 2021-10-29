@@ -1,10 +1,10 @@
 <?php
 /**
- * The WC Software License Client Library
+ * The Software License Server for WooCommerce Client Library
  *
- * This class defines all code necessary to check for a valid license and available updates stored on your WooCommerce Software License Server.
+ * This class defines all code necessary to check for a valid license and available updates stored on your Software License Server for WooCommerce.
  *
- * Documentation can be found here : http://docs.wcvendors.com/wc-software-license-server.
+ * Documentation can be found here : https://licenseserver.io/documentation
  *
  * To integrate this into your software product include the following code in your MAIN plugin file, do not attempt.
  * to add this code in any other file but your main plugin file.
@@ -17,35 +17,34 @@
  *      // Optional Parameters.
  *      @param string  optional $product_type - The type of product. plugin/theme
  *
- *  require_once plugin_dir_path( __FILE__ ) . 'path/to/wc-software-license-client/class-wc-software-license-client.php';
+ *  require_once plugin_dir_path( __FILE__ ) . 'path/to/class-slswc-client.php';
  *
- *  function wcslc_instance(){
- *      return WC_Software_License_Client::get_instance( 'http://yourshopurl.here.com', $plugin_file, $product_type );
- *  } // wcslc_instance()
+ *  function slswc_instance(){
+ *      return SLSWC_Client::get_instance( 'http://yourshopurl.here.com', $plugin_file, $product_type );
+ *  } // slswc_instance()
  *
- *  wcslc_instance();
+ *  slswc_instance();
  *
- * @version     1.0.2
+ * @version     1.0.0
  * @since       1.0.0
- * @package     WC_Software_License_Client
- * @author      Jamie Madden <support@wcvendors.com>
- * @link        http://www.wcvendors.com/wc-software-license-server
- * @todo        Need to cache results and updates to reduce load
+ * @package     SLSWC_Client
+ * @author      Jamie Madden <support@licenseserver.io>
+ * @link        https://licenseserver.io/
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
-if ( ! class_exists( 'WC_Software_License_Client' ) ) :
+if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 	/**
 	 * Class responsible for a single product.
 	 *
-	 * @version 1.0.2
-	 * @since   1.0.2
+	 * @version 1.0.0
+	 * @since   1.0.0
 	 */
 	//phpcs:ignore
-	class WC_Software_License_Client {
+	class SLSWC_Client {
 		/**
 		 * Instance of this class.
 		 *
@@ -57,7 +56,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Version - current plugin version
 		 *
 		 * @var string $version
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
 		public $version;
@@ -66,7 +65,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * License URL - The base URL for your woocommerce install
 		 *
 		 * @var string $license_server_url
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since 1.0.0
 		 */
 		public $license_server_url;
@@ -75,7 +74,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Slug - the plugin slug to check for updates with the server
 		 *
 		 * @var string $slug
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
 		public $slug;
@@ -84,7 +83,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Plugin text domain
 		 *
 		 * @var string $text_domain
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since 1.0.0
 		 */
 		public $text_domain;
@@ -93,7 +92,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Path to the plugin file or directory, relative to the plugins directory
 		 *
 		 * @var string $base_file
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
 		public $base_file;
@@ -102,7 +101,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Path to the plugin file or directory, relative to the plugins directory
 		 *
 		 * @var string $name
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
 		public $name;
@@ -111,7 +110,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Update interval - what period in hours to check for updates defaults to 12;
 		 *
 		 * @var string $update_interval
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
 		public $update_interval;
@@ -120,7 +119,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Option name - wp option name for license and update information stored as $slug_wc_software_license.
 		 *
 		 * @var string $option_name
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since 1.0.0
 		 */
 		public $option_name;
@@ -129,8 +128,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * The license server host.
 		 *
 		 * @var string $version
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		private $license_server_host;
 
@@ -138,8 +137,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * The plugin license key.
 		 *
 		 * @var string $version
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		private $license_key;
 
@@ -147,8 +146,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * The domain the plugin is running on.
 		 *
 		 * @var string $version
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		private $domain;
 
@@ -156,7 +155,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * The plugin license key.
 		 *
 		 * @var string $version
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @since   1.0.0
 		 * @access private
 		 */
@@ -166,17 +165,17 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * The current environment on which the client is install.
 		 *
 		 * @var     string
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		private $environment;
 
 		/**
-		 * Holds instance of WC_Software_License_Client_Manager class
+		 * Holds instance of SLSWC_Client_Manager class
 		 *
-		 * @var     WC_Software_License_Client_Manager
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @var     SLSWC_Client_Manager
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public $client_manager;
 
@@ -184,8 +183,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Whether to show the builtin settings page
 		 *
 		 * @var     bool
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public $show_settings_page;
 
@@ -207,7 +206,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Return an instance of this class.
 		 *
 		 * @since   1.0.0
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @param   string $license_server_url - The base url to your woocommerce shop.
 		 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 		 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
@@ -231,7 +230,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * Initialize the class actions.
 		 *
 		 * @since   1.0.0
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @param   string  $license_server_url - The base url to your woocommerce shop.
 		 * @param   string  $base_file - path to the plugin file or directory, relative to the plugins directory.
 		 * @param   string  $software_type - the type of software this is. plugin|theme, default: plugin.
@@ -295,7 +294,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				 * Only allow updates if they have a valid license key.
 				 * Or API keys are set to check for updates.
 				 */
-				if ( 'active' === $this->license_details['license_status'] || 'expiring' === $this->license_details['license_status'] || WC_Software_License_Client_Manager::is_connected() ) {
+				if ( 'active' === $this->license_details['license_status'] || 'expiring' === $this->license_details['license_status'] || SLSWC_Client_Manager::is_connected() ) {
 					if ( 'plugin' === $this->software_type ) {
 						add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
 						add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
@@ -326,18 +325,18 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 			set_transient( 'slswc_products', $slswc_products, HOUR_IN_SECONDS );
 
-			WC_Software_License_Client_Manager::log( "License Server Url: $license_server_url" );
-			WC_Software_License_Client_Manager::log( "Base file: $base_file" );
-			WC_Software_License_Client_Manager::log( "Software type: $software_type" );
-			WC_Software_License_Client_Manager::log( $args );
+			SLSWC_Client_Manager::log( "License Server Url: $license_server_url" );
+			SLSWC_Client_Manager::log( "Base file: $base_file" );
+			SLSWC_Client_Manager::log( "Software type: $software_type" );
+			SLSWC_Client_Manager::log( $args );
 		}
 
 		/**
 		 * Get the default args
 		 *
 		 * @return  array $args
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_default_args() {
 			return array(
@@ -453,8 +452,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 *
 		 * @param   mixed $transient transient object from update api.
 		 * @return  mixed $transient transient object from update api.
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public function theme_update_check( $transient ) {
 
@@ -530,22 +529,22 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 */
 		public function server_request( $action = 'check_update', $request_info = array() ) {
 
-			if ( empty( $request_info ) && ! WC_Software_License_Client_Manager::is_connected() ) {
+			if ( empty( $request_info ) && ! SLSWC_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
 				$request_info['license_key'] = trim( $this->license_details['license_key'] );
 				$request_info['domain']      = $this->domain;
 				$request_info['version']     = $this->version;
 				$request_info['environment'] = $this->environment;
-			} elseif ( WC_Software_License_Client_Manager::is_connected() ) {
+			} elseif ( SLSWC_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
 				$request_info['domain']      = $this->domain;
 				$request_info['version']     = $this->version;
 				$request_info['environment'] = $this->environment;
 
-				$request_info = array_merge( $request_info, WC_Software_License_Client_Manager::get_api_keys() );
+				$request_info = array_merge( $request_info, SLSWC_Client_Manager::get_api_keys() );
 			}
 
-			return WC_Software_License_Client_Manager::server_request( $action, $request_info );
+			return SLSWC_Client_Manager::server_request( $action, $request_info );
 
 		} // server_request
 
@@ -918,7 +917,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 			$message = null;
 			$expires = '';
 
-			WC_Software_License_Client_Manager::log( 'Validate license: ' . print_r( $input, true ) );
+			SLSWC_Client_Manager::log( 'Validate license: ' . print_r( $input, true ) );
 
 			foreach ( $options as $key => $value ) {
 
@@ -933,13 +932,13 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 						$this->license_details['license_key'] = $input[ $key ];
 						$response                             = $this->server_request( 'activate' );
 
-						WC_Software_License_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
-						WC_Software_License_Client_Manager::log( $response );
+						SLSWC_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
+						SLSWC_Client_Manager::log( $response );
 
 						// phpcs:ignore
 						if ( null !== $response ) {
 
-							if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
+							if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
 
 								$options[ $key ]            = $input[ $key ];
 								$options['license_status']  = $response->status;
@@ -959,7 +958,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 								$message = __( 'Invalid License', 'slswcclient' );
 							}
 
-							WC_Software_License_Client_Manager::log( $message );
+							SLSWC_Client_Manager::log( $message );
 
 							add_settings_error(
 								$this->option_name,
@@ -978,11 +977,11 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 					$response = $this->server_request( 'deactivate' );
 
-					WC_Software_License_Client_Manager::log( $response );
+					SLSWC_Client_Manager::log( $response );
 
 					if ( null !== $response ) {
 
-						if ( WC_Software_License_Client_Manager::check_response_status( $response ) ) {
+						if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
 							$options[ $key ]            = $input[ $key ];
 							$options['license_status']  = $response->status;
 							$options['license_expires'] = $response->expires;
@@ -996,7 +995,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 						}
 
-						WC_Software_License_Client_Manager::log( $message );
+						SLSWC_Client_Manager::log( $message );
 
 						add_settings_error(
 							$this->option_name,
@@ -1024,7 +1023,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 				}
 			}
 
-			WC_Software_License_Client_Manager::log( $options );
+			SLSWC_Client_Manager::log( $options );
 
 			return $options;
 
@@ -1106,8 +1105,8 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 * @param   string $base_file - Plugin file or theme slug.
 		 * @param   string $type - Product type. plugin|theme.
 		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_file_information( $base_file, $type = 'plugin' ) {
 			$data = array();
@@ -1222,7 +1221,7 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 		 *
 		 * @return void
 		 * @version 1.0.0
-		 * @since   1.0.2
+		 * @since   1.0.0
 		 */
 		public function save() {
 
@@ -1230,24 +1229,24 @@ if ( ! class_exists( 'WC_Software_License_Client' ) ) :
 
 		} // save
 
-	} // WC_Software_License_Client
+	} // SLSWC_Client
 
 endif;
 
-if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
+if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 	/**
 	 * Class to manage products relying on the Software License Server for WooCommerce.
 	 *
-	 * @since   1.0.4
-	 * @version 1.0.4
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 */
 
 	// phpcs:ignore
-	class WC_Software_License_Client_Manager {
+	class SLSWC_Client_Manager {
 		/**
 		 * Instance of this class.
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 * @var object
 		 */
 		private static $instance = null;
@@ -1255,7 +1254,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Version - current plugin version.
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 * @var string
 		 */
 		public static $version;
@@ -1264,14 +1263,14 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * License URL - The base URL for your woocommerce install.
 		 *
 		 * @var string
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 */
 		public static $license_server_url;
 
 		/**
 		 * The plugin slug to check for updates with the server.
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 *
 		 * @var string
 		 */
@@ -1280,7 +1279,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Plugin text domain.
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 *
 		 * @var string
 		 */
@@ -1290,8 +1289,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * List of locally installed plugins
 		 *
 		 * @var     array $plugins The list of plugins.
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static $plugins;
 
@@ -1299,8 +1298,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * List of locally installed themes.
 		 *
 		 * @var     array $themes The list of themes.
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static $themes;
 
@@ -1308,22 +1307,22 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * List of products
 		 *
 		 * @var     array
-		 * @since   1.0.4
-		 * @version 1.0.4
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static $products;
 
 		/**
 		 * Don't allow cloning
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 */
 		private function __clone() {}
 
 		/**
 		 * Don't allow unserializing instances of this class
 		 *
-		 * @since 1.0.2
+		 * @since 1.0.0
 		 */
 		private function __wakeup() {}
 
@@ -1334,8 +1333,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param   string $slug The software slug.
 		 * @param   string $text_domain The software text domain.
 		 * @return  object
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_instance( $license_server_url, $slug, $text_domain ) {
 			self::$license_server_url = $license_server_url;
@@ -1352,8 +1351,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Initialize the class actions
 		 *
-		 * @since 1.0.2
-		 * @version 1.0.2
+		 * @since 1.0.0
+		 * @version 1.0.0
 		 * @param string $license_server_url - The base url to your woocommerce shop.
 		 * @param string $slug - The software slug.
 		 * @param string $text_domain - The plugin's text domain.
@@ -1379,8 +1378,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Enqueue scripts.
 		 *
 		 * @return  void
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function admin_enqueue_scripts() {
 			if ( self::is_products_page() ) {
@@ -1393,8 +1392,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Check if the current page is a product list page.
 		 *
 		 * @return  boolean
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function is_products_page() {
 
@@ -1415,8 +1414,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Add script to admin footer.
 		 *
 		 * @return  void
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function admin_footer_script() {
 			?>
@@ -1475,8 +1474,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Add the admin menu to the dashboard
 		 *
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 * @access  public
 		 */
 		public function add_admin_menu() {
@@ -1493,8 +1492,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * List all products installed on this server.
 		 *
 		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function show_installed_products() {
 			$license_admin_url = admin_url( 'admin.php?page=slswc_license_manager' );
@@ -1646,8 +1645,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Output licenses form
 		 *
 		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function licenses_form() {
 			?>
@@ -1726,8 +1725,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   array $products The list of software products.
 		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function licenses_rows( $products ) {
 
@@ -1812,8 +1811,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $products The list of products.
 		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function list_products( $products ) {
 			$products = is_array( $products ) ? $products : (array) $products;
@@ -1951,8 +1950,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Output API Settings form
 		 *
 		 * @return void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function api_form() {
 			$keys = self::get_api_keys();
@@ -2054,8 +2053,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Output the product ratings
 		 *
 		 * @return void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 *
 		 * @param array $args The options for the rating.
 		 */
@@ -2071,8 +2070,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $version - The version to compare with installed WordPress version.
 		 * @return  void
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function show_compatible( $version ) {
 			global $wp_version;
@@ -2114,8 +2113,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * The available license status types
 		 *
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 * @access  public
 		 */
 		public static function license_status_types() {
@@ -2139,8 +2138,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Connect to the api server using API keys
 		 *
 		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function connect() {
 			$keys       = self::get_api_keys();
@@ -2164,8 +2163,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param   string $slug The software slug.
 		 * @param   string $type The type of software. Expects plugin/theme, default 'plugin'.
 		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_remote_product( $slug = '', $type = 'plugin' ) {
 
@@ -2200,8 +2199,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param   string $type The type of products. Expects plugins|themes, default 'plugins'.
 		 * @param   array  $args The arguments to form the query to search for the products.
 		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_remote_products( $type = 'plugins', $args = array() ) {
 			$licensed_products = array();
@@ -2251,8 +2250,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $type The type of products to return license details for. Expects `plugins` or `themes`, default empty.
 		 * @return  array
-		 * @version 1.0.4
-		 * @since   1.0.4
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function get_license_data_for_all( $type = '' ) {
 			$all_products  = array();
@@ -2283,8 +2282,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $type The plural product type plugins|themes.
 		 * @return  bool
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function valid_type( $type ) {
 			return in_array( $type, array( 'themes', 'plugins' ) );
@@ -2295,8 +2294,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $status The status tp check.
 		 * @return  bool
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function ignore_status( $status ) {
 			$ignored_statuses = array( 'expired', 'max_activations', 'failed' );
@@ -2307,8 +2306,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get the current tab.
 		 *
 		 * @return  string
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function get_tab() {
 			return isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['tab'] ) ) ) : '';
@@ -2320,8 +2319,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get locally installed themes that have SLSWC file headers.
 		 *
 		 * @return  array $installed_themes List of plugins.
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function get_local_themes() {
 
@@ -2376,8 +2375,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get locally installed plugins that have SLSWC file headers.
 		 *
 		 * @return  array $installed_plugins List of plugins.
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function get_local_plugins() {
 
@@ -2430,8 +2429,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 *
 		 * @param   string $type The software type. Expects plugin, theme or other. Default plugin.
 		 * @return  array $default_data The default product data.
-		 * @version 1.0.2
-		 * @since   1.0.2
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 */
 		public static function default_remote_product( $type = 'plugin' ) {
 
@@ -2452,8 +2451,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Get the API Keys stored in database
 		 *
 		 * @return  array
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function get_api_keys() {
 			return array_filter(
@@ -2484,8 +2483,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Check if the account is connected to the api
 		 *
 		 * @return  boolean
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function is_connected() {
 			$is_connected = get_option( 'slswc_api_connected', 'no' );
@@ -2524,8 +2523,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param   string $action activate|deactivate|check_update.
 		 * @param   array  $request_info The data to be sent to the server.
 		 * @param   string $domain The domain to send the data to.
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function server_request( $action = 'check_update', $request_info = array(), $domain = '' ) {
 
@@ -2582,7 +2581,7 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
 		 * @since   1.0.0
-		 * @version 1.0.2
+		 * @version 1.0.0
 		 * @access  public
 		 * @param WP_Error|Array $response The response or WP_Error.
 		 */
@@ -2660,8 +2659,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		/**
 		 * Validate the license server response to ensure its valid response not what the response is.
 		 *
-		 * @since   1.0.2
-		 * @version 1.0.2
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 * @access  public
 		 * @param   object $response_body The data returned.
 		 */
@@ -2686,8 +2685,8 @@ if ( ! class_exists( 'WC_Software_License_Client_Manager' ) ) :
 		 * @param string $slug    Product slug.
 		 * @param string $package The product download url.
 		 *
-		 * @since   1.0.4
-		 * @version 1.0.4
+		 * @since   1.0.0
+		 * @version 1.0.0
 		 */
 		public static function product_background_installer( $slug = '', $package = '' ) {
 			global $wp_filesystem;
@@ -2847,8 +2846,8 @@ if ( ! function_exists( 'slswc_extra_headers' ) ) {
 	 *
 	 * @param   array $headers The extra theme/plugin headers.
 	 * @return  array
-	 * @since   1.0.2
-	 * @version 1.0.2
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 */
 	function slswc_extra_headers( $headers ) {
 
@@ -2891,8 +2890,8 @@ if ( ! function_exists( 'slswc_extra_headers' ) ) {
 /**
  * Load the license manager class once all plugins are loaded.
  *
- * @version 1.0.2
- * @since   1.0.2
+ * @version 1.0.0
+ * @since   1.0.0
  */
 // Extra Plugin & Theme Header.
 add_filter( 'extra_plugin_headers', 'slswc_extra_headers' );
@@ -2907,8 +2906,8 @@ if ( ! function_exists( 'slswc_client_admin_script' ) ) {
 	 * Print admin script for SLSWC Client.
 	 *
 	 * @return void
-	 * @version 1.0.2
-	 * @since   1.0.2
+	 * @version 1.0.0
+	 * @since   1.0.0
 	 */
 	function slswc_client_admin_script() {
 
@@ -2953,12 +2952,12 @@ if ( ! function_exists( 'slswc_client_manager' ) ) {
 	/**
 	 * Load the license client manager.
 	 *
-	 * @return  WC_Software_License_Client_Manager Instance of the client manager
-	 * @version 1.0.2
-	 * @since   1.0.2
+	 * @return  SLSWC_Client_Manager Instance of the client manager
+	 * @version 1.0.0
+	 * @since   1.0.0
 	 */
 	function slswc_client_manager() {
 		global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
-		return WC_Software_License_Client_Manager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
+		return SLSWC_Client_Manager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
 	}
 }
