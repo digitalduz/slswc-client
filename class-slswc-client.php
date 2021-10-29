@@ -815,7 +815,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		<form action='options.php' method='post'>
 			<div class="main">
 				<div class="notice update">
-				<?php printf( esc_attr( __( 'Please Note: If your license is active on another website you will need to deactivate this in your wcvendors.com my downloads page before being able to activate it on this site. IMPORTANT: If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ) ), esc_attr( $this->name ) ); ?>
+				<?php printf( esc_attr( __( 'Please Note: If your license is active on another website you will need to deactivate this before being able to activate it on this site. IMPORTANT: If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ) ), esc_attr( $this->name ) ); ?>
 				</div>
 
 				<?php settings_errors(); ?>
