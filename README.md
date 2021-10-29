@@ -42,8 +42,8 @@ Here is a full example of how to use this in a plugin:
  * Domain Path  : /languages
  * SLSWC        : plugin
  * Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
- * Required WP  : 5.1
- * Compatiple To: 5.1
+ * Required WP  : 5.8
+ * Compatiple To: 5.8.1
  */
 function test_slswc_client_for_plugin() {
     require_once 'includes/class-slswc-client.php';
@@ -77,11 +77,11 @@ Version     : 1.0
 License     : GNU General Public License v2 or later
 License URI : http://www.gnu.org/licenses/gpl-2.0.html
 Tags        : blog, two-columns, left-sidebar
-Text Domain : rigidtheme
+Text Domain : test-theme
 SLSWC       : theme
-Documentation URL: https://example.test/docs/rigid-theme
-Tested WP   : 5.1
-Requires WP : 5.1
+Documentation URL: https://example.test/docs/test-theme
+Tested WP   : 5.8
+Requires WP : 5.8.1
 */
 ```
 
