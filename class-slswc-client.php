@@ -1744,7 +1744,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 						<input type="hidden"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][current_version]"
 								id="<?php echo esc_attr( $slug ); ?>_current_version"
-								value="<?php echo esc_attr( $license_version ); ?>"
+								value="<?php echo esc_attr( $current_version ); ?>"
 						/>
 					</td>
 					<td class="license-field">
@@ -2228,7 +2228,10 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			self::log( 'Getting remote products' );
 			self::log( $response );
 
+			error_log( "response " . print_r( $response, true));
+
 			if ( is_object( $response ) && 'ok' === $response->status ) {
+			
 				return $response->products;
 			}
 
@@ -2264,6 +2267,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			}
 
 			$maybe_type_key = '' !== $type ? $type : '';
+			error_log("Key $maybe_type_key, products : " . print_r( $licenses_data, true ) );
 			return apply_filters( 'slswc_client_licence_data_for_all' . $maybe_type_key, $licenses_data );
 		}
 
