@@ -1901,17 +1901,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
 							</div>
 						</div>
-						<div class="plugin-card-bottom">
-							<div class="vers column-rating">
-								<?php
-									self::output_ratings(
-										array(
-											'rating' => $product['average_rating'],
-											'number' => $product['reviews_count'],
-										)
-									);
-								?>
-							</div>
+						<div class="plugin-card-bottom">					
 							<div class="column-updated">
 								<strong>Last Updated: </strong>
 								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'mysql' ) ); ?> ago.
@@ -2065,7 +2055,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 */
 		public static function show_compatible( $version ) {
 			global $wp_version;
-			$compatible = version_compare( $version, $wp_version, '>' ) ? true : false;
+			$compatible = version_compare( $version, $wp_version ) >= 0 ? true : false;
 
 			if ( $compatible ) {
 				$compatibility_label = __( 'Compatible', 'slswcclient' );
