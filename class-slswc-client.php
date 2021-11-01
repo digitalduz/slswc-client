@@ -1504,17 +1504,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			<style>
 				.slswc-product-thumbnail:before {font-size: 128px;}
 			</style>
-			<div class="wrap plugin-install-tab">
-				<div class="notice update">
-					<?php
-					echo esc_attr(
-						sprintf(
-							__( 'Please Note: If your license is active on another website you will need to deactivate this in your %s my downloads page before being able to activate it on this site. IMPORTANT: If this is a development or a staging site dont activate your license. Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ),
-							self::$license_server_url
-						)
-					);
-					?>
-				</div>
+			<div class="wrap plugin-install-tab">				
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
 				<h1><?php esc_attr_e( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
 				<?php
