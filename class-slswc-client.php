@@ -1726,12 +1726,12 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$license_info = get_option( $option_name );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 
-				$has_license_info    = empty( $license_info ) ? true : false;
-				$license_key         = $has_license_info ? $license_info['license_key'] : '';
-				$current_version     = $has_license_info ? $license_info['current_version'] : '';
-				$license_status      = $has_license_info ? $license_info['license_status'] : '';
-				$license_expires     = $has_license_info ? $license_info['license_expires'] : '';
-				$license_environment = $has_license_info ? $license_info['environment'] : '';
+				$has_license_info    = empty( $license_info ) ? false : true;
+				$license_key         = $has_license_info ? trim( $license_info['license_key'] ) : '';
+				$current_version     = $has_license_info ? trim( $license_info['current_version'] ) : '';
+				$license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
+				$license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
+				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : 'live';
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -2228,8 +2228,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			self::log( 'Getting remote products' );
 			self::log( $response );
 
-			error_log( "response " . print_r( $response, true));
-
 			if ( is_object( $response ) && 'ok' === $response->status ) {
 			
 				return $response->products;
@@ -2267,7 +2265,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			}
 
 			$maybe_type_key = '' !== $type ? $type : '';
-			error_log("Key $maybe_type_key, products : " . print_r( $licenses_data, true ) );
 			return apply_filters( 'slswc_client_licence_data_for_all' . $maybe_type_key, $licenses_data );
 		}
 
@@ -2411,9 +2408,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 						$plugins[ $plugin_details['Slug'] ] = wp_parse_args( $plugin_data, self::default_remote_product( 'theme' ) );
 					}
 				}
-			}
 
-			wp_cache_add( 'slswc_plugins', $plugins, 'slswc', apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+				wp_cache_add( 'slswc_plugins', $plugins, 'slswc', apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+			}
 
 			return $plugins;
 		}
