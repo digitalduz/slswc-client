@@ -1,0 +1,31 @@
+{
+    "name": "madvault/slswc-client",
+    "description": "Software License Server for WooCommerce",
+    "keywords": [
+        "wordpress",
+        "plugin"
+    ],
+    "type": "wordpress-plugin",
+    "authors": [
+        {
+            "name": "Jamie Madden",
+            "email": "support@licenseserver.io"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "require-dev": {
+        "mockery/mockery": "~1.2",
+        "antecedent/patchwork": "dev-master",
+        "phpunit/phpunit": "~7.5",
+        "automattic/vipwpcs": "dev-master",
+        "woocommerce/woocommerce-sniffs": "^0.1.1",
+        "dealerdirect/phpcodesniffer-composer-installer": "~0.7.0"
+    },
+    "prefer-stable" : true,
+    "scripts": {
+        "fix": "./vendor/bin/phpcbf --warning-severity=0 -s --ignore-annotations --extensions=php,html ./includes ./templates",
+        "lint": "./vendor/bin/phpcs --warning-severity=0 -s --ignore-annotations --extensions=php,html ./includes ./templates",
+        "phptest": "./vendor/bin/phpcs -p ./slswc.php ./includes ./templates --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html"
+    }
+}
