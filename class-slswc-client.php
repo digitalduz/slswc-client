@@ -1503,6 +1503,10 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			?>
 			<style>
 				.slswc-product-thumbnail:before {font-size: 128px;}
+				.slswc-plugin-card-bottom {display: flex;}
+				.slswc-plugin-card-bottom div {width: 45%;}
+				.slswc-plugin-card-bottom div.column-updated {float:left;text-align:left;}
+				.slswc-plugin-card-bottom div.column-compatibility {float:right;text-align:right;}
 			</style>
 			<div class="wrap plugin-install-tab">				
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
@@ -1886,7 +1890,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 										<?php endif; ?>
 									</li>
 									<li>
-										<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
+										<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=772&height=840' ) ); ?>"
 											class="thickbox open-plugin-details-modal"
 											<?php // translators: %s - Product name. ?>
 											aria-label="<?php echo esc_attr( sprintf( __( 'More information about %s', 'slswcclient' ), esc_attr( $name_version ) ) ); ?>"
@@ -1901,14 +1905,10 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								<p class="authors"> <cite>By <a href="<?php echo esc_attr( $product['author_uri'] ); ?>"><?php echo esc_attr( $product['author'] ); ?></a></cite></p>
 							</div>
 						</div>
-						<div class="plugin-card-bottom">					
+						<div class="plugin-card-bottom slswc-plugin-card-bottom">					
 							<div class="column-updated">
 								<strong>Last Updated: </strong>
-								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ), current_time( 'mysql' ) ); ?> ago.
-							</div>
-							<div class="column-downloaded">
-								<?php // translators: 1. Number of activations. ?>
-								<?php echo esc_attr( sprintf( __( '%d Active Installations', 'slswcclient' ), $product['activations'] ) ); ?>
+								<?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ) ); ?> ago.
 							</div>
 							<div class="column-compatibility">
 								<?php self::show_compatible( $product['compatible_to'] ); ?>
@@ -2219,7 +2219,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			self::log( $response );
 
 			if ( is_object( $response ) && 'ok' === $response->status ) {
-			
 				return $response->products;
 			}
 
