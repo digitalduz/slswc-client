@@ -6,7 +6,7 @@
     "start": "npm install && composer install && composer dump-autoload && gulp",
     "dev": "gulp && gulp watch",
     "build": "gulp build",
-    "build release": "composer install --no-dev -o && gulp build && gulp release && composer install",
+    "build-release": "composer install --no-dev -o && gulp build && gulp release && composer install",
     "version": "gulp version && git add .",
     "format-scss": "prettier --write \"./assets/src/scss/**/*.scss\"",
     "format-js": "prettier-eslint --write --eslint-config-path=.eslintrc.js --config=.prettierrc \"./assets/src/js/**/*.js\"",
