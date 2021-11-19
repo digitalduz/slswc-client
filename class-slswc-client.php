@@ -231,10 +231,10 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @param   string  $license_server_url - The base url to your woocommerce shop.
-		 * @param   string  $base_file - path to the plugin file or directory, relative to the plugins directory.
-		 * @param   string  $software_type - the type of software this is. plugin|theme, default: plugin.
-		 * @param   integer $args - array of additional arguments to override default ones.
+		 * @param   string $license_server_url - The base url to your woocommerce shop.
+		 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
+		 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
+		 * @param   array  $args - array of additional arguments to override default ones.
 		 */
 		private function __construct( $license_server_url, $base_file, $software_type, $args ) {
 			if ( empty( $args ) ) {
@@ -271,15 +271,15 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$this->license_server_host = @wp_parse_url( $this->license_server_url, PHP_URL_HOST );
 
 			// Don't run the license activation code if running on local host.
-			$whitelist = apply_filters( 'wcv_localhost_whitelist', array( '127.0.0.1', '::1' ) );
+			$host = isset( $_SERVER['SERVER_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ) : '';
 
-			if ( isset( $_SERVER['SERVER_ADDR'] ) && in_array( sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ), $whitelist, true ) && ! $args['debug'] ) {
+			if ( SLSWC_Client_Manager::is_dev( $host, $this->environment ) && ! $args['debug'] ) {
 
 				add_action( 'admin_notices', array( $this, 'license_localhost' ) );
 
 			} else {
 
-				// Initilize wp-admin interfaces.
+				// Initialize wp-admin interfaces.
 				add_action( 'admin_init', array( $this, 'check_install' ) );
 				add_action( 'admin_init', array( $this, 'add_license_settings' ) );
 				add_action( 'admin_menu', array( $this, 'add_license_menu' ) );
@@ -342,7 +342,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			return array(
 				'update_interval'    => 12,
 				'debug'              => false,
-				'environment'        => 'live',
+				'environment'        => SLSWC_Client_Manager::get_environment(),
 				'show_settings_page' => false,
 			);
 		}
@@ -1656,7 +1656,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 			if ( ! empty( $_POST['licenses'] ) && ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_licenses_nonce'] ) ), 'save_licenses' ) ) {
 				// phpcs:ignore
-				$post_licenses = isset( $_POST['licenses'] ) ? wp_unslash( $_POST['licenses'] ) : array();
+				$post_licenses       = isset( $_POST['licenses'] ) ? wp_unslash( $_POST['licenses'] ) : array();
 
 				if ( ! empty( $post_licenses ) ) {
 					foreach ( $post_licenses as $slug => $license_details ) {
@@ -1667,7 +1667,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								'license_key'     => '',
 								'license_expires' => '',
 								'current_version' => self::$version,
-								'environment'     => 'live',
+								'environment'     => self::get_environment(),
 							)
 						);
 
@@ -1735,7 +1735,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$current_version     = $has_license_info ? trim( $license_info['current_version'] ) : '';
 				$license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
 				$license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
-				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : 'live';
+				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : self::get_environment();
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -2768,6 +2768,152 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 					'message' => __( 'Failed to install product. Download link not provided or is invalid.', 'slswcclient' ),
 				)
 			);
+		}
+
+		/**
+		 * Check if a url qualifies as localhost, staging or development environment.
+		 *
+		 * @param string $url The url to be checked.
+		 * @param string $environment The user specified environment of the url.
+		 * @return boolean
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public static function is_dev( $url = '', $environment = 'live' ) {
+			$is_dev = false;
+
+			if ( 'live' === $environment ) {
+				return apply_filters( 'slswc_client_is_dev', false, $url, $environment );
+			}
+
+			// Trim the url.
+			$url = strtolower( trim( $url ) );
+
+			// Add the scheme so we can use parse_url.
+			if ( false === strpos( $url, 'http://' ) && false === strpos( $url, 'https://' ) ) {
+				$url = 'http://' . $url;
+			}
+
+			$url_parts = wp_parse_url( $url );
+			$host      = ! empty( $url_parts['host'] ) ? $url_parts['host'] : false;
+
+			if ( empty( $url ) || ! $host ) {
+				return apply_filters( 'slswc_client_is_dev', false );
+			}
+
+			$is_ip_local = self::is_ip_local( $host );
+
+			$check_tlds = apply_filters( 'slswc_client_validate_tlds', true );
+			$is_tld_dev = false;
+
+			if ( $check_tlds ) {
+				$is_tld_dev = self::is_tld_dev( $host );
+			}
+
+			$is_subdomain_dev = self::is_subdomain_dev( $host );
+
+			$is_dev = ( $is_ip_dev || $is_tld_dev || $is_subdomain_dev ) ? true : false;
+
+			return apply_filters( 'slswc_client_is_dev', $is_dev, $url, $environment );
+		}
+
+		/**
+		 * Check if a host's IP address is within the local IP range.
+		 *
+		 * @param string $host The host to be checked.
+		 * @return boolean
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public static function is_ip_local( $host ) {
+			if ( 'localhost' === $host ) {
+				return true;
+			}
+
+			if ( false !== ip2long( $host ) ) {
+				if ( ! filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+					return true;
+				}
+			}
+
+			return apply_filters( 'slswc_client_is_ip_local', false, $host );
+		}
+
+		/**
+		 * Check if a host's TLD is a development or local tld
+		 *
+		 * @param string $host The host to be checked.
+		 * @return boolean
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public static function is_tld_dev( $host ) {
+			$tlds_to_check = apply_filters(
+				'slswc_client_url_tlds',
+				array(
+					'.dev',
+					'.local',
+					'.test',
+				)
+			);
+
+			foreach ( $tlds_to_check as $tld ) {
+				if ( false !== strpos( $host, $tld ) ) {
+					return true;
+				}
+			}
+
+			return apply_filters( 'slswc_client_is_tld_dev', false, $host );
+		}
+
+		/**
+		 * Check if a domain contains development subdomain.
+		 *
+		 * @param string $host The domain to be checked.
+		 * @return boolean
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public static function is_subdomain_dev( $host ) {
+			if ( substr_count( $host, '.' ) <= 1 ) {
+				return false;
+			}
+
+			$subdomains_to_check = apply_filters(
+				'slswc_client_url_subdomains',
+				array(
+					'dev.',
+					'*.staging.',
+					'*.test.',
+					'staging-*.',
+					'*.wpengine.com',
+					'*.easywp.com',
+				)
+			);
+
+			foreach ( $subdomains_to_check as $subdomain ) {
+
+				$subdomain = str_replace( '.', '(.)', $subdomain );
+				$subdomain = str_replace( array( '*', '(.)' ), '(.*)', $subdomain );
+
+				if ( preg_match( '/^(' . $subdomain . ')/', $host ) ) {
+					return true;
+				}
+			}
+
+			return apply_filters( 'slswc_client_is_subdomain_dev', false, $host );
+		}
+
+		/**
+		 * Get the current environment the client is running on.
+		 *
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 *
+		 * @return string
+		 */
+		public static function get_environment() {
+			return self::is_dev( get_option( 'siteurl' ) ) ? 'staging' : 'live';
 		}
 
 		/**
