@@ -281,7 +281,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 				// Initialize wp-admin interfaces.
 				add_action( 'admin_init', array( $this, 'check_install' ) );
-				add_action( 'admin_init', array( $this, 'add_license_settings' ) );
+
 				add_action( 'admin_menu', array( $this, 'add_license_menu' ) );
 
 				// Internal methods.
@@ -364,6 +364,11 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 					'license_expires' => '',
 					'current_version' => $this->version,
 					'environment'     => $this->environment,
+					'active_status'   => array(
+						'live'    => 'no',
+						'staging' => 'no',
+					),
+					'deactivate_license' => 'deactivate_license',
 				);
 
 				update_option( $this->option_name, $default_license_options );
@@ -734,74 +739,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		} // add_license_menu
 
 		/**
-		 * Load settings for the admin screens so users can input their license key
-		 *
-		 * Utilizes the WordPress Settings API to implment this
-		 *
-		 * @since 1.0.0
-		 * @access public
-		 * TODO: Remove settings functions related to old settings page
-		 */
-		public function add_license_settings() {
-
-			register_setting( $this->option_name, $this->option_name, array( $this, 'validate_license' ) );
-
-			// License key section.
-			add_settings_section(
-				$this->slug . '_license_activation',
-				__( 'License Activation', 'slswcclient' ),
-				array( $this, 'license_activation_section_callback' ),
-				$this->option_name
-			);
-
-			// License key.
-			add_settings_field(
-				'license_key',
-				__( 'License key', 'slswcclient' ),
-				array( $this, 'license_key_field' ),
-				$this->option_name,
-				$this->slug . '_license_activation'
-			);
-
-			// License status.
-			add_settings_field(
-				'license_status',
-				__( 'License Status', 'slswcclient' ),
-				array( $this, 'license_status_field' ),
-				$this->option_name,
-				$this->slug . '_license_activation'
-			);
-
-			// License expires.
-			add_settings_field(
-				'license_expires',
-				__( 'License Expires', 'slswcclient' ),
-				array( $this, 'license_expires_field' ),
-				$this->option_name,
-				$this->slug . '_license_activation'
-			);
-
-			// License environment.
-			add_settings_field(
-				'license_environment',
-				__( 'This is a Staging Site', 'slswcclient' ),
-				array( $this, 'licence_environment_field' ),
-				$this->option_name,
-				$this->slug . '_environment'
-			);
-
-			// Deactivate license checkbox.
-			add_settings_field(
-				'deactivate_license',
-				__( 'Deactivate license', 'slswcclient' ),
-				array( $this, 'license_deactivate_field' ),
-				$this->option_name,
-				$this->slug . '_license_activation'
-			);
-
-		} // add_license_page
-
-		/**
 		 * License page output call back function.
 		 *
 		 * @since 1.0.0
@@ -818,7 +755,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				<?php printf( esc_attr( __( 'Please Note: If your license is active on another website you will need to deactivate this before being able to activate it on this site. IMPORTANT: If this is a development or a staging site dont activate your license.  Your license should ONLY be activated on the LIVE WEBSITE you use Pro on.', 'slswcclient' ) ), esc_attr( $this->name ) ); ?>
 				</div>
 
-				<?php settings_errors(); ?>
+				<?php settings_errors( $this->option_name ); ?>
 
 				<?php
 					settings_fields( $this->option_name );
@@ -917,19 +854,23 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$message = null;
 			$expires = '';
 
+			$environment   = isset( $input['environment'] ) ? $input['environment'] : 'live';
+			$active_status = $this->get_active_status( $environment );
+
 			SLSWC_Client_Manager::log( 'Validate license: ' . print_r( $input, true ) );
 
 			foreach ( $options as $key => $value ) {
 
 				if ( 'license_key' === $key ) {
 
-					if ( 'active' === $this->get_license_status() ) {
+					if ( $active_status && 'active' === $this->get_license_status() ) {
 						continue;
 					}
 
-					if ( ! array_key_exists( 'deactivate_license', $input ) || 'deactivated' !== $this->get_license_status() ) {
+					if ( ! array_key_exists( 'deactivate_license', $input ) && ! $active_status ) {
 
 						$this->license_details['license_key'] = $input[ $key ];
+						$this->environment                    = $environment;
 						$response                             = $this->server_request( 'activate' );
 
 						SLSWC_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
@@ -940,9 +881,10 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 							if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
 
-								$options[ $key ]            = $input[ $key ];
-								$options['license_status']  = $response->status;
-								$options['license_expires'] = $response->expires;
+								$options[ $key ]                        = $input[ $key ];
+								$options['license_status']              = $response->status;
+								$options['license_expires']             = $response->expires;
+								$options['active_status'][$environment] = 'yes';
 
 								if ( 'valid' === $response->status || 'active' === $response->status ) {
 									$type    = 'updated';
@@ -973,20 +915,21 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 					$options[ $key ] = $input[ $key ];
 
-				} elseif ( array_key_exists( $key, $input ) && 'deactivate_license' === $key ) {
-
-					$response = $this->server_request( 'deactivate' );
+				} elseif ( array_key_exists( $key, $input ) && 'deactivate_license' === $key && $active_status ) {
+					$this->environment = $environment;
+					$response          = $this->server_request( 'deactivate' );
 
 					SLSWC_Client_Manager::log( $response );
 
 					if ( null !== $response ) {
 
 						if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
-							$options[ $key ]            = $input[ $key ];
-							$options['license_status']  = $response->status;
-							$options['license_expires'] = $response->expires;
-							$type                       = 'updated';
-							$message                    = __( 'License Deactivated', 'slswcclient' );
+							$options[ $key ]                        = $input[ $key ];
+							$options['license_status']              = $response->status;
+							$options['license_expires']             = $response->expires;
+							$options['active_status'][$environment] = 'no';
+							$type                                   = 'updated';
+							$message                                = __( 'License Deactivated', 'slswcclient' );
 
 						} else {
 
@@ -1023,12 +966,31 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				}
 			}
 
+			update_option( $this->option_name, $options );
+
 			SLSWC_Client_Manager::log( $options );
 
 			return $options;
 
 		} // validate_license
 
+		/**
+		 * Check if staging activated
+		 *
+		 * @param string $environment environment to get status.
+		 * @return boolean
+		 */
+		public function get_active_status( $environment ) {
+			$options = $this->license_details;
+			if ( ! isset( $options['active_status'] ) ) {
+				$options['active_status'] = array(
+					'live' => false,
+					'staging' => false,
+				);
+			}
+			$active_status = $options['active_status'][$environment];
+			return is_bool( $active_status ) ? $active_status : ( 'yes' === strtolower( $active_status ) || 1 === $active_status || 'true' === strtolower( $active_status ) || '1' === $active_status );
+		}
 		/**
 		 * The available license status types.
 		 *
@@ -1671,7 +1633,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 							)
 						);
 
-						update_option( $slug . '_license_manager', $license_details );
+						//update_option( $slug . '_license_manager', $license_details );
 						do_action( "slswc_save_license_{$slug}", $license_details );
 					}
 				}
@@ -1736,6 +1698,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
 				$license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
 				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : self::get_environment();
+				$active_status	     = $has_license_info ? ( array_key_exists( 'active_status', $license_info ) && 'yes' === $license_info['active_status'][$license_environment] ?  true : false ) : false;
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -1772,7 +1735,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								name="licenses[<?php echo esc_attr( $slug ); ?>][deactivate_license]"
 								value="deactivate_license"
 								id="<?php echo esc_attr( $slug ); ?>_deactivate_license"
-								<?php array_key_exists( 'deactivate_license', $license_info ) ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
+								<?php array_key_exists( 'deactivate_license', $license_info ) && ! $active_status ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
 						/>
 					</td>
 					<td class="license-field">
@@ -2909,6 +2872,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @version 1.0.0
 		 * @since   1.0.0
+		 * @access public
 		 *
 		 * @return string
 		 */
@@ -2919,8 +2883,8 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		/**
 		 * Class logger so that we can keep our debug and logging information cleaner
 		 *
-		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
+		 * @since   1.0.0
 		 * @param mixed $data - The data to go to the error log.
 		 */
 		public static function log( $data ) {
