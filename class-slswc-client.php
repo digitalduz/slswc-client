@@ -180,15 +180,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		public $client_manager;
 
 		/**
-		 * Whether to show the builtin settings page
-		 *
-		 * @var     bool
-		 * @since   1.0.0
-		 * @version 1.0.0
-		 */
-		public $show_settings_page;
-
-		/**
 		 * Don't allow cloning
 		 *
 		 * @since 1.0.0
@@ -241,12 +232,11 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				$args = $this->get_file_information( $base_file, $software_type );
 			}
 
-			$this->base_file          = $base_file;
-			$this->name               = empty( $args['name'] ) ? $args['title'] : $args['name'];
-			$this->license_server_url = trailingslashit( $license_server_url );
-			$this->version            = $args['version'];
-			$this->text_domain        = $args['text_domain'];
-			$this->show_settings_page = $args['show_settings_page'];
+			$this->base_file = $base_file;
+			$this->name      = empty( $args['name'] ) ? $args['title'] : $args['name'];
+
+			$this->version     = $args['version'];
+			$this->text_domain = $args['text_domain'];
 
 			if ( 'plugin' === $software_type ) {
 				$this->plugin_file = plugin_basename( $base_file );
@@ -255,6 +245,8 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				$this->theme_file = $base_file;
 				$this->slug       = empty( $args['slug'] ) ? basename( $this->theme_file, '.css' ) : $args['slug'];
 			}
+
+			$this->license_server_url = apply_filters( 'slswc_license_server_url_for_' . $this->slug, trailingslashit( $license_server_url ) );
 
 			$this->update_interval = $args['update_interval'];
 			$this->debug           = apply_filters( 'slswc_client_logging', defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'] );
@@ -267,13 +259,14 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$this->license_manager_url = esc_url( admin_url( 'options-general.php?page=slswc_license_manager&tab=licenses' ) );
 
 			// Get the license server host.
+			$license_server_host = @wp_parse_url( $this->license_server_url, PHP_URL_HOST );
 			// phpcs:ignore
-			$this->license_server_host = @wp_parse_url( $this->license_server_url, PHP_URL_HOST );
+			$this->license_server_host = apply_filters( 'slswc_license_server_host_for_' . $this->slug, $license_server_host);
 
 			// Don't run the license activation code if running on local host.
 			$host = isset( $_SERVER['SERVER_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ) : '';
 
-			if ( SLSWC_Client_Manager::is_dev( $host, $this->environment ) && ! $args['debug'] ) {
+			if ( SLSWC_Client_Manager::is_dev( $host, $this->environment ) && ( ! empty( $args['debug'] ) && ! $args['debug'] ) ) {
 
 				add_action( 'admin_notices', array( $this, 'license_localhost' ) );
 
@@ -281,8 +274,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 				// Initialize wp-admin interfaces.
 				add_action( 'admin_init', array( $this, 'check_install' ) );
-
-				add_action( 'admin_menu', array( $this, 'add_license_menu' ) );
 
 				// Internal methods.
 				add_filter( 'http_request_host_is_external', array( $this, 'fix_update_host' ), 10, 2 );
@@ -340,10 +331,9 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 */
 		public static function get_default_args() {
 			return array(
-				'update_interval'    => 12,
-				'debug'              => false,
-				'environment'        => SLSWC_Client_Manager::get_environment(),
-				'show_settings_page' => false,
+				'update_interval' => 12,
+				'debug'           => false,
+				'environment'     => SLSWC_Client_Manager::get_environment(),
 			);
 		}
 
@@ -359,12 +349,12 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			// Set defaults.
 			if ( empty( $this->license_details ) ) {
 				$default_license_options = array(
-					'license_status'  => 'inactive',
-					'license_key'     => '',
-					'license_expires' => '',
-					'current_version' => $this->version,
-					'environment'     => $this->environment,
-					'active_status'   => array(
+					'license_status'     => 'inactive',
+					'license_key'        => '',
+					'license_expires'    => '',
+					'current_version'    => $this->version,
+					'environment'        => $this->environment,
+					'active_status'      => array(
 						'live'    => 'no',
 						'staging' => 'no',
 					),
@@ -533,6 +523,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * @param array  $request_info The data to be sent as part of the request.
 		 */
 		public function server_request( $action = 'check_update', $request_info = array() ) {
+			SLSWC_Client_Manager::log( "Server request $action with license key: {$this->license_details['license_key']}" );
 
 			if ( empty( $request_info ) && ! SLSWC_Client_Manager::is_connected() ) {
 				$request_info['slug']        = $this->slug;
@@ -719,26 +710,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		} //fix_update_host
 
 		/**
-		 * Add the admin menu to the dashboard
-		 *
-		 * @since 1.0.0
-		 * @access public
-		 */
-		public function add_license_menu() {
-			if ( $this->show_settings_page ) {
-				$page = add_options_page(
-					// translators: 1 - Plugin/Theme name.
-					sprintf( __( '%s License', 'slswcclient' ), $this->name ),
-					// translators: 1 - Plugin/Theme name.
-					sprintf( __( '%s License', 'slswcclient' ), $this->name ),
-					'manage_options',
-					$this->slug . '_license_manager',
-					array( $this, 'load_license_page' )
-				);
-			}
-		} // add_license_menu
-
-		/**
 		 * License page output call back function.
 		 *
 		 * @since 1.0.0
@@ -881,10 +852,10 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 							if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
 
-								$options[ $key ]                        = $input[ $key ];
-								$options['license_status']              = $response->status;
-								$options['license_expires']             = $response->expires;
-								$options['active_status'][$environment] = 'yes';
+								$options[ $key ]                          = $input[ $key ];
+								$options['license_status']                = $response->status;
+								$options['license_expires']               = $response->expires;
+								$options['active_status'][ $environment ] = 'yes';
 
 								if ( 'valid' === $response->status || 'active' === $response->status ) {
 									$type    = 'updated';
@@ -924,12 +895,12 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 					if ( null !== $response ) {
 
 						if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
-							$options[ $key ]                        = $input[ $key ];
-							$options['license_status']              = $response->status;
-							$options['license_expires']             = $response->expires;
-							$options['active_status'][$environment] = 'no';
-							$type                                   = 'updated';
-							$message                                = __( 'License Deactivated', 'slswcclient' );
+							$options[ $key ]                          = $input[ $key ];
+							$options['license_status']                = $response->status;
+							$options['license_expires']               = $response->expires;
+							$options['active_status'][ $environment ] = 'no';
+							$type                                     = 'updated';
+							$message                                  = __( 'License Deactivated', 'slswcclient' );
 
 						} else {
 
@@ -984,11 +955,11 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$options = $this->license_details;
 			if ( ! isset( $options['active_status'] ) ) {
 				$options['active_status'] = array(
-					'live' => false,
+					'live'    => false,
 					'staging' => false,
 				);
 			}
-			$active_status = $options['active_status'][$environment];
+			$active_status = $options['active_status'][ $environment ];
 			return is_bool( $active_status ) ? $active_status : ( 'yes' === strtolower( $active_status ) || 1 === $active_status || 'true' === strtolower( $active_status ) || '1' === $active_status );
 		}
 		/**
@@ -1320,7 +1291,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @param string $text_domain - The plugin's text domain.
 		 */
 		private function __construct( $license_server_url, $slug, $text_domain ) {
-			self::$license_server_url = $license_server_url;
+			self::$license_server_url = apply_filters( 'slswc_client_manager_license_server_url', $license_server_url );
 			self::$slug               = $slug;
 			self::$text_domain        = $text_domain;
 
@@ -1540,6 +1511,13 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				if ( ! empty( $_POST['disconnect_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['disconnect_nonce'] ) ), 'disconnect' ) ) {
 					update_option( 'slswc_api_connected', 'no' );
 				}
+
+				$_all_products = array_merge( self::$plugins, self::$themes );
+				foreach ( $_all_products as $_product ) {
+					$option_name = esc_attr( $_product['slug'] ) . '_license_manager';
+
+					settings_errors( $option_name );
+				}
 				?>
 				<div class="wp-filter">
 					<ul class="filter-links">
@@ -1633,7 +1611,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 							)
 						);
 
-						//update_option( $slug . '_license_manager', $license_details );
+						// update_option( $slug . '_license_manager', $license_details );
 						do_action( "slswc_save_license_{$slug}", $license_details );
 					}
 				}
@@ -1698,7 +1676,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
 				$license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
 				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : self::get_environment();
-				$active_status	     = $has_license_info ? ( array_key_exists( 'active_status', $license_info ) && 'yes' === $license_info['active_status'][$license_environment] ?  true : false ) : false;
+				$active_status       = $has_license_info ? ( array_key_exists( 'active_status', $license_info ) && 'yes' === $license_info['active_status'][ $license_environment ] ? true : false ) : false;
 				?>
 				<tr>
 					<td><?php echo esc_attr( $product_name ); ?></td>
@@ -2508,6 +2486,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 					return $response_body;
 				}
 			} else {
+				self::log( 'There was an error executing this request, please check the errors below.' );
+				self::log( print_r( $response, true ) );
+
 				add_settings_error(
 					self::$slug . '_license_manager',
 					esc_attr( 'settings_updated' ),
@@ -2775,7 +2756,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 			$is_subdomain_dev = self::is_subdomain_dev( $host );
 
-			$is_dev = ( $is_ip_dev || $is_tld_dev || $is_subdomain_dev ) ? true : false;
+			$is_dev = ( $is_ip_local || $is_tld_dev || $is_subdomain_dev ) ? true : false;
 
 			return apply_filters( 'slswc_client_is_dev', $is_dev, $url, $environment );
 		}
