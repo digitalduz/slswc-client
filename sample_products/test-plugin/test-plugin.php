@@ -25,7 +25,7 @@
  * Compatible To: 5.8.1
  */
 function slswc_client() {
-	require_once dirname( __FILE__ ) . '/class-slswc.php';
+	require_once dirname( __FILE__ ) . '/class-slswc-client.php';
 	return SLSWC_Client::get_instance( 'http://example.com/', __FILE__, 'plugin' );
 }
 add_action( 'plugins_loaded', 'slswc_client', 11 );
