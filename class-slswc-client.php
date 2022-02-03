@@ -180,20 +180,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		public $client_manager;
 
 		/**
-		 * Don't allow cloning
-		 *
-		 * @since 1.0.0
-		 */
-		public function __clone() {}
-
-		/**
-		 * Don't allow unserializing instances of this class
-		 *
-		 * @since 1.0.0
-		 */
-		public function __wakeup() {}
-
-		/**
 		 * Return an instance of this class.
 		 *
 		 * @since   1.0.0
@@ -1264,20 +1250,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @version 1.0.0
 		 */
 		public static $products;
-
-		/**
-		 * Don't allow cloning
-		 *
-		 * @since 1.0.0
-		 */
-		public function __clone() {}
-
-		/**
-		 * Don't allow unserializing instances of this class
-		 *
-		 * @since 1.0.0
-		 */
-		public function __wakeup() {}
 
 		/**
 		 * Return instance of this class
