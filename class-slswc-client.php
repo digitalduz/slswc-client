@@ -1250,14 +1250,14 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since 1.0.0
 		 */
-		private function __clone() {}
+		public function __clone() {}
 
 		/**
 		 * Don't allow unserializing instances of this class
 		 *
 		 * @since 1.0.0
 		 */
-		private function __wakeup() {}
+		public function __wakeup() {}
 
 		/**
 		 * Return instance of this class
