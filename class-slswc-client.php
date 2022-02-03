@@ -251,11 +251,14 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$this->update_interval = $args['update_interval'];
 			$this->debug           = apply_filters( 'slswc_client_logging', defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'] );
 
-			$this->option_name         = $this->slug . '_license_manager';
-			$this->domain              = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
-			$this->license_details     = get_option( $this->option_name );
-			$this->software_type       = $software_type;
-			$this->environment         = $args['environment'];
+			$this->option_name   = $this->slug . '_license_manager';
+			$this->domain        = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
+			$this->software_type = $software_type;
+			$this->environment   = $args['environment'];
+
+			$default_license_options = $this->get_default_license_options();
+			$this->license_details   = get_option( $this->option_name, $default_license_options );
+
 			$this->license_manager_url = esc_url( admin_url( 'options-general.php?page=slswc_license_manager&tab=licenses' ) );
 
 			// Get the license server host.
@@ -338,6 +341,35 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		}
 
 		/**
+		 * Get default license options.
+		 *
+		 * @param array $args Options to override the defaults.
+		 * @return  array
+		 * @since   1.0.0
+		 * @version 1.0.0
+		 */
+		public function get_default_license_options( $args = array() ) {
+			$default_options = array(
+				'license_status'     => 'inactive',
+				'license_key'        => '',
+				'license_expires'    => '',
+				'current_version'    => $this->version,
+				'environment'        => $this->environment,
+				'active_status'      => array(
+					'live'    => 'no',
+					'staging' => 'no',
+				),
+				'deactivate_license' => 'deactivate_license',
+			);
+
+			if ( ! empty( $args ) ) {
+				$default_options = wp_parse_args( $args, $default_options );
+			}
+
+			return apply_filters( 'slswc_client_default_license_options', $default_options );
+		}
+
+		/**
 		 * Check the installation and configure any defaults that are required
 		 *
 		 * @since   1.0.0
@@ -348,19 +380,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 			// Set defaults.
 			if ( empty( $this->license_details ) ) {
-				$default_license_options = array(
-					'license_status'     => 'inactive',
-					'license_key'        => '',
-					'license_expires'    => '',
-					'current_version'    => $this->version,
-					'environment'        => $this->environment,
-					'active_status'      => array(
-						'live'    => 'no',
-						'staging' => 'no',
-					),
-					'deactivate_license' => 'deactivate_license',
-				);
-
+				$default_license_options = $this->get_default_license_options();
 				update_option( $this->option_name, $default_license_options );
 			}
 
