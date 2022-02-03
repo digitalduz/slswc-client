@@ -28,7 +28,6 @@
  * @version     1.0.0
  * @since       1.0.0
  * @package     SLSWC_Client
- * @author      Jamie Madden <support@licenseserver.io>
  * @link        https://licenseserver.io/
  */
 
@@ -157,7 +156,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * @var string $version
 		 * @version 1.0.0
 		 * @since   1.0.0
-		 * @access private
 		 */
 		private $admin_notice;
 
@@ -248,7 +246,9 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$this->license_manager_url = esc_url( admin_url( 'options-general.php?page=slswc_license_manager&tab=licenses' ) );
 
 			// Get the license server host.
+			// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged
 			$license_server_host = @wp_parse_url( $this->license_server_url, PHP_URL_HOST );
+			//phpcs:enable
 			// phpcs:ignore
 			$this->license_server_host = apply_filters( 'slswc_license_server_host_for_' . $this->slug, $license_server_host);
 
@@ -555,7 +555,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Validate the license is active and if not, set the status and return false
 		 *
 		 * @since 1.0.0
-		 * @access public
 		 * @param object $response_body Response body.
 		 */
 		public function check_license( $response_body ) {
@@ -580,7 +579,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * returning an empty string will disable this link
 		 *
 		 * @since 1.0.0
-		 * @access public
 		 * @param array  $links The array having default links for the plugin.
 		 * @param string $file The name of the plugin file.
 		 */
@@ -614,7 +612,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Process the manual check for update if check for update is clicked on the plugins page.
 		 *
 		 * @since 1.0.0
-		 * @access public
 		 */
 		public function process_manual_update_check() {
 			// phpcs:ignore
@@ -666,7 +663,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Out the results of the manual check
 		 *
 		 * @since 1.0.0
-		 * @access public
 		 */
 		public function output_manual_update_check_result() {
 
@@ -701,7 +697,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Source for this solution: Plugin Update Checker Library 3387.1 by Janis Elsts.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 * @param bool   $allow Whether to allow or not.
 		 * @param string $host  The host name.
 		 * @return bool
@@ -719,13 +715,13 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License page output call back function.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function load_license_page() {
 			?>
 		<div class='wrap'>
 			<?php // translators: 1 - Plugin/Theme name. ?>
-		<h2><?php printf( esc_attr( __( '%s License Manager', 'slswcclient' ), esc_attr( $this->name ) ) ); ?></h2>
+		<h2><?php echo esc_attr( sprintf( __( '%s License Manager', 'slswcclient' ), esc_attr( $this->name ) ) ); ?></h2>
 		<form action='options.php' method='post'>
 			<div class="main">
 				<div class="notice update">
@@ -750,7 +746,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License activation settings section callback
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_activation_section_callback() {
 
@@ -762,7 +758,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License key field callback
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_key_field() {
 			$value = ( isset( $this->license_details['license_key'] ) ) ? $this->license_details['license_key'] : '';
@@ -774,7 +770,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License acivated field
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_status_field() {
 
@@ -788,7 +784,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License acivated field
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_expires_field() {
 			echo esc_attr( $this->license_details['license_expires'] );
@@ -798,7 +794,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * License deactivate checkbox
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_deactivate_field() {
 
@@ -821,7 +817,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Validate the license key information sent from the form.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 * @param array $input the input passed from the request.
 		 */
 		public function validate_license( $input ) {
@@ -834,7 +830,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$environment   = isset( $input['environment'] ) ? $input['environment'] : 'live';
 			$active_status = $this->get_active_status( $environment );
 
-			SLSWC_Client_Manager::log( 'Validate license: ' . print_r( $input, true ) );
+			SLSWC_Client_Manager::log( "Validate license:: key={$input['license_key']}, environment=$environment, status=$active_status" );
 
 			foreach ( $options as $key => $value ) {
 
@@ -972,7 +968,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * The available license status types.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function license_status_types() {
 
@@ -1005,7 +1001,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Get the license status.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function get_license_status() {
 
@@ -1017,7 +1013,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Get the license key
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function get_license_key() {
 
@@ -1030,7 +1026,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Get the license expiry
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 */
 		public function get_license_expires() {
 
@@ -1120,7 +1116,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Set the license status
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 * @param string $license_status license status.
 		 */
 		public function set_license_status( $license_status ) {
@@ -1133,7 +1129,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Set the license key
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 * @param string $license_key License key.
 		 */
 		public function set_license_key( $license_key ) {
@@ -1146,7 +1142,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * Set the license expires.
 		 *
 		 * @since 1.0.0
-		 * @access public
+		 * @version 1.0.0
 		 * @param string $license_expires License expiry date.
 		 */
 		public function set_license_expires( $license_expires ) {
@@ -1401,7 +1397,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @access  public
 		 */
 		public function add_admin_menu() {
 			$page = add_options_page(
@@ -1603,7 +1598,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 							)
 						);
 
-						// update_option( $slug . '_license_manager', $license_details );
 						do_action( "slswc_save_license_{$slug}", $license_details );
 					}
 				}
@@ -1746,7 +1740,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 			$type = self::get_tab();
 
-			if ( in_array( $type, array( 'plugins', 'themes' ) ) ) {
+			if ( in_array( $type, array( 'plugins', 'themes' ), true ) ) {
 				$slugs    = array();
 				$licenses = array();
 				foreach ( $products as $slug => $details ) {
@@ -1794,7 +1788,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 									<a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=600&height=800' ) ); ?>"
 										class="thickbox open-plugin-details-modal">
 										<?php echo esc_attr( $product['name'] ); ?>
-										<?php if ( $product['thumbnail'] == '' ) : ?>
+										<?php if ( '' === $product['thumbnail'] ) : ?>
 											<i class="dashicons dashicons-admin-<?php echo esc_attr( $thumb_class ); ?> plugin-icon slswc-product-thumbnail"></i>
 										<?php else : ?>
 											<img src="<?php echo esc_attr( $product['thumbnail'] ); ?>" class="plugin-icon" alt="<?php echo esc_attr( $name_version ); ?>">
@@ -2012,7 +2006,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since 1.0.0
 		 * @since 1.0.1
-		 * @access public
+		 * @version 1.0.0
 		 *
 		 * @param string $status The license status.
 		 */
@@ -2028,7 +2022,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @access  public
 		 */
 		public static function license_status_types() {
 
@@ -2199,7 +2192,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @since   1.0.0
 		 */
 		public static function valid_type( $type ) {
-			return in_array( $type, array( 'themes', 'plugins' ) );
+			return in_array( $type, array( 'themes', 'plugins' ), true );
 		}
 
 		/**
@@ -2212,7 +2205,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 */
 		public static function ignore_status( $status ) {
 			$ignored_statuses = array( 'expired', 'max_activations', 'failed' );
-			return in_array( $status, $ignored_statuses );
+			return in_array( $status, $ignored_statuses, true );
 		}
 
 		/**
@@ -2223,7 +2216,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @since   1.0.0
 		 */
 		public static function get_tab() {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			return isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['tab'] ) ) ) : '';
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		}
 
 		/**
@@ -2479,7 +2474,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				}
 			} else {
 				self::log( 'There was an error executing this request, please check the errors below.' );
+				// phpcs:disable
 				self::log( print_r( $response, true ) );
+				// phpcs:enable
 
 				add_settings_error(
 					self::$slug . '_license_manager',
@@ -2498,7 +2495,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @access  public
 		 * @param WP_Error|Array $response The response or WP_Error.
 		 */
 		public static function validate_response( $response ) {
@@ -2577,7 +2573,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @access  public
 		 * @param   object $response_body The data returned.
 		 */
 		public static function check_response_status( $response_body ) {
@@ -2845,7 +2840,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @version 1.0.0
 		 * @since   1.0.0
-		 * @access public
 		 *
 		 * @return string
 		 */
@@ -2997,7 +2991,8 @@ if ( ! function_exists( 'slswc_client_admin_script' ) ) {
 							?>
 						if ( undefined != '<?php echo esc_attr( $slug ); ?>' && src.includes( '<?php echo esc_attr( $slug ); ?>' ) ) {
 							<?php $url = esc_url_raw( $details['license_server_url'] ) . 'products/' . esc_attr( $slug ) . '/#reviews'; ?>
-							$( '#plugin-information' ).find( '.fyi-description' ).html( '<?php echo sprintf( __( 'To read all the reviews or write your own visit the <a href="%s">product page</a>.', 'slswcclient' ), $url ); ?>');
+							<?php // translators: %s - The url to visit. ?>
+							$( '#plugin-information' ).find( '.fyi-description' ).html( '<?php echo wp_kses_post( sprintf( __( 'To read all the reviews or write your own visit the <a href="%s">product page</a>.', 'slswcclient' ), $url ) ); ?>');
 							$( '#plugin-information' ).find( '.counter-label a' ).each( function() {
 								$(this).attr( 'href', '<?php echo esc_attr( $url ); ?>' );
 							} );
