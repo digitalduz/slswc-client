@@ -22,6 +22,9 @@
         "woocommerce/woocommerce-sniffs": "^0.1.1",
         "dealerdirect/phpcodesniffer-composer-installer": "~0.7.0"
     },
+    "psr-4": {
+      "MadVault\\SLSWC\\Client": "src/"
+    },
     "prefer-stable" : true,
     "scripts": {
         "fix": "./vendor/bin/phpcbf --warning-severity=0 -s --ignore-annotations --extensions=php,html ./includes ./templates",
