@@ -1653,7 +1653,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			foreach ( $products as $product ) :
 				$slug         = esc_attr( $product['slug'] );
 				$option_name  = $slug . '_license_manager';
-				$license_info = get_option( $option_name );
+				$license_info = get_option( $option_name, array() );
 				$product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 
 				$has_license_info    = empty( $license_info ) ? false : true;
@@ -1699,7 +1699,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								name="licenses[<?php echo esc_attr( $slug ); ?>][deactivate_license]"
 								value="deactivate_license"
 								id="<?php echo esc_attr( $slug ); ?>_deactivate_license"
-								<?php array_key_exists( 'deactivate_license', $license_info ) && ! $active_status ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
+								<?php is_array( $license_info ) && array_key_exists( 'deactivate_license', $license_info ) && ! $active_status ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
 						/>
 					</td>
 					<td class="license-field">
@@ -2119,6 +2119,8 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 			foreach ( $licenses_data as $slug => $_license_data ) {
 				if ( ! self::ignore_status( $_license_data['license_status'] ) ) {
+					$_license_data['domain']    = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
+					$_license_data['slug']      = $slug;
 					$slugs[]                    = $slug;
 					$licensed_products[ $slug ] = $_license_data;
 				}
@@ -2174,7 +2176,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			foreach ( $all_products as $type => $_products ) {
 
 				foreach ( $_products as $slug => $_product ) {
-					$_license_data          = get_option( $slug . '_license_manager' );
+					$_license_data          = get_option( $slug . '_license_manager', array() );
 					$licenses_data[ $slug ] = $_license_data;
 				}
 			}
@@ -2365,9 +2367,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		public static function get_api_keys() {
 			return array_filter(
 				array(
-					'username'        => get_option( 'slswc_api_username' ),
-					'consumer_key'    => get_option( 'slswc_consumer_key' ),
-					'consumer_secret' => get_option( 'slswc_consumer_secret' ),
+					'username'        => get_option( 'slswc_api_username', '' ),
+					'consumer_key'    => get_option( 'slswc_consumer_key', '' ),
+					'consumer_secret' => get_option( 'slswc_consumer_secret', '' ),
 				)
 			);
 		}
@@ -2844,7 +2846,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @return string
 		 */
 		public static function get_environment() {
-			return self::is_dev( get_option( 'siteurl' ) ) ? 'staging' : 'live';
+			return self::is_dev( get_option( 'siteurl', '' ) ) ? 'staging' : 'live';
 		}
 
 		/**
