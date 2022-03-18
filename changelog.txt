@@ -1,5 +1,14 @@
 Changelog for Software License for WooCommerce Client
 
+Version 1.0.1 - 18th March 2022
+
+* Added: Filter for server URL/host for developers.
+* Updated: Get default license options when loading the software client.
+* Updated: Client file name
+* Updated: Fix license activation and domain status.
+* Fixed: Undefined index when no license info was saved.
+* Removed: Unused code.
+
 Version 1.0.0 - 29th October 2021
 
 * First Release 
