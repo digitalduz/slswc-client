@@ -289,7 +289,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			}
 
 			global $slswc_license_server_url, $slswc_slug, $slswc_text_domain, $slswc_products;
-			$slswc_license_server_url = trailingslashit( $license_server_url );
+			$slswc_license_server_url = trailingslashit( $this->license_server_url );
 			$slswc_slug               = $args['slug'];
 			$slswc_text_domain        = $args['text_domain'];
 
@@ -305,7 +305,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 			set_transient( 'slswc_products', $slswc_products, HOUR_IN_SECONDS );
 
-			SLSWC_Client_Manager::log( "License Server Url: $license_server_url" );
+			SLSWC_Client_Manager::log( "License Server Url: $this->license_server_url" );
 			SLSWC_Client_Manager::log( "Base file: $base_file" );
 			SLSWC_Client_Manager::log( "Software type: $software_type" );
 			SLSWC_Client_Manager::log( $args );
@@ -825,10 +825,13 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$options = $this->license_details;
 			$type    = null;
 			$message = null;
-			$expires = '';
 
 			$environment   = isset( $input['environment'] ) ? $input['environment'] : 'live';
 			$active_status = $this->get_active_status( $environment );
+
+			if ( $active_status ) {
+				$options['license_status'] = 'active';
+			}
 
 			SLSWC_Client_Manager::log( "Validate license:: key={$input['license_key']}, environment=$environment, status=$active_status" );
 
@@ -875,7 +878,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 							SLSWC_Client_Manager::log( $message );
 
-							add_settings_error(
+							SLSWC_Client_Manager::add_message(
 								$this->option_name,
 								esc_attr( 'settings_updated' ),
 								$message,
@@ -913,11 +916,10 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 						SLSWC_Client_Manager::log( $message );
 
-						add_settings_error(
+						SLSWC_Client_Manager::add_message(
 							$this->option_name,
-							esc_attr( 'settings_updated' ),
 							$message,
-							$type
+							'error'
 						);
 					}
 				} elseif ( 'license_status' === $key ) {
@@ -1246,6 +1248,15 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @version 1.0.0
 		 */
 		public static $products;
+
+		/**
+		 * Status update messages
+		 *
+		 * @var array
+		 * @version 1.0.1
+		 * @since   1.0.1
+		 */
+		public static $messages = array();
 
 		/**
 		 * Return instance of this class
@@ -1602,6 +1613,8 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 					}
 				}
 			}
+
+			self::display_messages();
 			?>
 			<form name="licenses-form" action="" method="post">
 				<?php wp_nonce_field( 'save_licenses', 'save_licenses_nonce' ); ?>
@@ -2480,9 +2493,8 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				self::log( print_r( $response, true ) );
 				// phpcs:enable
 
-				add_settings_error(
+				self::add_message(
 					self::$slug . '_license_manager',
-					esc_attr( 'settings_updated' ),
 					$result->get_error_message(),
 					'error'
 				);
@@ -2870,6 +2882,56 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			//phpcs:enable
 
 		} // log
+
+		/**
+		 * Get all messages to be added to admin notices.
+		 *
+		 * @return array
+		 * @version 1.0.2
+		 * @since   1.0.2
+		 */
+		public static function get_messages() {
+			return self::$messages;
+		}
+
+		/**
+		 * Add a message to be shown to admin
+		 *
+		 * @param string $key     The array key of the message.
+		 * @param string $message The message to be added.
+		 * @param string $type    The type of message to be added.
+		 * @return void
+		 * @version 1.0.2
+		 * @since   1.0.2
+		 */
+		public static function add_message( $key, $message, $type = 'success' ) {
+			self::$messages[] = array(
+				'key'     => $key,
+				'message' => $message,
+				'type'    => $type,
+			);
+		}
+
+		/**
+		 * Display license update messages.
+		 *
+		 * @return void
+		 * @version 1.0.2
+		 * @since   1.0.2
+		 */
+		public static function display_messages() {
+			if ( empty( self::$messages ) ) {
+				return;
+			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			foreach ( self::$messages as $message ) {
+				echo sprintf( '<div class="%1$s notice is-dismissible"><p>%2$s</p></div>', esc_attr( $message['type'] ), wp_kses_post( $message['message'] ) );
+			}
+		}
 	}
 endif;
 
