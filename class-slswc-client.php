@@ -880,7 +880,6 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 							SLSWC_Client_Manager::add_message(
 								$this->option_name,
-								esc_attr( 'settings_updated' ),
 								$message,
 								$type
 							);
