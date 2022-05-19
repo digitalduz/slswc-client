@@ -816,8 +816,8 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		/**
 		 * Validate the license key information sent from the form.
 		 *
-		 * @since 1.0.0
-		 * @version 1.0.0
+		 * @since   1.0.0
+		 * @version 1.0.2
 		 * @param array $input the input passed from the request.
 		 */
 		public function validate_license( $input ) {
@@ -826,126 +826,106 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			$type    = null;
 			$message = null;
 
+			// Reset the license data if the license key has changed.
+			if ( $options['license_key'] === $input['license_key'] ) {
+				$options               = self::get_default_license_options();
+				$this->license_details = $options;
+			}
+
 			$environment   = isset( $input['environment'] ) ? $input['environment'] : 'live';
 			$active_status = $this->get_active_status( $environment );
 
-			if ( $active_status ) {
-				$options['license_status'] = 'active';
-			}
+			$this->environment                    = $environment;
+			$this->license_details['license_key'] = $input['license_key'];
+			$options                              = wp_parse_args( $input, $options );
 
 			SLSWC_Client_Manager::log( "Validate license:: key={$input['license_key']}, environment=$environment, status=$active_status" );
 
-			foreach ( $options as $key => $value ) {
+			$response = null;
+			$action   = array_key_exists( 'deactivate_license', $input ) ? 'deactivate' : 'activate';
 
-				if ( 'license_key' === $key ) {
-
-					if ( $active_status && 'active' === $this->get_license_status() ) {
-						continue;
-					}
-
-					if ( ! array_key_exists( 'deactivate_license', $input ) && ! $active_status ) {
-
-						$this->license_details['license_key'] = $input[ $key ];
-						$this->environment                    = $environment;
-						$response                             = $this->server_request( 'activate' );
-
-						SLSWC_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
-						SLSWC_Client_Manager::log( $response );
-
-						// phpcs:ignore
-						if ( null !== $response ) {
-
-							if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
-
-								$options[ $key ]                          = $input[ $key ];
-								$options['license_status']                = $response->status;
-								$options['license_expires']               = $response->expires;
-								$options['active_status'][ $environment ] = 'yes';
-
-								if ( 'valid' === $response->status || 'active' === $response->status ) {
-									$type    = 'updated';
-									$message = __( 'License activated.', 'slswcclient' );
-								} else {
-									$type     = 'error';
-									$messages = $this->license_status_types();
-									$message  = $messages[ $response->status ];
-								}
-							} else {
-
-								$type    = 'error';
-								$message = __( 'Invalid License', 'slswcclient' );
-							}
-
-							SLSWC_Client_Manager::log( $message );
-
-							SLSWC_Client_Manager::add_message(
-								$this->option_name,
-								$message,
-								$type
-							);
-
-							$options[ $key ] = $input[ $key ];
-						}
-					}
-
-					$options[ $key ] = $input[ $key ];
-
-				} elseif ( array_key_exists( $key, $input ) && 'deactivate_license' === $key && $active_status ) {
-					$this->environment = $environment;
-					$response          = $this->server_request( 'deactivate' );
-
-					SLSWC_Client_Manager::log( $response );
-
-					if ( null !== $response ) {
-
-						if ( SLSWC_Client_Manager::check_response_status( $response ) ) {
-							$options[ $key ]                          = $input[ $key ];
-							$options['license_status']                = $response->status;
-							$options['license_expires']               = $response->expires;
-							$options['active_status'][ $environment ] = 'no';
-							$type                                     = 'updated';
-							$message                                  = __( 'License Deactivated', 'slswcclient' );
-
-						} else {
-
-							$type    = 'updated';
-							$message = __( 'Unable to deactivate license. Please deactivate on the store.', 'slswcclient' );
-
-						}
-
-						SLSWC_Client_Manager::log( $message );
-
-						SLSWC_Client_Manager::add_message(
-							$this->option_name,
-							$message,
-							'error'
-						);
-					}
-				} elseif ( 'license_status' === $key ) {
-
-					if ( empty( $options['license_status'] ) ) {
-						$options['license_status'] = 'inactive';
-					} else {
-						$options['license_status'] = $options['license_status'];
-					}
-				} elseif ( 'license_expires' === $key ) {
-
-					if ( empty( $options['license_expires'] ) ) {
-						$options['license_expires'] = '';
-					} else {
-						$options['license_expires'] = gmdate( 'Y-m-d', strtotime( $options['license_expires'] ) );
-					}
-				} elseif ( 'environment' === $key ) {
-					$options['environment'] = $input['environment'];
-				}
+			if ( $active_status && 'activate' === $action ) {
+				$options['license_status'] = 'active';
 			}
+
+			if ( 'activate' === $action && ! $active_status ) {
+				SLSWC_Client_Manager::log( 'Activating. current status is: ' . $this->get_license_status() );
+
+				unset( $options['deactivate_license'] );
+				$this->license_details = $options;
+
+				$response = $this->server_request( 'activate' );
+			} elseif ( 'deactivate' === $action ) {
+				SLSWC_Client_Manager::log( 'Deactivating license. current status is: ' . $this->get_license_status() );
+
+				$response = $this->server_request( 'deactivate' );
+			} else {
+				unset( $options['deactivate_license'] );
+				$this->license_details = $options;
+
+				$response = $this->server_request( 'check_license' );
+			}
+
+			if ( is_null( $response ) ) {
+				SLSWC_Client_Manager::add_message(
+					'error',
+					__( 'Error: Your license might be invalid or there was an unknown error on the license server. Please try again and contact support if this issue persists.', 'slswcclient' ),
+					$type
+				);
+				update_option( $this->option_name, $options );
+				return;
+			}
+
+			// phpcs:ignore
+			if ( ! SLSWC_Client_Manager::check_response_status( $response ) ) {
+				update_option( $this->option_name, $options );
+				return;
+			}
+
+			$options['license_key']                   = $input['license_key'];
+			$options['license_status']                = $response->domain->status;
+			$options['domain']                        = $response->domain;
+			$options['license_expires']               = $response->expires;
+			$options['active_status'][ $environment ] = 'activate' === $action && 'active' === $response->domain->status ? 'yes' : 'no';
+
+			$domain_status = $response->domain->status;
+
+			$type     = 'updated';
+			$messages = $this->license_status_types();
+
+			if ( ( 'valid' === $domain_status || 'active' === $domain_status ) && 'activate' === $action ) {
+				$message = __( 'License activated.', 'slswcclient' );
+			} elseif ( 'active' !== $domain_status && 'activate' === $action ) {
+				$type    = 'error';
+				$message = sprintf(
+					__( 'Failed to activate license. %s', 'slswcclient' ),
+					$messages[ $domain_status ]
+				);
+			} elseif ( 'deactivate' === $action && 'deactivated' === $domain_status ) {
+				$message = __( 'License Deactivated', 'slswcclient' );
+			} elseif ( 'deactivate' === $action && 'deactivate' !== $domain_status ) {
+				$type    = 'error';
+				$message = sprintf(
+					// translators: %s - The message describing the license status.
+					__( 'Unable to deactivate license. Please deactivate on the store. %s', 'slswcclient' ),
+					$messages[ $domain_status ]
+				);
+			} else {
+				$type    = 'error';
+				$message = $messages[ $response->status ];
+			}
+
+			SLSWC_Client_Manager::log( $message );
+
+			SLSWC_Client_Manager::add_message(
+				$this->option_name,
+				$message,
+				$type
+			);
 
 			update_option( $this->option_name, $options );
 
 			SLSWC_Client_Manager::log( $options );
-
-			return $options;
-
 		} // validate_license
 
 		/**
