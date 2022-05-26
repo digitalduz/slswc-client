@@ -1,5 +1,10 @@
 Changelog for Software License for WooCommerce Client
 
+Version 1.0.2 - 18th May 2022
+* Rewrite license validation method.
+* Fix license status check.
+* Properly display admin notices for license updates.
+
 Version 1.0.1 - 18th March 2022
 
 * Added: Filter for server URL/host for developers.

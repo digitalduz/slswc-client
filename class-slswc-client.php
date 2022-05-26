@@ -25,7 +25,7 @@
  *
  *  slswc_instance();
  *
- * @version     1.0.1
+ * @version     1.0.2
  * @since       1.0.0
  * @package     SLSWC_Client
  * @link        https://licenseserver.io/
