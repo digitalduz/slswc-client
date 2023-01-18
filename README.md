@@ -43,7 +43,7 @@ Here is a full example of how to use this in a plugin:
  * SLSWC        : plugin
  * Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
  * Required WP  : 5.8
- * Compatiple To: 5.8.1
+ * Compatible To: 5.8.1
  */
 function test_slswc_client_for_plugin() {
     require_once 'includes/class-slswc-client.php';

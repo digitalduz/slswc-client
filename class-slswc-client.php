@@ -704,7 +704,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 */
 		public function fix_update_host( $allow, $host ) {
 
-			if ( strtolower( $host ) === strtolower( $this->license_server_url ) ) {
+			if ( strtolower( $host ) === strtolower( $this->license_server_host ) ) {
 				return true;
 			}
 			return $allow;
@@ -1335,7 +1335,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$('.slswc-install-now, .slswc-update-now').on( 'click', function(e){
 					e.preventDefault();
 					let $el = $(this);
-					let package = $(this).data('package');
+					let download_url = $(this).data('download_url');
 					let name = $(this).data('name');
 					let slug = $(this).data('slug');
 					let type = $(this).data('type');
@@ -1347,7 +1347,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 						url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
 						data: {
 							action:  'slswc_install_product',
-							package: package,
+							download_url: download_url,
 							name:    name,
 							slug:    slug,
 							type:    type,
@@ -1420,7 +1420,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			</style>
 			<div class="wrap plugin-install-tab">				
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
-				<h1><?php esc_attr_e( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
+				<h1><?php esc_attr_e( 'Licensed Plugins and Themes', 'slswcclient' ); ?></h1>
 				<?php
 
 				if ( isset( $_POST['save_api_keys_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_api_keys_nonce'] ) ), 'save_api_keys' ) ) {
@@ -1795,7 +1795,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 											<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
 										<?php else : ?>
 										<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now <?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
-											data-package="<?php echo esc_url_raw( $product['download_url'] ); ?>"
+											data-download_url="<?php echo esc_url_raw( $product['download_url'] ); ?>"
 											data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
 											href="#"
 											<?php // translators: %s - The license name and version. ?>
@@ -1839,7 +1839,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				</div>
 			<?php else : ?>
 				<div class="no-products">
-					<p><?php esc_attr_e( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
+					<p><?php esc_attr_e( 'No products in this category yet.', 'slswcclient' ); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
@@ -1862,8 +1862,11 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$consumer_key    = isset( $keys['consumer_key'] ) ? $keys['consumer_key'] : '';
 				$consumer_secret = isset( $keys['consumer_secret'] ) ? $keys['consumer_secret'] : '';
 				?>
+			<p>
+				<?php esc_attr_e( 'The API allows you to install plugins directly from the Updates Server into your website instead of downloading and uploading manually.', 'slswcclient' ); ?>
+			</p>
 			<p class="about-text">
-				<?php esc_attr_e( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', 'slswcclient' ); ?>
+				<?php esc_attr_e( 'Enter API details then save to proceed to the next step to connect', 'slswcclient' ); ?>
 			</p>
 			<form name="api-keys" method="post" action="">
 				<?php wp_nonce_field( 'save_api_keys', 'save_api_keys_nonce' ); ?>
@@ -2703,7 +2706,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
-		public static function is_dev( $url = '', $environment = 'live' ) {
+		public static function is_dev( $url = '', $environment = '' ) {
 			$is_dev = false;
 
 			if ( 'live' === $environment ) {
