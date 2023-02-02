@@ -18,7 +18,7 @@
  * Version: 1.0.0
  * Author: License Server
  * Domain Path: /languages
- * Requires at least: 5.7
+ * Requires at least : 5.7
  *
  * SLSWC                   : plugin
  * SLSWC Slug              : test-plugin

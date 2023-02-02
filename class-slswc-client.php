@@ -1666,19 +1666,14 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 						/>
 					</td>
 					<td class="license-field">
-						<input type="radio"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>_environment_live"
-								value="live"
-								<?php checked( $license_environment, 'live' ); ?>
-						/> <?php echo esc_attr( __( 'Live', 'slswcclient' ) ); ?>
-
-						<input type="radio"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>_environment_staging"
-								value="staging"
-								<?php checked( $license_environment, 'staging' ); ?>
-						/> <?php echo esc_attr( __( 'Staging', 'slswcclient' ) ); ?>
+						<select name="licenses[<?php echo esc_attr( $slug ); ?>][environment]">
+							<option value="live" <?php selected( $license_environment, 'live' ); ?>>
+								<?php echo esc_attr( __( 'Live', 'slswcclient' ) ); ?>
+							</option>
+							<option value="staging" <?php selected( $license_environment, 'staging' ); ?>>
+								<?php echo esc_attr( __( 'Staging', 'slswcclient' ) ); ?>
+							</option>
+						</select>
 					</td>
 					<?php do_action( 'slswc_after_license_column', $product ); ?>
 					<!--<td>
