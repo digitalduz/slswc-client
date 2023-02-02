@@ -289,7 +289,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 						add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
 						add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
 					} else {
-						add_action( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
+						add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
 					}
 
 					add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
