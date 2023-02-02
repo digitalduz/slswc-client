@@ -19,10 +19,10 @@
  * Author: License Server 
  * Domain Path: /languages
  * SLSWC: plugin
- * Slug: test-plugin
- * Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
- * Required WP: 5.7
- * Compatible To: 5.8.1
+ * SLSWC Slug: test-plugin
+ * SLSWC Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires WP: 5.7
+ * SLSWC Compatible To: 5.8.1
  */
 function slswc_client() {
 	require_once dirname( __FILE__ ) . '/class-slswc-client.php';

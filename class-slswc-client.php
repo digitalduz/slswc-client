@@ -1032,52 +1032,14 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				}
 				$plugin = get_plugin_data( $base_file, false );
 
-				$data = array(
-					'name'              => $plugin['Name'],
-					'title'             => $plugin['Title'],
-					'description'       => $plugin['Description'],
-					'author'            => $plugin['Author'],
-					'author_uri'        => $plugin['AuthorURI'],
-					'version'           => $plugin['Version'],
-					'plugin_url'        => $plugin['PluginURI'],
-					'text_domain'       => $plugin['TextDomain'],
-					'domain_path'       => $plugin['DomainPath'],
-					'network'           => $plugin['Network'],
-
-					// SLSWC Headers.
-					'slswc'             => ! empty( $plugin['SLSWC'] ) ? $plugin['SLSWC'] : '',
-					'slug'              => ! empty( $plugin['Slug'] ) ? $plugin['Slug'] : $plugin['TextDomain'],
-					'required_wp'       => ! empty( $plugin['RequiredWP'] ) ? $plugin['RequiredWP'] : '',
-					'compatible_to'     => ! empty( $plugin['CompatibleTo'] ) ? $plugin['CompatibleTo'] : '',
-					'documentation_url' => ! empty( $plugin['DocumentationURL'] ) ? $plugin['DocumentationURL'] : '',
-					'type'              => $type,
-				);
+				$data = SLSWC_CLient_Manager::format_plugin_data( $plugin, $base_file, $type );
 			} elseif ( 'theme' === $type ) {
 				if ( ! function_exists( 'wp_get_theme' ) ) {
 					require_once ABSPATH . 'wp-includes/theme.php';
 				}
 				$theme = wp_get_theme( basename( $base_file ) );
 
-				$data = array(
-					'name'              => $theme->get( 'Name' ),
-					'theme_url'         => $theme->get( 'ThemeURI' ),
-					'description'       => $theme->get( 'Description' ),
-					'author'            => $theme->get( 'Author' ),
-					'author_uri'        => $theme->get( 'AuthorURI' ),
-					'version'           => $theme->get( 'Version' ),
-					'template'          => $theme->get( 'Template' ),
-					'status'            => $theme->get( 'Status' ),
-					'tags'              => $theme->get( 'Tags' ),
-					'text_domain'       => $theme->get( 'TextDomain' ),
-					'domain_path'       => $theme->get( 'DomainPath' ),
-					// SLSWC Headers.
-					'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
-					'slug'              => ! empty( $theme->get( 'Slug' ) ) ? $theme->get( 'Slug' ) : $theme->get( 'TextDomain' ),
-					'required_wp'       => ! empty( $theme->get( 'RequiredWP' ) ) ? $theme->get( 'RequiredWP' ) : '',
-					'compatible_to'     => ! empty( $theme->get( 'CompatibleTo' ) ) ? $theme->get( 'CompatibleTo' ) : '',
-					'documentation_url' => ! empty( $theme->get( 'DocumentationURL' ) ) ? $theme->get( 'DocumentationURL' ) : '',
-					'type'              => $type,
-				);
+				$data = SLSWC_Client_Manager::format_theme_data( $theme, $base_file);
 			}
 
 			return $data;
@@ -2241,28 +2203,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 				foreach ( $wp_themes as $theme_file => $theme_details ) {
 					if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
-
-						$theme_data = array(
-							'file'              => WP_CONTENT_DIR . "/themes/{$theme_file}",
-							'name'              => $theme_details->get( 'Name' ),
-							'theme_url'         => $theme_details->get( 'ThemeURI' ),
-							'description'       => $theme_details->get( 'Description' ),
-							'author'            => $theme_details->get( 'Author' ),
-							'author_uri'        => $theme_details->get( 'AuthorURI' ),
-							'version'           => $theme_details->get( 'Version' ),
-							'template'          => $theme_details->get( 'Template' ),
-							'status'            => $theme_details->get( 'Status' ),
-							'tags'              => $theme_details->get( 'Tags' ),
-							'text_domain'       => $theme_details->get( 'TextDomain' ),
-							'domain_path'       => $theme_details->get( 'DomainPath' ),
-							// SLSWC Headers.
-							'slswc'             => ! empty( $theme_details->get( 'SLSWC' ) ) ? $theme_details->get( 'SLSWC' ) : '',
-							'slug'              => ! empty( $theme_details->get( 'Slug' ) ) ? $theme_details->get( 'Slug' ) : $theme_details->get( 'TextDomain' ),
-							'required_wp'       => ! empty( $theme_details->get( 'RequiredWP' ) ) ? $theme_details->get( 'RequiredWP' ) : '',
-							'compatible_to'     => ! empty( $theme_details->get( 'CompatibleTo' ) ) ? $theme_details->get( 'CompatibleTo' ) : '',
-							'documentation_url' => ! empty( $theme_details->get( 'DocumentationURL' ) ) ? $theme_details->get( 'DocumentationURL' ) : '',
-							'type'              => 'theme',
-						);
+						$theme_data = self::format_theme_data( $theme_details, $theme_file );
 
 						$themes[ $theme_details->get( 'Slug' ) ] = wp_parse_args( $theme_data, self::default_remote_product( 'theme' ) );
 					}
@@ -2298,26 +2239,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				foreach ( $wp_plugins as $plugin_file => $plugin_details ) {
 					if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
 
-						$plugin_data = array(
-							'file'              => WP_CONTENT_DIR . "/plugins/{$plugin_file}",
-							'name'              => $plugin_details['Name'],
-							'title'             => $plugin_details['Title'],
-							'description'       => $plugin_details['Description'],
-							'author'            => $plugin_details['Author'],
-							'author_uri'        => $plugin_details['AuthorURI'],
-							'version'           => $plugin_details['Version'],
-							'plugin_url'        => $plugin_details['PluginURI'],
-							'text_domain'       => $plugin_details['TextDomain'],
-							'domain_path'       => $plugin_details['DomainPath'],
-							'network'           => $plugin_details['Network'],
-							// SLSWC Headers.
-							'slswc'             => ! empty( $plugin_details['SLSWC'] ) ? $plugin_details['SLSWC'] : '',
-							'slug'              => ! empty( $plugin_details['Slug'] ) ? $plugin_details['Slug'] : $plugin_details['TextDomain'],
-							'required_wp'       => ! empty( $plugin_details['RequiredWP'] ) ? $plugin_details['RequiredWP'] : '',
-							'compatible_to'     => ! empty( $plugin_details['CompatibleTo'] ) ? $plugin_details['CompatibleTo'] : '',
-							'documentation_url' => ! empty( $plugin_details['DocumentationURL'] ) ? $plugin_details['DocumentationURL'] : '',
-							'type'              => 'plugin',
-						);
+						$plugin_data = self::format_plugin_data( $plugin_details, $plugin_file, 'plugin' );
 
 						$plugins[ $plugin_details['Slug'] ] = wp_parse_args( $plugin_data, self::default_remote_product( 'theme' ) );
 					}
@@ -2327,6 +2249,61 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			}
 
 			return $plugins;
+		}
+
+		public static function format_plugin_data( $data, $file = '', $type = 'plugin' ) {
+			$formated_data = array(				
+				'name'              => $data['Name'],
+				'title'             => $data['Title'],
+				'description'       => $data['Description'],
+				'author'            => $data['Author'],
+				'author_uri'        => $data['AuthorURI'],
+				'version'           => $data['Version'],
+				'plugin_url'        => $data['PluginURI'],
+				'text_domain'       => $data['TextDomain'],
+				'domain_path'       => $data['DomainPath'],
+				'network'           => $data['Network'],
+				// SLSWC Headers.
+				'slswc'             => ! empty( $data['SLSWC'] ) ? $data['SLSWC'] : '',
+				'slug'              => ! empty( $data['SLSWCSlug'] ) ? $data['Slug'] : $data['TextDomain'],
+				'requires_wp'       => ! empty( $data['RequiresWP'] ) ? $data['RequiresWP'] : '',
+				'compatible_to'     => ! empty( $data['SLSWCCompatibleTo'] ) ? $data['SLSWCCompatibleTo'] : '',
+				'documentation_url' => ! empty( $data['SLSWCDocumentationURL'] ) ? $data['SLSWCDocumentationURL'] : '',
+				'type'              => $type,
+			);
+
+			if ( $file != '' ) {
+				$sub_dir = $type === 'theme' ? 'themes' : 'plugins';
+				$formated_data['file'] = WP_CONTENT_DIR . "/{$sub_dir}/{$file}";
+			}
+
+			return apply_filters( 'slswc_client_formated_plugin_data', $formated_data, $data, $file, $type );
+		}
+
+		public static function format_theme_data ( $theme, $theme_file ) {
+			$formated_data = array(
+				'file'              => WP_CONTENT_DIR . "/themes/{$theme_file}",
+				'name'              => $theme->get( 'Name' ),
+				'theme_url'         => $theme->get( 'ThemeURI' ),
+				'description'       => $theme->get( 'Description' ),
+				'author'            => $theme->get( 'Author' ),
+				'author_uri'        => $theme->get( 'AuthorURI' ),
+				'version'           => $theme->get( 'Version' ),
+				'template'          => $theme->get( 'Template' ),
+				'status'            => $theme->get( 'Status' ),
+				'tags'              => $theme->get( 'Tags' ),
+				'text_domain'       => $theme->get( 'TextDomain' ),
+				'domain_path'       => $theme->get( 'DomainPath' ),
+				// SLSWC Headers.
+				'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
+				'slug'              => ! empty( $theme->get( 'SLSWCSlug' ) ) ? $theme->get( 'SLSWCSlug' ) : $theme->get( 'TextDomain' ),
+				'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) ) ? $theme->get( 'RequiresWP' ) : '',
+				'compatible_to'     => ! empty( $theme->get( 'SLSWCCompatibleTo' ) ) ? $theme->get( 'SLSWCCompatibleTo' ) : '',
+				'documentation_url' => ! empty( $theme->get( 'SLSWCDocumentationURL' ) ) ? $theme->get( 'SLSWCDocumentationURL' ) : '',
+				'type'              => 'theme',
+			);
+
+			return apply_filters( 'slswc_client_formated_theme_data', $formated_data, $theme, $theme_file );
 		}
 
 		/**
@@ -2958,28 +2935,28 @@ if ( ! function_exists( 'slswc_extra_headers' ) ) {
 			$headers[] = 'SLSWC';
 		}
 
-		if ( ! in_array( 'Updated', $headers, true ) ) {
-			$headers[] = 'Updated';
+		if ( ! in_array( 'SLSWC Updated', $headers, true ) ) {
+			$headers[] = 'SLSWC Updated';
 		}
 
 		if ( ! in_array( 'Author', $headers, true ) ) {
 			$headers[] = 'Author';
 		}
 
-		if ( ! in_array( 'Slug', $headers, true ) ) {
-			$headers[] = 'Slug';
+		if ( ! in_array( 'SLSWC Slug', $headers, true ) ) {
+			$headers[] = 'SLSWC Slug';
 		}
 
-		if ( ! in_array( 'Required WP', $headers, true ) ) {
-			$headers[] = 'Required WP';
+		if ( ! in_array( 'Requires at least', $headers, true ) ) {
+			$headers[] = 'Requires at least';
 		}
 
-		if ( ! in_array( 'Compatible To', $headers, true ) ) {
-			$headers[] = 'Compatible To';
+		if ( ! in_array( 'SLSWC Compatible To', $headers, true ) ) {
+			$headers[] = 'SLSWC Compatible To';
 		}
 
-		if ( ! in_array( 'Documentation URL', $headers, true ) ) {
-			$headers[] = 'Documentation URL';
+		if ( ! in_array( 'SLSWC Documentation URL', $headers, true ) ) {
+			$headers[] = 'SLSWC Documentation URL';
 		}
 
 		return $headers;
