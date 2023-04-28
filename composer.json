@@ -6,6 +6,7 @@
         "plugin"
     ],
     "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
     "authors": [
         {
             "name": "Jamie Madden",
@@ -13,19 +14,21 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
+    "autoload": {
+        "classmap": [
+            "class-slswc-client.php"
+        ]
+    },
     "require-dev": {
-        "mockery/mockery": "~1.2",
-        "antecedent/patchwork": "dev-master",
-        "phpunit/phpunit": "~7.5",
-        "automattic/vipwpcs": "dev-master",
-        "woocommerce/woocommerce-sniffs": "^0.1.1",
-        "dealerdirect/phpcodesniffer-composer-installer": "~0.7.0"
+        "wc-vendors/wc-vendors-phpcs": "dev-main"
     },
     "prefer-stable" : true,
     "scripts": {
-        "fix": "./vendor/bin/phpcbf --warning-severity=0 -s --ignore-annotations --extensions=php,html ./includes ./templates",
-        "lint": "./vendor/bin/phpcs --warning-severity=0 -s --ignore-annotations --extensions=php,html ./includes ./templates",
-        "phptest": "./vendor/bin/phpcs -p ./slswc.php ./includes ./templates --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html"
+        "fix": "./vendor/bin/phpcbf --warning-severity=0 -s --ignore-annotations --extensions=php ./class-slswc-client.php ./sample_products",
+        "lint": "./vendor/bin/phpcs --warning-severity=0 -s --ignore-annotations --extensions=php ./",
+        "phptest": "./vendor/bin/phpcs -p ./class-slswc-client.php ./ --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html"
+    },
+    "config": {
+        "allow-plugins": {}
     }
 }

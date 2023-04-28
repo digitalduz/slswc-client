@@ -4,7 +4,11 @@ This is the class file required to be included with your plugin or theme to prov
 
 ## Usage
 
-First download the `class-slswc-client.php` into a convenient folder in your theme or plugin. You may include the file and initialize it in your plugin's main file or theme's functions.php file. In it's basic form, the license client can be initialized like this:
+### Install using composer
+`composer require madvault/slswc-client`
+
+### Clone or download from the repository
+Include the `class-slswc-client.php` file into a convenient folder in your theme or plugin. You may include the file and initialize it in your plugin's main file or theme's functions.php file. In it's basic form, the license client can be initialized like this:
 
 ```SLSWC_Client::get_instance( $license_server_url, $base_file, $software_type );```
 
@@ -18,14 +22,44 @@ First download the `class-slswc-client.php` into a convenient folder in your the
 ### Example for themes:
 `SLSWC_Client::get_instance( 'http://example.test/', WP_CONTENT_DIR . '/themes/theme-directory-name', 'theme' );`
 
-## Advanced Usage
+### Required plugin and theme headers.
+With the basic integration, the license client will look for specific plugin or theme headers that are required for the license client to work properly. The following two, are the required headers:
+
+* SLSWC - This is used to specify the type of product this is, a plugin or theme. This is also used to detect plugins or themes whose updates are managed by this client.
+* SLSWC Slug - The slug of the software as specified in the License panel of the product in the License Server for WooCommerce. The slug is used to query the product's public information. The slug must be the same as the product's slug. If a slug is not specified, the plugin or theme's text domain will be used as the slug.
+
+**Example usage for a plugin:**
+
+```/**
+ * Plugin Name : Test Plugin
+ * SLSWC	   : plugin
+ * SLSWC Slug  : test-plugin
+ */
+```
+
+**Example usage for a theme**
+```/**
+ * Theme Name : Test Theme
+ * SLSWC      : theme
+ * SLSWC Slug : test-theme
+ */
+```
+
+### Additional Headers
 
 The client also searches for additional theme or plugin headers for information about the plugin, these headers are as follows:
 
 * SLSWC - Specifies whether this is a `plugin` or `theme`.
-* Documentation URL - Link to documentation for this plugin or theme
+* SLSWC Slug - The slug of the theme or plugin. Used when checking the license or reading product information.
+* SLSWC Documentation URL - Link to documentation for this plugin or theme
 * Required WP - Minimum version of WordPress required
-* Compatible To - Maximum compatible WordPress version
+* SLSWC Compatible To - Maximum compatible WordPress version
+* SLSWC Updated - The date on which the plugin/theme was last updated.
+
+Additionally, the following WordPress plugin/theme headers are used for additional information if available.
+
+* Author - The plugin author name
+* Requires at least - The minimum required WordPress version supported by the theme or plugin.
 
 Here is a full example of how to use this in a plugin:
 
@@ -41,7 +75,7 @@ Here is a full example of how to use this in a plugin:
  * Author       : Author Name
  * Domain Path  : /languages
  * SLSWC        : plugin
- * Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
+ * SLSWC Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
  * Required WP  : 5.8
  * Compatible To: 5.8.1
  */

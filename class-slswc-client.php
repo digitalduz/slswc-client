@@ -40,9 +40,15 @@
  * @link        https://licenseserver.io/
  */
 
+namespace Madvault\Slswc\Client;
+
+use \WP_Error;
+use \Exception;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
+
 if ( ! class_exists( 'SLSWC_Client' ) ) :
 
 	/**

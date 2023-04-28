@@ -25,8 +25,22 @@
  * SLSWC Documentation URL : https://www.gnu.org/licenses/gpl-2.0.html
  * SLSWC Compatible To     : 5.8.1
  */
+
+/**
+ * First you must install the license server client library using composer.
+ *
+ * Install using: composer require madvault/slswc-client
+ */
+require dirname( __FILE__ ) . '/vendor/autoload.php';
+
+use Madvault\Slswc\Client\SLSWC_Client;
+
+/**
+ * Function to initialize the client.
+ *
+ * @return object
+ */
 function your_prefix_slswc_client() {
-	require_once dirname( __FILE__ ) . '/class-slswc-client.php';
 	return SLSWC_Client::get_instance( 'http://example.com/', __FILE__, 'plugin' );
 }
 add_action( 'plugins_loaded', 'slswc_client', 11 );
