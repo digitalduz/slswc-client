@@ -40,7 +40,7 @@
  * @link        https://licenseserver.io/
  */
 
-namespace Madvault\Slswc\Client;
+namespace Madvault\SLSWC\Client;
 
 use \WP_Error;
 use \Exception;

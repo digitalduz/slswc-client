@@ -29,6 +29,8 @@
         "phptest": "./vendor/bin/phpcs -p ./class-slswc-client.php ./ --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html"
     },
     "config": {
-        "allow-plugins": {}
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
