@@ -113,11 +113,11 @@ class Updater {
 			$themes    = array();
 
 			foreach ( $wp_themes as $theme_file => $theme_details ) {
-				if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
-					$theme_data = Helper::format_theme_data( $theme_details, $theme_file );
-
-					$themes[ $theme_details->get( 'Slug' ) ] = wp_parse_args( $theme_data, $this->default_remote_product( 'theme' ) );
+				if ( ! $theme_details->get( 'SLSWC' ) || 'theme' !== $theme_details->get( 'SLSWC' ) ) {
+					continue;
 				}
+				$theme_data = Helper::format_theme_data( $theme_details, $theme_file );
+				$themes[ $theme_details->get( 'Slug' ) ] = wp_parse_args( $theme_data, $this->default_remote_product( 'theme' ) );
 			}
 		}
 
@@ -150,23 +150,42 @@ class Updater {
 			$wp_plugins = get_plugins();
 
 			foreach ( $wp_plugins as $plugin_file => $plugin_details ) {
-				if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
-
-					$plugin_data = Helper::format_plugin_data( $plugin_details, $plugin_file, 'plugin' );
-
-					$plugins[ $plugin_data['slug'] ] = wp_parse_args( $plugin_data, $this->default_remote_product( 'theme' ) );
+				if ( ! isset( $plugin_details['SLSWC'] ) || 'plugin' !== $plugin_details['SLSWC'] ) {
+					continue;
 				}
+
+				$plugin_data = Helper::format_plugin_data( $plugin_details, $plugin_file, 'plugin' );
+				$plugins[ $plugin_data['slug'] ] = wp_parse_args( $plugin_data, $this->default_remote_product( 'theme' ) );
 			}
 
-			wp_cache_add( 'slswc_plugins', $plugins, 'slswc', apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+			wp_cache_add(
+				'slswc_plugins',
+				$plugins,
+				'slswc',
+				apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 )
+			);
 		}
 
 		$this->set_plugins( $plugins );
 
+		$this->save_products( $plugins, 'slswc_plugins' );
+
 		return $plugins;
 	}
 
-	
+	/**
+	 * Save products to transient
+	 *
+	 * @param array $products The products to save.
+	 * @param string $key The transient key.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function save_products( $products, $key = 'slswc_products' ) {
+		$slswc_products = array_filter( $products );
+		return set_transient( $key, $slswc_products, HOUR_IN_SECONDS );
+	}
 
 	/**
 	 * Get default remote product data
@@ -232,7 +251,7 @@ class Updater {
 			$notice_text = __( 'To enable this update please activate your license in Settings > License Manager page.' , 'slswcclient' );
 
 			foreach ( $plugins as $key => $value ) {
-				if( isset( $transient->response[ $value->file ] ) && isset( $transient->response[ $value->file ]->package ) && '' == $transient->response[ $value->file ]->package && ( FALSE === stristr($transient->response[ $value->file ]->upgrade_notice, $notice_text ) ) ){
+				if( isset( $transient->response[ $value['file'] ] ) && isset( $transient->response[ $value['file'] ]->package ) && '' == $transient->response[ $value['file'] ]->package && ( FALSE === stristr($transient->response[ $value['file'] ]->upgrade_notice, $notice_text ) ) ){
 					$message = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
 					$transient->response[ $value->file ]->upgrade_notice = wp_kses_post( $message );
 				}
@@ -253,10 +272,8 @@ class Updater {
 		$plugins = $this->get_plugins();
 		if( !is_array( $plugins ) || count( $plugins ) < 0 ) return;
 
-		error_log( print_r( $plugins, true ) );
-
 		foreach ( $plugins as $key => $update ) {
-			add_action( 'in_plugin_update_message-' . $update->file, array( $this, 'need_license_message' ), 10, 2 );
+			add_action( 'in_plugin_update_message-' . $update['file'], array( $this, 'need_license_message' ), 10, 2 );
 		}
 	}
 
@@ -271,7 +288,7 @@ class Updater {
 	 */
 	public function need_license_message ( $plugin_data, $update ) {
 		if ( empty( $update->package ) ) {
-			echo wp_kses_post( '<div class="slswcclient-plugin-upgrade-notice">' . __( 'To enable this update please connect your WooCommerce subscription by visiting the Settings > License Manager page.', 'slswcclient' ) . '</div>' );
+			echo wp_kses_post('<div class="slswcclient-plugin-upgrade-notice">' . __( 'To enable this update please connect your WooCommerce subscription by visiting the Settings > License Manager page.', 'slswcclient' ) . '</div>' );
 		}
 	}
 

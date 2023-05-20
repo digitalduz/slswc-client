@@ -50,11 +50,15 @@
 
 namespace Madvault\Slswc\Client;
 
+require __DIR__ . '/vendor/autoload.php';
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-require __DIR__ . '/vendor/autoload.php';
+use Madvault\Slswc\Client\Updater;
+use Madvault\Slswc\Client\LicenseManager;
+use Madvault\Slswc\Client\Client;
 
 define ( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 
@@ -168,9 +172,10 @@ class SLSWC_Client {
 
 add_action( 'plugins_loaded', function () {
 	global $slswc_updater;
-	global $slswc_client;
 
-	$slswc_client = new SLSWC_Client( true );
+	$license_key = '';
+
+	$slswc_client = Client::get_instance( 'http://slswc.local', __FILE__, 'plugin' );
 	$slswc_client->init_hooks();
 
 	$slswc_updater = new Updater( __FILE__, SLSWC_CLIENT_VERSION );

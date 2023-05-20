@@ -24,9 +24,9 @@ class Client {
 	/**
 	 * Instance of this class.
 	 *
-	 * @var array
+	 * @var Madvault\Slswc\Client\Client
 	 */
-	private static $instances = array();
+	private static $instance = null;
 
 	/**
 	 * Version - current plugin version
@@ -146,15 +146,6 @@ class Client {
 	private $environment;
 
 	/**
-	 * Holds instance of ClientManager class
-	 *
-	 * @var     ClientManager
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public $client_manager;
-
-	/**
 	 * The plugin file
 	 *
 	 * @var string
@@ -209,6 +200,15 @@ class Client {
 	public $software_type;
 
 	/**
+	 * Additional arguments to override default ones.
+	 *
+	 * @var array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $args = array();
+
+	/**
 	 * Return an instance of this class.
 	 *
 	 * @since   1.0.0
@@ -220,15 +220,15 @@ class Client {
 	 * @return  object A single instance of this class.
 	 */
 	public static function get_instance( $license_server_url, $base_file, $software_type = 'plugin', ...$args ) {
-
-		$args = Helper::recursive_parse_args( $args, Helper::recursive_parse_args( self::get_default_args(), Helper::get_file_information( $base_file, $software_type ) ) );
-
-		$text_domain = $args['text_domain'];
-		if ( ! array_key_exists( $text_domain, self::$instances ) ) {
-			self::$instances[ $text_domain ] = new self( $license_server_url, $base_file, $software_type, $args );
+		if ( null === self::$instance ) {
+			self::$instance = new self(
+				$license_server_url,
+				$base_file,
+				$software_type,
+				$args
+			);
 		}
-
-		return self::$instances;
+		return self::$instance;
 
 	} // get_instance
 
@@ -242,16 +242,19 @@ class Client {
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 	 * @param   array  $args - array of additional arguments to override default ones.
 	 */
-	private function __construct( $license_server_url, $base_file, $software_type, $args ) {
-		if ( empty( $args ) ) {
-			$args = Helper::get_file_information( $base_file, $software_type );
-		}
+	private function __construct( $license_server_url, $base_file, $software_type = 'plugin', ...$args ) {
+		$args = Helper::recursive_parse_args(
+			$args,
+			Helper::recursive_parse_args(
+				self::get_default_args(),
+				Helper::get_file_information(
+					$base_file,
+					$software_type
+				)
+			)
+		);
 
-		$this->base_file = $base_file;
-		$this->name      = empty( $args['name'] ) ? $args['title'] : $args['name'];
-
-		$this->version     = $args['version'];
-		$this->text_domain = $args['text_domain'];
+		$this->args = $args;
 
 		if ( 'plugin' === $software_type ) {
 			$this->plugin_file = plugin_basename( $base_file );
@@ -261,15 +264,26 @@ class Client {
 			$this->slug       = empty( $args['slug'] ) ? basename( $this->theme_file, '.css' ) : $args['slug'];
 		}
 
-		$this->license_server_url = apply_filters( 'slswc_license_server_url_for_' . $this->slug, trailingslashit( $license_server_url ) );
+		$this->base_file   = $base_file;
+		$this->name        = empty( $args['name'] ) && ! empty( $args['title'] ) ? $args['title'] : $args['name'];
+		$this->version     = empty( $args['version'] ) ? '1.0.0' : $args['version'];
+		$this->text_domain = empty( $args['text_domain'] ) ? $this->slug : $args['text_domain'];
 
-		$this->update_interval = $args['update_interval'];
-		$this->debug           = apply_filters( 'slswc_client_logging', defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug'] );
+		$this->license_server_url = apply_filters(
+			'slswc_license_server_url_for_' . $this->slug,
+			trailingslashit( $license_server_url )
+		);
+
+		$this->update_interval = empty( $args['update_interval'] ) ? 12 : $args['update_interval'];
+		$this->debug           = apply_filters(
+			'slswc_client_logging',
+			defined( 'WP_DEBUG' ) && WP_DEBUG ? true : $args['debug']
+		);
 
 		$this->option_name   = $this->slug . '_license_manager';
 		$this->domain        = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
 		$this->software_type = $software_type;
-		$this->environment   = $args['environment'];
+		$this->environment   = isset( $args['environment'] ) ? $args['environment'] : '';
 
 		$default_license_options = $this->get_default_license_options();
 		$this->license_details   = get_option( $this->option_name, $default_license_options );
@@ -283,10 +297,23 @@ class Client {
 		// phpcs:ignore
 		$this->license_server_host = apply_filters( 'slswc_license_server_host_for_' . $this->slug, $license_server_host);
 
+		Helper::log( "License Server Url: $this->license_server_url" );
+		Helper::log( "Base file: $base_file" );
+		Helper::log( "Software type: $software_type" );
+		Helper::log( $args );
+	}
+
+	/**
+	 * Initialize action hooks and filters
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function init_hooks() {
 		// Don't run the license activation code if running on local host.
 		$host = isset( $_SERVER['SERVER_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ) : '';
-
-		if ( Helper::is_dev( $host, $this->environment ) && ( ! empty( $args['debug'] ) && ! $args['debug'] ) ) {
+		if ( Helper::is_dev( $host, $this->environment ) && ( ! empty( $this->args['debug'] ) && ! $this->args['debug'] ) ) {
 
 			add_action( 'admin_notices', array( $this, 'license_localhost' ) );
 
@@ -307,7 +334,16 @@ class Client {
 			 * Only allow updates if they have a valid license key.
 			 * Or API keys are set to check for updates.
 			 */
-			if ( 'active' === $this->license_details['license_status'] || 'expiring' === $this->license_details['license_status'] || Helper::is_connected() ) {
+
+			//TODO:Remove this test data
+			$this->license_details['license_status'] = 'active';
+			$this->license_details['active_status']['live'] = 'yes';
+			// End todo
+
+			$allowed_statuses = array( 'active', 'expiring' );
+			$license_status   = $this->license_details['license_status'];
+
+			if ( in_array( $license_status, $allowed_statuses ) || Helper::is_connected() ) {
 				if ( 'plugin' === $this->software_type ) {
 					add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
 					add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
@@ -320,28 +356,6 @@ class Client {
 				add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
 			}
 		}
-
-		global $slswc_license_server_url, $slswc_slug, $slswc_text_domain, $slswc_products;
-		$slswc_license_server_url = trailingslashit( $this->license_server_url );
-		$slswc_slug               = $args['slug'];
-		$slswc_text_domain        = $args['text_domain'];
-
-		$slswc_products = get_transient( 'slswc_products' );
-
-		$slswc_products[ $slswc_slug ] = array(
-			'slug'               => $slswc_slug,
-			'text_domain'        => $slswc_text_domain,
-			'license_server_url' => $slswc_license_server_url,
-		);
-
-		$slswc_products = array_filter( $slswc_products );
-
-		set_transient( 'slswc_products', $slswc_products, HOUR_IN_SECONDS );
-
-		Helper::log( "License Server Url: $this->license_server_url" );
-		Helper::log( "Base file: $base_file" );
-		Helper::log( "Software type: $software_type" );
-		Helper::log( $args );
 	}
 
 	/**
@@ -410,7 +424,6 @@ class Client {
 		if ( 'expired' === $this->license_details['license_status'] && 'active' === $this->license_details['license_status'] ) {
 			add_action( 'admin_notices', array( $this, 'license_inactive' ) );
 		}
-
 	}
 
 	/**
@@ -425,10 +438,17 @@ class Client {
 		echo '<div class="error notice is-dismissible"><p>';
 		// phpcs:disable
 		// translators: 1 - Product name. 2 - Link opening html. 3 - link closing html.
-		echo sprintf( __( 'The %1$s license key has not been activated, so you will not be able to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 'slswcclient' ), esc_attr( $this->name ), '<a href="' . esc_url_raw( $this->license_manager_url ) . '">', '</a>' );
+		echo sprintf(
+			__(
+				'The %1$s license key has not been activated, so you will not be able to get automatic updates or support! %2$sClick here%3$s to activate your support and updates license key.', 
+				'slswcclient'
+			),
+			esc_attr( $this->name ),
+			'<a href="' . esc_url_raw( $this->license_manager_url ) . '">',
+			'</a>' 
+		);
 		echo '</p></div>';
 		// phpcs:enable
-
 	}
 
 	/**
@@ -593,15 +613,17 @@ class Client {
 	 */
 	public function check_license( $response_body ) {
 
-		$status = $response_body->status;
+		$status = is_array( $response_body) ? $response_body['status'] : $response_body->status;
 
 		if ( 'active' === $status || 'expiring' === $status ) {
 			return true;
 		}
 
-		$this->set_license_status( $status );
-		$this->set_license_expires( $response_body->expires );
-		$this->save();
+		if ( ! is_numeric( $status ) ) {
+			$this->set_license_status( $status );
+			$this->set_license_expires( $response_body->expires );
+			$this->save();
+		}
 
 		return false;
 
@@ -742,7 +764,6 @@ class Client {
 			return true;
 		}
 		return $allow;
-
 	}
 
 	/**
@@ -1079,5 +1100,4 @@ class Client {
 		update_option( $this->option_name, $this->license_details );
 
 	} // save
-
 } 
