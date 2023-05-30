@@ -73,7 +73,7 @@ class Updater {
 		add_action( 'init', array( $this, 'init_products' ), 1 );
 		register_activation_hook( $this->file, array( $this, 'activate' ) );
 		add_filter( 'extra_plugin_headers', array( $this, 'extra_headers' ) );
-		add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );		
+		add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
 		add_filter( 'site_transient_update_plugins', array( $this, 'change_update_information' ) );
 	}
 

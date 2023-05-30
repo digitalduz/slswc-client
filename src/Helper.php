@@ -58,6 +58,8 @@ class Helper {
 	 
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @return object The response from the server.
 	 */
 	public static function server_request( $domain, $action = 'check_update', $request_info = array() ) {
 
@@ -104,7 +106,7 @@ class Helper {
 			// phpcs:enable
 
 			// Return null to halt the execution.
-			return array(
+			return (object) array(
 				'status' => $response['response']['code'],
 				'response' => $result->get_error_message(),
 			);
@@ -186,7 +188,7 @@ class Helper {
 	 *
 	 * @param object $theme The theme object.
 	 * @param string $theme_file The theme file.
-	 * @return void
+	 * @return array
 	 * @version 1.1.0
 	 * @since   1.1.0
 	 */
@@ -206,10 +208,18 @@ class Helper {
 			'domain_path'       => $theme->get( 'DomainPath' ),
 			// SLSWC Headers.
 			'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
-			'slug'              => ! empty( $theme->get( 'SLSWCSlug' ) ) ? $theme->get( 'SLSWCSlug' ) : $theme->get( 'TextDomain' ),
-			'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) ) ? $theme->get( 'RequiresWP' ) : '',
-			'compatible_to'     => ! empty( $theme->get( 'SLSWCCompatibleTo' ) ) ? $theme->get( 'SLSWCCompatibleTo' ) : '',
-			'documentation_url' => ! empty( $theme->get( 'SLSWCDocumentationURL' ) ) ? $theme->get( 'SLSWCDocumentationURL' ) : '',
+			'slug'              => ! empty( $theme->get( 'SLSWCSlug' ) )
+				? $theme->get( 'SLSWCSlug' )
+				: $theme->get( 'TextDomain' ),
+			'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) )
+				? $theme->get( 'RequiresWP' )
+				: '',
+			'compatible_to'     => ! empty( $theme->get( 'SLSWCCompatibleTo' ) )
+				? $theme->get( 'SLSWCCompatibleTo' )
+				: '',
+			'documentation_url' => ! empty( $theme->get( 'SLSWCDocumentationURL' ) )
+				? $theme->get( 'SLSWCDocumentationURL' )
+				: '',
 			'type'              => 'theme',
 		);
 
@@ -241,7 +251,7 @@ class Helper {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 * @param WP_Error|Array $response The response or WP_Error.
+	 * @param WP_Error|array $response The response or WP_Error.
 	 */
 	public static function validate_response( $response ) {
 
@@ -261,7 +271,10 @@ class Helper {
 
 			// There was a problem with the initial request.
 			if ( ! isset( $response['response']['code'] ) ) {
-				return new WP_Error( 'slswc_no_response_code', __( 'wp_safe_remote_get() returned an unexpected result.', 'slswcclient' ) );
+				return new WP_Error(
+					'slswc_no_response_code',
+					__( 'wp_safe_remote_get() returned an unexpected result.', 'slswcclient' )
+				);
 			}
 
 			// There is a validation error on the server side, output the problem.

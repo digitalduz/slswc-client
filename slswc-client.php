@@ -57,118 +57,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Madvault\Slswc\Client\Updater;
-use Madvault\Slswc\Client\LicenseManager;
+use Madvault\Slswc\Client\ClientManager;
 use Madvault\Slswc\Client\Client;
 
 define ( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 
-/**
- * Class responsible for initializing the client's core features.
- *
- * @version 1.1.0
- * @since   1.1.0
- */
-class SLSWC_Client {
-	/**
-	 * Instance of this class
-	 *
-	 * @var SLSWC_Client
-	 */
-	public $instance = null;
-
-	/**
-	 * Whether to initialize the client manager or not
-	 *
-	 * @var boolean
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public $initialize_manager = false;
-
-	/**
-	 * Construct an instance of this class
-	 *
-	 * @param boolean $initialize_manager Whether to initialize ClientManager or not.
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function __construct( $initialize_manager = false ) {
-		$this->initialize_manager = $initialize_manager;
-		$this->init_hooks();
-	}
-
-	/**
-	 * Initialize hooks
-	 *
-	 * @return void
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function init_hooks() {		
-		add_action( 'admin_footer', array( $this, 'client_admin_script' ), 11 );
-
-		if ( $this->initialize_manager ) {
-			add_action( 'admin_init', array( $this, 'client_manager' ), 12 );
-		}
-	}
-
-	/**
-	 * Load the license client manager.
-	 *
-	 * @return  ClientManager Instance of the client manager
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function client_manager() {
-		global $slswc_license_server_url, $slswc_slug, $slswc_text_domain;
-		return ClientManager::get_instance( $slswc_license_server_url, $slswc_slug, $slswc_text_domain );
-	}
-
-	/**
-	 * Adds admin script for plugins
-	 *
-	 * @return void
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function client_admin_script() {
-		global $slswc_products;
-
-		$screen = get_current_screen();
-		if ( 'plugins' !== $screen->id ) {
-			return;
-		}
-
-		?>
-		<script type="text/javascript">
-			jQuery( function( $ ){
-				$( document ).ready( function() {
-					var products = '<?php echo wp_json_encode( $slswc_products ); ?>';
-					var $products = $.parseJSON(products);
-					if( $( document ).find( '#plugin-information' ) && window.frameElement ) {
-						var src = window.frameElement.src;
-						<?php
-						foreach ( $slswc_products as $slug => $details ) :
-							if ( ! is_array( $details ) || array_key_exists( 'slug', $details ) ) {
-								continue;
-							}
-							?>
-						if ( undefined != '<?php echo esc_attr( $slug ); ?>' && src.includes( '<?php echo esc_attr( $slug ); ?>' ) ) {
-							<?php $url = esc_url_raw( $details['license_server_url'] ) . 'products/' . esc_attr( $slug ) . '/#reviews'; ?>
-							<?php // translators: %s - The url to visit. ?>
-							$( '#plugin-information' ).find( '.fyi-description' ).html( '<?php echo wp_kses_post( sprintf( __( 'To read all the reviews or write your own visit the <a href="%s">product page</a>.', 'slswcclient' ), $url ) ); ?>');
-							$( '#plugin-information' ).find( '.counter-label a' ).each( function() {
-								$(this).attr( 'href', '<?php echo esc_attr( $url ); ?>' );
-							} );
-						}
-						<?php endforeach; ?>
-					}
-				} );
-			} );
-		</script>
-		<?php
-	}
-}
+define( 'SLSWC_CLIENT_FILE', __FILE__ );
+define( 'SLSWC_CLIENT_PATH', plugin_dir_path( __FILE__ ) );
+define( 'SLSWC_CLIENT_PARTIALS_DIR', SLSWC_CLIENT_PATH . '/partials/' );
+define( 'SLSWC_CLIENT_ASSETS_URL', plugin_dir_url( __FILE__ ) . '/assets/' );
+define( 'SLSWC_CLIENT_LOGGING', false );
 
 add_action( 'plugins_loaded', function () {
 	global $slswc_updater;
@@ -179,4 +77,15 @@ add_action( 'plugins_loaded', function () {
 	$slswc_client->init_hooks();
 
 	$slswc_updater = new Updater( __FILE__, SLSWC_CLIENT_VERSION );
+	$slswc_updater->init_hooks();
 });
+
+function slswc_client_manager () {
+	$client_manager = ClientManager::get_instance();
+	$client_manager->init_hooks();
+
+	return $client_manager;
+}
+
+slswc_client_manager();
+

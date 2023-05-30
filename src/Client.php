@@ -24,7 +24,7 @@ class Client {
 	/**
 	 * Instance of this class.
 	 *
-	 * @var Madvault\Slswc\Client\Client
+	 * @var Client
 	 */
 	private static $instance = null;
 
@@ -173,13 +173,13 @@ class Client {
 	public $license_details;
 
 	/**
-	 * Theme file.
+	 * The theme file
 	 *
 	 * @var string
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public $theme_file = '';
+	public $theme_file;
 
 	/**
 	 * The license server url.
@@ -316,46 +316,48 @@ class Client {
 		if ( Helper::is_dev( $host, $this->environment ) && ( ! empty( $this->args['debug'] ) && ! $this->args['debug'] ) ) {
 
 			add_action( 'admin_notices', array( $this, 'license_localhost' ) );
+			return;
 
-		} else {
-
-			// Initialize wp-admin interfaces.
-			add_action( 'admin_init', array( $this, 'check_install' ) );
-
-			// Internal methods.
-			add_filter( 'http_request_host_is_external', array( $this, 'fix_update_host' ), 10, 2 );
-
-			add_action( 'wp_ajax_slswc_activate_license', array( $this, 'activate_license' ) );
-
-			// Validate license on save.
-			add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ), 99 );
-
-			/**
-			 * Only allow updates if they have a valid license key.
-			 * Or API keys are set to check for updates.
-			 */
-
-			//TODO:Remove this test data
-			$this->license_details['license_status'] = 'active';
-			$this->license_details['active_status']['live'] = 'yes';
-			// End todo
-
-			$allowed_statuses = array( 'active', 'expiring' );
-			$license_status   = $this->license_details['license_status'];
-
-			if ( in_array( $license_status, $allowed_statuses ) || Helper::is_connected() ) {
-				if ( 'plugin' === $this->software_type ) {
-					add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
-					add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
-					add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
-				} else {
-					add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
-				}
-
-				add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
-				add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
-			}
 		}
+		
+		// Initialize wp-admin interfaces.
+		add_action( 'admin_init', array( $this, 'check_install' ) );
+
+		// Internal methods.
+		add_filter( 'http_request_host_is_external', array( $this, 'fix_update_host' ), 10, 2 );
+
+		add_action( 'wp_ajax_slswc_activate_license', array( $this, 'activate_license' ) );
+
+		// Validate license on save.
+		add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ), 99 );
+
+		/**
+		 * Only allow updates if they have a valid license key.
+		 * Or API keys are set to check for updates.
+		 */
+
+		//TODO:Remove this test data
+		$this->license_details['license_status'] = 'active';
+		$this->license_details['active_status']['live'] = 'yes';
+		// End todo
+
+		$allowed_statuses = array( 'active', 'expiring' );
+		$license_status   = $this->license_details['license_status'];
+
+		if ( ! in_array( $license_status, $allowed_statuses ) && ! Helper::is_connected() ) {
+			return;
+		}
+
+		// if ( 'plugin' === $this->software_type ) {
+		// 	add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
+		// 	add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
+		// 	add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
+		// } else {
+		// 	add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
+		// }
+
+		add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
+		add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
 	}
 
 	/**
@@ -466,79 +468,9 @@ class Client {
 
 	}
 
-	/**
-	 * Check for updates with the license server.
-	 *
-	 * @since  1.0.0
-	 * @param  object $transient object from the update api.
-	 * @return object $transient object possibly modified.
-	 */
-	public function update_check( $transient ) {
+	
 
-		if ( empty( $transient->checked ) ) {
-			return $transient;
-		}
-
-		$server_response = $this->server_request( 'check_update' );
-
-		if ( $this->check_license( $server_response ) ) {
-			if ( isset( $server_response ) && is_object( $server_response->software_details ) ) {
-
-				$plugin_update_info = $server_response->software_details;
-
-				if ( isset( $plugin_update_info->new_version ) ) {
-					if ( version_compare( $plugin_update_info->new_version, $this->version, '>' ) ) {
-						// Required to cast as array due to how object is returned from api.
-						$plugin_update_info->sections              = (array) $plugin_update_info->sections;
-						$plugin_update_info->banners               = (array) $plugin_update_info->banners;
-						$transient->response[ $this->plugin_file ] = $plugin_update_info;
-					}
-				}
-			}
-		}
-
-		return $transient;
-
-	}
-
-	/**
-	 * Check if there are updates for themes.
-	 *
-	 * @param   mixed $transient transient object from update api.
-	 * @return  mixed $transient transient object from update api.
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public function theme_update_check( $transient ) {
-
-		if ( empty( $transient->checked ) ) {
-			return $transient;
-		}
-
-		$server_response = $this->server_request( 'check_update' );
-
-		if ( $this->check_license( $server_response ) ) {
-
-			if ( isset( $server_response ) && is_object( $server_response->software_details ) ) {
-
-				$theme_update_info = $server_response->software_details;
-
-				if ( isset( $theme_update_info->new_version ) ) {
-					if ( version_compare( $theme_update_info->new_version, $this->version, '>' ) ) {
-						// Required to cast as array due to how object is returned from api.
-						$theme_update_info->sections = (array) $theme_update_info->sections;
-						$theme_update_info->banners  = (array) $theme_update_info->banners;
-						$theme_update_info->url      = $theme_update_info->homepage;
-						// Theme name.
-						$transient->response[ $this->slug ] = (array) $theme_update_info;
-					}
-				}
-			}
-		}
-
-		return $transient;
-	}
-
+	
 	/**
 	 * Add the plugin information to the WordPress Update API.
 	 *
@@ -627,7 +559,7 @@ class Client {
 
 		return false;
 
-	} // check_license
+	}
 
 
 	/**
@@ -674,9 +606,9 @@ class Client {
 		if ( isset( $_GET['slswc_check_for_update'] ) && isset( $_GET['slswc_slug'] ) && $_GET['slswc_slug'] === $this->slug && current_user_can( 'update_plugins' ) && check_admin_referer( 'slswc_check_for_update' ) ) {
 
 			// Check for updates.
-			$server_response = $this->server_request();
+			$response = $this->server_request();
 
-			if ( $this->check_license( $server_response ) ) {
+			if ( $this->check_license( $response ) ) {
 
 				if ( isset( $server_response ) && is_object( $server_response->software_details ) ) {
 
