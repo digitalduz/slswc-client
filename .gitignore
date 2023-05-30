@@ -85,7 +85,6 @@ tmp
 reports
 
 # Dist files
-assets/*
 !assets/src/
 
 # Language files
