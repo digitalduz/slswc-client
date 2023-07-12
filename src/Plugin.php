@@ -47,7 +47,7 @@ class Plugin {
 	 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args - array of additional arguments to override default ones.
 	 */
-	private function __construct( $license_server_url, $base_file, ...$args ) {
+	public function __construct( $license_server_url, $base_file, ...$args ) {
 		$this->client = Client::get_instance( $license_server_url, $base_file, 'plugin', ...$args );
 	}
 

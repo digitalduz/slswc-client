@@ -110,7 +110,7 @@ class ApiClient {
 			'consumer_secret' => $consumer_secret,
 		);
 		return update_option(
-			'slswc_appi_keys_' . esc_attr( $this->slug ),
+			'slswc_api_keys_' . esc_attr( $this->slug ),
 			$keys
 		);
 	}

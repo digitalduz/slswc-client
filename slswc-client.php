@@ -77,10 +77,14 @@ add_action( 'plugins_loaded', function () {
 	$slswc_client->init_hooks();
 
 	$slswc_updater = new Updater( __FILE__, SLSWC_CLIENT_VERSION );
+
+	$plugin = new Plugin( 'http://slswc.local', __FILE__, $license_key);
+
 	$slswc_updater->init_hooks();
 });
 
 function slswc_client_manager () {
+	
 	$client_manager = ClientManager::get_instance();
 	$client_manager->init_hooks();
 
