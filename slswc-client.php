@@ -67,29 +67,41 @@ define( 'SLSWC_CLIENT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SLSWC_CLIENT_PARTIALS_DIR', SLSWC_CLIENT_PATH . '/partials/' );
 define( 'SLSWC_CLIENT_ASSETS_URL', plugin_dir_url( __FILE__ ) . '/assets/' );
 define( 'SLSWC_CLIENT_LOGGING', false );
+define( 'SLSWC_LICENSE_SERVER_URL', 'http://localhost:10029/' );
 
 add_action( 'plugins_loaded', function () {
-	global $slswc_updater;
+	global $plugin;
 
-	$license_key = '';
+	if ( ! is_admin() ) {
+		return;
+	}
 
-	$slswc_client = Client::get_instance( 'http://slswc.local', __FILE__, 'plugin' );
-	$slswc_client->init_hooks();
+	$license_key =  'd16b60d0ee549a1cba8ac4922739dc68b1755165';
 
-	$slswc_updater = new Updater( __FILE__, SLSWC_CLIENT_VERSION );
+	$args = array(
+		'license_key' => $license_key
+	);
+	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $args );
+	$plugin->init_hooks();
 
-	$plugin = new Plugin( 'http://slswc.local', __FILE__, $license_key);
+	$license_manager = LicenseManager::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, 'plugin', $args );
+	$license_manager->init_hooks();
 
-	$slswc_updater->init_hooks();
+	// $slswc_client = Client::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, 'plugin' );
+	// $slswc_client->init_hooks();
+
+	//$slswc_updater = new Updater( __FILE__, SLSWC_CLIENT_VERSION );
+
+	//$slswc_updater->init_hooks();
 });
 
 function slswc_client_manager () {
 	
-	$client_manager = ClientManager::get_instance();
+	$client_manager = ClientManager::get_instance( SLSWC_LICENSE_SERVER_URL );
 	$client_manager->init_hooks();
 
 	return $client_manager;
 }
 
-slswc_client_manager();
+//slswc_client_manager();
 

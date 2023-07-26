@@ -50,67 +50,20 @@ class Helper {
 	}
 
 	/**
-	 * Send a request to the server.
+	 * Get file information
 	 *
-	 * @param   string $domain The domain to send the data to.
-	 * @param   string $action activate|deactivate|check_update.
-	 * @param   array  $request_info The data to be sent to the server.
-	 
-	 * @since   1.0.0
+	 * @param string $base_file     The base file.
+	 * @param array  $args          Default details
+	 * @param string $software_type The type of software. plugin|theme
+	 * @return array
 	 * @version 1.0.0
-	 *
-	 * @return object The response from the server.
+	 * @since   1.0.0
 	 */
-	public static function server_request( $domain, $action = 'check_update', $request_info = array() ) {
-
-		$slug = isset( $request_info['slug'] ) ? $request_info['slug'] : '';
-
-		// Allow filtering the request info for plugins.
-		$request_info = apply_filters( 'slswc_request_info_' . $slug, $request_info );
-
-		// Build the server url api end point fix url build to support the WordPress API.
-		$server_request_url = esc_url_raw( $domain . 'wp-json/slswc/v1/' . $action . '?' . http_build_query( $request_info ) );
-
-		// Options to parse the wp_safe_remote_get() call.
-		$request_options = array( 'timeout' => 30 );
-
-		// Allow filtering the request options.
-		$request_options = apply_filters( 'slswc_request_options_' . $slug, $request_options );
-
-		// Query the license server.
-		$endpoint_get_actions = apply_filters( 'slswc_client_get_actions', array( 'product', 'products' ) );
-		if ( in_array( $action, $endpoint_get_actions, true ) ) {
-			$response = wp_safe_remote_get( $server_request_url, $request_options );
-		} else {
-			$response = wp_safe_remote_post( $server_request_url, $request_options );
-		}
-
-		// Validate that the response is valid not what the response is.
-		$result = self::validate_response( $response );
-
-		// Check if there is an error and display it if there is one, otherwise process the response.
-		if ( ! is_wp_error( $result ) ) {
-
-			$response_body = json_decode( wp_remote_retrieve_body( $response ) );
-
-			// Check the status of the response.
-			$continue = self::check_response_status( $response_body );
-
-			if ( $continue ) {
-				return $response_body;
-			}
-		} else {
-			Helper::log( 'There was an error executing this request, please check the errors below.' );
-			// phpcs:disable
-			Helper::log( print_r( $response, true ) );
-			// phpcs:enable
-
-			// Return null to halt the execution.
-			return (object) array(
-				'status' => $response['response']['code'],
-				'response' => $result->get_error_message(),
-			);
-		}
+	public static function get_file_details( $base_file, $args = array(), $software_type = 'plugin' ) {
+		return self::recursive_parse_args(
+			$args,
+			self::get_file_information( $base_file, $software_type )
+		);
 	}
 
 	/**
@@ -238,119 +191,12 @@ class Helper {
 		$new_args = (array) $defaults;
 		foreach ( $args as $key => $value ) {
 			if ( is_array( $value ) && isset( $new_args[ $key ] ) ) {
-				$new_args[ $key ] = recursive_parse_args( $value, $new_args[ $key ] );
+				$new_args[ $key ] = self::recursive_parse_args( $value, $new_args[ $key ] );
 			} else {
 				$new_args[ $key ] = $value;
 			}
 		}
 		return $new_args;
-	}
-
-	/**
-	 * Validate the license server response to ensure its valid response not what the response is.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 * @param WP_Error|array $response The response or WP_Error.
-	 */
-	public static function validate_response( $response ) {
-
-		if ( ! empty( $response ) ) {
-
-			// Can't talk to the server at all, output the error.
-			if ( is_wp_error( $response ) ) {
-				return new WP_Error(
-					$response->get_error_code(),
-					sprintf(
-						// translators: 1. Error message.
-						__( 'HTTP Error: %s', 'slswcclient' ),
-						$response->get_error_message()
-					)
-				);
-			}
-
-			// There was a problem with the initial request.
-			if ( ! isset( $response['response']['code'] ) ) {
-				return new WP_Error(
-					'slswc_no_response_code',
-					__( 'wp_safe_remote_get() returned an unexpected result.', 'slswcclient' )
-				);
-			}
-
-			// There is a validation error on the server side, output the problem.
-			if ( 400 === $response['response']['code'] ) {
-
-				$body = json_decode( $response['body'] );
-
-				$response_message = '';
-
-				foreach ( $body->data->params as $param => $message ) {
-					$response_message .= $message;
-				}
-
-				return new WP_Error(
-					'slswc_validation_failed',
-					sprintf(
-						// translators: %s: Error/response message.
-						__( 'There was a problem with your license: %s', 'slswcclient' ),
-						$response_message
-					)
-				);
-			}
-
-			// The server is broken.
-			if ( 500 === $response['response']['code'] ) {
-				return new WP_Error(
-					'slswc_internal_server_error',
-					sprintf(
-						// translators: %s: the http response code from the server.
-						__( 'There was a problem with the license server: HTTP response code is : %s', 'slswcclient' ),
-						$response['response']['code']
-					)
-				);
-			}
-
-			if ( 200 !== $response['response']['code'] ) {
-				return new WP_Error(
-					'slswc_unexpected_response_code',
-					sprintf(
-						__( 'HTTP response code is : % s, expecting ( 200 )', 'slswcclient' ),
-						$response['response']['code']
-					)
-				);
-			}
-
-			if ( empty( $response['body'] ) ) {
-				return new WP_Error(
-					'slswc_no_response',
-					__( 'The server returned no response.', 'slswcclient' )
-				);
-			}
-
-			return true;
-		}
-	}
-
-	/**
-	 * Validate the license server response to ensure its valid response not what the response is.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 * @param   object $response_body The data returned.
-	 */
-	public static function check_response_status( $response_body ) {
-		Helper::log( 'Check response' );
-		Helper::log( $response_body );
-
-		if ( is_object( $response_body ) && ! empty( $response_body ) ) {
-
-			$license_status_types = self::license_status_types();
-			$status               = $response_body->status;
-
-			return ( array_key_exists( $status, $license_status_types ) || 'ok' === $status ) ? true : false;
-		}
-
-		return false;
 	}
 
 	/**
@@ -643,5 +489,46 @@ class Helper {
 		} else {
 			error_log( __CLASS__ . ' : ' . $data );
 		}
+	}
+
+	/**
+	 * Add extra theme headers.
+	 *
+	 * @param   array $headers The extra theme/plugin headers.
+	 * @return  array
+	 * @since   1.1.0
+	 * @version 1.1.0
+	 */
+	public static function extra_headers( $headers ) {
+
+		if ( ! in_array( 'SLSWC', $headers, true ) ) {
+			$headers[] = 'SLSWC';
+		}
+
+		if ( ! in_array( 'SLSWC Updated', $headers, true ) ) {
+			$headers[] = 'SLSWC Updated';
+		}
+
+		if ( ! in_array( 'Author', $headers, true ) ) {
+			$headers[] = 'Author';
+		}
+
+		if ( ! in_array( 'SLSWC Slug', $headers, true ) ) {
+			$headers[] = 'SLSWC Slug';
+		}
+
+		if ( ! in_array( 'Requires at least', $headers, true ) ) {
+			$headers[] = 'Requires at least';
+		}
+
+		if ( ! in_array( 'SLSWC Compatible To', $headers, true ) ) {
+			$headers[] = 'SLSWC Compatible To';
+		}
+
+		if ( ! in_array( 'SLSWC Documentation URL', $headers, true ) ) {
+			$headers[] = 'SLSWC Documentation URL';
+		}
+
+		return $headers;
 	}
 }

@@ -10,9 +10,18 @@
 
 namespace Madvault\Slswc\Client;
 
-use Madvault\Slswc\Client\Client;
+use Madvault\Slswc\Client\ApiClient;
 
 class Plugin {
+	/**
+	 * The instance of this class.
+	 *
+	 * @var plugin
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public static $instance = null;
+
 	/**
 	 * The plugin version
 	 *
@@ -30,33 +39,123 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	public $plugin_file;
+
 	/**
-	 * The Client object.
+	 * Software slug
 	 *
-	 * @var Client
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $slug;
+
+	/**
+	 * The dir and file of the plugin
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $plugin_dir_file;
+
+	/**
+	 * The instance of the ApiClient class.
+	 *
+	 * @var ApiClient
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
 	private $client;
+
 	/**
-	 * Initialize the class actions.
+	 * The license details class.
+	 *
+	 * @var LicenseDetails
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	private $license;
+
+	/**
+	 * Get an instance of this class..
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
-	 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
-	 * @param   array  $args - array of additional arguments to override default ones.
+	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   array  $args               - array of additional arguments to override default ones.
 	 */
-	public function __construct( $license_server_url, $base_file, ...$args ) {
-		$this->client = Client::get_instance( $license_server_url, $base_file, 'plugin', ...$args );
+	public static function get_instance( $license_server_url, $base_file, ...$args ) {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self( $license_server_url, $base_file, ...$args );
+		}
+
+		return self::$instance;
 	}
 
-	public function init_hooks() {
-		$this->client->init_hooks();
+	/**
+	 * Initialize the class.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 * @param   string $plugin_file          - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   array  $args               - array of additional arguments to override default ones.
+	 */
+	public function __construct( $license_server_url, $plugin_file, $args = array() ) {
+		
+		$this->plugin_file  = $plugin_file;
 
+		$args = Helper::get_file_details( $this->plugin_file );
+
+		$this->slug = $args['slug'];
+
+		$this->plugin_dir_file = $this->plugin_dir_file();
+
+		$this->client  = ApiClient::get_instance( $license_server_url, $this->slug );
+		$this->license = new LicenseDetails( $plugin_file );
+	}
+
+	/**
+	 * Initialize Hooks
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function init_hooks() {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
 		add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
 		add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
+		add_filter( 'extra_plugin_headers', array( $this, 'extra_headers' ) );
+		add_filter( 'site_transient_update_plugins', array( $this, 'change_update_information' ) );
+		add_action( 'in_plugin_update_message-' . $this->plugin_dir_file, array( $this, 'need_license_message' ), 10, 2 );
+	}
+
+	/**
+	 * Get the plugin folder and base name based on the file path
+	 *
+	 * @return string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	function plugin_dir_file() {
+		$plugin_folder = '';
+		$plugin_file = '';
+
+		// Normalize the file path by removing any trailing slashes
+		$file_path = rtrim($this->plugin_file, '/');
+
+		// Extract the folder name and file name from the file path
+		$file_parts = explode('/', $file_path);
+		$file_count = count($file_parts);
+
+		if ($file_count >= 2) {
+			$plugin_folder = $file_parts[$file_count - 2];
+			$plugin_file = $file_parts[$file_count - 1];
+		}
+
+		// Return the plugin folder and file name as a string
+		return $plugin_folder . '/' . $plugin_file;
 	}
 
 	/**
@@ -67,29 +166,187 @@ class Plugin {
 	 * @return object $transient object possibly modified.
 	 */
 	public function update_check( $transient ) {
+		error_log('Update check');
 
 		if ( empty( $transient->checked ) ) {
+			error_log('Transient empty');
 			return $transient;
 		}
 
-		$response = $this->client->server_request( 'check_update' );
+		$response = $this->client->request( 'check_update' );
 
-		if ( $this->client->check_license( $response ) ) {
-			if ( isset( $response ) && is_object( $response->software_details ) ) {
+		if ( ! $this->license->check_license( $response ) ) {
+			error_log('License check failed');
+			return $transient;
+		}
 
-				$plugin_update_info = $response->software_details;
+		if ( isset( $response ) && is_object( $response->software_details ) ) {
+			error_log('License check passed');
 
-				if ( isset( $plugin_update_info->new_version ) ) {
-					if ( version_compare( $plugin_update_info->new_version, $this->version, '>' ) ) {
-						// Required to cast as array due to how object is returned from api.
-						$plugin_update_info->sections              = (array) $plugin_update_info->sections;
-						$plugin_update_info->banners               = (array) $plugin_update_info->banners;
-						$transient->response[ $this->plugin_file ] = $plugin_update_info;
-					}
-				}
+			$plugin_update_info = $response->software_details;
+
+			if ( ! isset( $plugin_update_info->new_version ) ) {
+				return $transient;
+			}
+
+			if ( version_compare( $plugin_update_info->new_version, $this->version, '>' ) ) {
+				// Required to cast as array due to how object is returned from api.
+				$plugin_update_info->sections              = (array) $plugin_update_info->sections;
+				$plugin_update_info->banners               = (array) $plugin_update_info->banners;
+				$transient->response[ $this->plugin_file ] = $plugin_update_info;
 			}
 		}
 
 		return $transient;
+	}
+
+	/**
+	 * Add the plugin information to the WordPress Update API.
+	 *
+	 * @since  1.0.0
+	 * @param  bool|object $result The result object. Default false.
+	 * @param  string      $action The type of information being requested from the Plugin Install API.
+	 * @param  object      $args Plugin API arguments.
+	 * @return object
+	 */
+	public function add_plugin_info( $result, $action = null, $args = null ) {
+
+		error_log('Add plugin info: ' .print_r( $result, true));
+
+		// Is this about our plugin?
+		if ( isset( $args->slug ) ) {
+
+			if ( $args->slug !== $this->slug ) {
+				return $result;
+			}
+		} else {
+			return $result;
+		}
+
+		$server_response    = $this->client->request();
+		$plugin_update_info = $server_response->software_details;
+
+		// Required to cast as array due to how object is returned from api.
+		$plugin_update_info->sections = (array) $plugin_update_info->sections;
+		$plugin_update_info->banners  = (array) $plugin_update_info->banners;
+		$plugin_update_info->ratings  = (array) $plugin_update_info->ratings;
+		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && false !== $plugin_update_info ) {
+			return $plugin_update_info;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Add a check for update link on the plugins page. You can change the link with the supplied filter.
+	 * returning an empty string will disable this link
+	 *
+	 * @since 1.0.0
+	 * @param array  $links The array having default links for the plugin.
+	 * @param string $file The name of the plugin file.
+	 */
+	public function check_for_update_link( $links, $file ) {
+		// Only modify the plugin meta for our plugin.
+		if ( stripos( $this->plugin_file, $file ) && current_user_can( 'update_plugins' ) ) {
+
+			$update_link_url = wp_nonce_url(
+				add_query_arg(
+					array(
+						'slswc_check_for_update' => 1,
+						'slswc_slug'             => $this->slug,
+					),
+					self_admin_url( 'plugins.php' )
+				),
+				'slswc_check_for_update'
+			);
+
+			$update_link_text = apply_filters(
+				'slswc_update_link_text_' . $this->slug,
+				__( 'Check for updates', 'slswcclient' )
+			);
+
+			if ( ! empty( $update_link_text ) ) {
+				$links[] = sprintf( '<a href="%s">%s</a>', esc_attr( $update_link_url ), $update_link_text );
+			}
+		}
+
+		return $links;
+
+	}
+
+	/**
+	 * Change update information
+	 *
+	 * @param object $transient The transient object.
+	 * @return object $transient The possibly modified transient object.
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function change_update_information ( $transient ) {
+		error_log('Change plugin update information');
+		//If we are on the update core page, change the update message for unlicensed products
+		global $pagenow;
+		$update_core = ( 'update-core.php' == $pagenow ) ? true : false;
+		
+		if ( $update_core && $transient && isset( $transient->response ) && ! isset( $_GET['action'] ) ) {
+
+			$notice_text = __(
+				'To enable this update please activate your license in Settings > License Manager page.',
+				'slswcclient'
+			);
+
+			if ( ! isset( $transient->response[ $this->plugin_file ] ) ) {
+				error_log('No plugin update information in transient');
+				return $transient;
+			}
+
+			$plugin_response = $transient->response[ $this->plugin_file ];
+
+			$plugin_has_update = isset( $plugin_response ) && isset( $plugin_response->package ) ? true: false;
+
+			$upgrade_notice = ( FALSE === stristr( $plugin_response->upgrade_notice, $notice_text ) );
+
+			if( $plugin_has_update && '' == $plugin_response->package && $upgrade_notice ) {
+				$message = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
+				$plugin_response->upgrade_notice = wp_kses_post( $message );
+			}
+		}
+
+		return $transient;
+	}
+
+	/**
+	 * Add action for queued products to display message for unlicensed products.
+	 *
+	 * @param array $plugin_data
+	 * @param object $update
+	 * @return void
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function need_license_message ( $plugin_data, $update ) {
+		error_log('In plugin update needs license');
+		if ( ! empty( $update->package ) ) {
+			return;
+		}
+
+		echo wp_kses_post(
+			sprintf(
+				'<div class="slswcclient-plugin-upgrade-notice">%s</div>',
+			 __( 'To enable this update please activate your license', 'slswcclient' )
+			)
+		);
+	}
+
+	/**
+	 * Extra plugin headers.
+	 *
+	 * @param array $headers The array of headers.
+	 * @return array
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function extra_headers( $headers ) {
+		return Helper::extra_headers( $headers );
 	}
 }

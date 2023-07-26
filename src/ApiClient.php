@@ -10,6 +10,8 @@ namespace Madvault\Slswc\Client;
 
 use Madvault\Slswc\Client\Helper;
 
+use \WP_Error;
+
 /**
  * Class to manage products relying on the Software License Server for WooCommerce.
  *
@@ -18,6 +20,15 @@ use Madvault\Slswc\Client\Helper;
  */
 //phpcs:ignore
 class ApiClient {
+
+	/**
+	 * Instance of this class.
+	 *
+	 * @var ApiClient
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public static $instance = null;
 
 	/**
 	 * The plugin updater client
@@ -35,22 +46,60 @@ class ApiClient {
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public $url;
+	public $license_server_url;
 
 	/**
 	 * The slug of the product using the client
 	 *
-	 * @var [type]
+	 * @var string
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
 	public $slug;
 
-	public function __construct( $client ) {
-		$this->client = $client;
+	public static function get_instance( $license_server_url, $slug ) {
+		if ( self::$instance == null ) {
+			self::$instance = new self( $license_server_url, $slug );
+		}
 
-		$this->url = $this->client->license_server_url;
-		$this->slug = $this->client->slug;
+		return self::$instance;
+	}
+
+	/**
+	 * Construct a new instance of this class
+	 *
+	 * @param string $license_server_url The license server url.
+	 * @param string $slug               The software slug.
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function __construct( $license_server_url, $slug ) {
+		$this->license_server_url = $license_server_url;
+		$this->slug = $slug;
+	}
+
+	/**
+	 * Set the software slug.
+	 *
+	 * @param string $slug
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+  public function set_slug( $slug ) {
+		$this->slug = $slug;
+	}
+
+	/**
+	 * Set the license server url.
+	 *
+	 * @param string $url The license server url.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_license_server_url($url) {
+		$this->license_server_url = $url;
 	}
 
 	/**
@@ -62,7 +111,7 @@ class ApiClient {
 	 */
 	public function connect() {
 		$keys       = $this->get_api_keys();
-		$connection = helper::server_request( $this->url, 'connect', $keys );
+		$connection = $this->request( 'connect', $keys );
 
 		Helper::log( 'Connecting...' );
 
@@ -113,6 +162,179 @@ class ApiClient {
 			'slswc_api_keys_' . esc_attr( $this->slug ),
 			$keys
 		);
+	}
+
+	/**
+	 * Send a request to the server.
+	 *
+	 * @param   string $domain The domain to send the data to.
+	 * @param   string $action activate|deactivate|check_update.
+	 * @param   array  $request_info The data to be sent to the server.
+	 
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return object The response from the server.
+	 */
+	public function request( $action = 'check_update', $request_info = array() ) {
+
+		$domain =  $this->license_server_url;
+
+		$slug = isset( $request_info['slug'] ) ? $request_info['slug'] : '';
+
+		// Allow filtering the request info for plugins.
+		$request_info = apply_filters( 'slswc_request_info_' . $slug, $request_info );
+
+		// Build the server url api end point fix url build to support the WordPress API.
+		$server_request_url = esc_url_raw( $domain . 'wp-json/slswc/v1/' . $action . '?' . http_build_query( $request_info ) );
+
+		// Options to parse the wp_safe_remote_get() call.
+		$request_options = array( 'timeout' => 30 );
+
+		// Allow filtering the request options.
+		$request_options = apply_filters( 'slswc_request_options_' . $slug, $request_options );
+
+		// Query the license server.
+		$endpoint_get_actions = apply_filters( 'slswc_client_get_actions', array( 'product', 'products' ) );
+		if ( in_array( $action, $endpoint_get_actions, true ) ) {
+			$response = wp_safe_remote_get( $server_request_url, $request_options );
+		} else {
+			$response = wp_safe_remote_post( $server_request_url, $request_options );
+		}
+
+		// Validate that the response is valid not what the response is.
+		$result = $this->validate_response( $response );
+
+		// Check if there is an error and display it if there is one, otherwise process the response.
+		if ( ! is_wp_error( $result ) ) {
+
+			$response_body = json_decode( wp_remote_retrieve_body( $response ) );
+
+			// Check the status of the response.
+			$continue = $this->check_response_status( $response_body );
+
+			if ( $continue ) {
+				return $response_body;
+			}
+		}
+		
+		Helper::log( 'There was an error executing this request, please check the errors below.' );
+		// phpcs:disable
+		Helper::log( print_r( $response, true ) );
+		// phpcs:enable
+
+		// Return null to halt the execution.
+		return (object) array(
+			'status' => $response['response']['code'],
+			'response' => $result->get_error_message(),
+		);
+	}
+
+	/**
+	 * Validate the license server response to ensure its valid response not what the response is.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 * @param WP_Error|array $response The response or WP_Error.
+	 */
+	public function validate_response( $response ) {
+
+		if ( ! empty( $response ) ) {
+
+			// Can't talk to the server at all, output the error.
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					$response->get_error_code(),
+					sprintf(
+						// translators: 1. Error message.
+						__( 'HTTP Error: %s', 'slswcclient' ),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			// There was a problem with the initial request.
+			if ( ! isset( $response['response']['code'] ) ) {
+				return new WP_Error(
+					'slswc_no_response_code',
+					__( 'wp_safe_remote_get() returned an unexpected result.', 'slswcclient' )
+				);
+			}
+
+			// There is a validation error on the server side, output the problem.
+			if ( 400 === $response['response']['code'] ) {
+
+				$body = json_decode( $response['body'] );
+
+				$response_message = '';
+
+				foreach ( $body->data->params as $param => $message ) {
+					$response_message .= $message;
+				}
+
+				return new WP_Error(
+					'slswc_validation_failed',
+					sprintf(
+						// translators: %s: Error/response message.
+						__( 'There was a problem with your license: %s', 'slswcclient' ),
+						$response_message
+					)
+				);
+			}
+
+			// The server is broken.
+			if ( 500 === $response['response']['code'] ) {
+				return new WP_Error(
+					'slswc_internal_server_error',
+					sprintf(
+						// translators: %s: the http response code from the server.
+						__( 'There was a problem with the license server: HTTP response code is : %s', 'slswcclient' ),
+						$response['response']['code']
+					)
+				);
+			}
+
+			if ( 200 !== $response['response']['code'] ) {
+				return new WP_Error(
+					'slswc_unexpected_response_code',
+					sprintf(
+						__( 'HTTP response code is : % s, expecting ( 200 )', 'slswcclient' ),
+						$response['response']['code']
+					)
+				);
+			}
+
+			if ( empty( $response['body'] ) ) {
+				return new WP_Error(
+					'slswc_no_response',
+					__( 'The server returned no response.', 'slswcclient' )
+				);
+			}
+
+			return true;
+		}
+	}
+
+	/**
+	 * Validate the license server response to ensure its valid response not what the response is.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 * @param   object $response_body The data returned.
+	 */
+	public function check_response_status( $response_body ) {
+		Helper::log( 'Check response' );
+		Helper::log( $response_body );
+
+		if ( is_object( $response_body ) && ! empty( $response_body ) ) {
+
+			$license_status_types = Helper::license_status_types();
+			$status               = $response_body->status;
+
+			return ( array_key_exists( $status, $license_status_types ) || 'ok' === $status ) ? true : false;
+		}
+
+		return false;
 	}
 
 }

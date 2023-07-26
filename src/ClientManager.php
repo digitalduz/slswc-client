@@ -114,10 +114,10 @@ class ClientManager {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public static function get_instance() {
+	public static function get_instance( $server_url ) {
 
 		if ( null === self::$instance ) {
-			self::$instance = new self();
+			self::$instance = new self( $server_url );
 		}
 
 		return self::$instance;
@@ -131,8 +131,9 @@ class ClientManager {
 	 * @since 1.0.0
 	 * @version 1.0.0
 	 */
-	private function __construct( $server_url = '') {
+	private function __construct( $server_url ) {
 		$this->updater = new Updater(SLSWC_CLIENT_FILE, SLSWC_CLIENT_VERSION);
+		$this->server_url = $server_url;
 
 		$this->plugins = $this->updater->get_local_plugins();
 		$this->themes  = $this->updater->get_local_themes();
@@ -578,9 +579,9 @@ class ClientManager {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function connect( $url ) {
+	public function connect() {
 		$keys       = Helper::get_api_keys();
-		$connection = helper::server_request( $url, 'connect', $keys );
+		$connection = helper::server_request( $this->server_url, 'connect', $keys );
 
 		Helper::log( 'Connecting...' );
 
@@ -598,13 +599,12 @@ class ClientManager {
 	 * Get more details about the product from the license server.
 	 *
 	 * @param   string $slug The software slug.
-	 * @
 	 * @param   string $type The type of software. Expects plugin/theme, default 'plugin'.
 	 * @return  array
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function get_remote_product( $slug, $server_url, $type = 'plugin' ) {
+	public function get_remote_product( $slug, $type = 'plugin' ) {
 
 		$request_info = array(
 			'slug' => $slug,
@@ -619,7 +619,7 @@ class ClientManager {
 			$request_info['license_key'] = trim( $license_data['license_key'] );
 		}
 
-		$response = Helper::server_request( $server_url, 'product', $request_info );
+		$response = Helper::server_request( $this->server_url, 'product', $request_info );
 
 		if ( is_object( $response ) && 'ok' === $response->status ) {
 			return $response->product;
@@ -634,14 +634,13 @@ class ClientManager {
 	/**
 	 * Get a user's purchased products.
 	 *
-	 * @param string $url The url to the license server.
 	 * @param   string $type The type of products. Expects plugins|themes, default 'plugins'.
 	 * @param   array  $args The arguments to form the query to search for the products.
 	 * @return  array
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function get_remote_products( $url,  $type = 'plugins', $args = array() ) {
+	public function get_remote_products( $type = 'plugins', $args = array() ) {
 		$licensed_products = array();
 		$request_info      = array();
 		$slugs             = array();
@@ -651,6 +650,11 @@ class ClientManager {
 		$licenses_data = $this->get_license_data_for_all( $type );
 
 		foreach ( $licenses_data as $slug => $_license_data ) {
+			error_log('License data: ' . print_r( $_license_data, true ));
+			if ( empty( $_license_data ) ) {
+				continue;
+			}
+
 			if ( ! $this->ignore_status( $_license_data['license_status'] ) ) {
 				$_license_data['domain']    = untrailingslashit( str_ireplace( array( 'http://', 'https://' ), '', home_url() ) );
 				$_license_data['slug']      = $slug;
@@ -674,7 +678,9 @@ class ClientManager {
 			$request_info['api_keys'] = Helper::get_api_keys();
 		}
 
-		$response = Helper::server_request( $url, 'products', $request_info );
+		$response = Helper::server_request( $this->server_url, 'products', $request_info );
+
+		error_log('Response: ' . print_r( $response, true ));
 
 		Helper::log( 'Getting remote products' );
 		Helper::log( $response );

@@ -72,9 +72,7 @@ class Updater {
 	public function init_hooks() {
 		add_action( 'init', array( $this, 'init_products' ), 1 );
 		register_activation_hook( $this->file, array( $this, 'activate' ) );
-		add_filter( 'extra_plugin_headers', array( $this, 'extra_headers' ) );
-		add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
-		add_filter( 'site_transient_update_plugins', array( $this, 'change_update_information' ) );
+		
 	}
 
 	/**
@@ -88,7 +86,7 @@ class Updater {
 		$this->get_local_plugins();
 		$this->get_local_themes();
 
-		$this->add_unlicensed_products_notices();
+		//$this->add_unlicensed_products_notices();
 	}
 
 	/**
@@ -145,7 +143,7 @@ class Updater {
 
 		$plugins = wp_cache_get( 'slswc_plugins', 'slswc' );
 
-		if ( $plugins == false  ) {
+		if ( $plugins === false  ) {
 			$plugins    = array();
 			$wp_plugins = get_plugins();
 
@@ -218,7 +216,7 @@ class Updater {
 	 * @since   1.1.0
 	 */
 	public function activate() {
-		update_option( 'slswc_update_client_version', $this->version );		
+		update_option( 'slswc_update_client_version', $this->version );
 	}
 
 	/**
@@ -230,107 +228,6 @@ class Updater {
 	 */
 	public function add_product() {
 
-	}
-
-	/**
-	 * Change update information
-	 *
-	 * @param object $transient
-	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function change_update_information ( $transient ) {
-		//If we are on the update core page, change the update message for unlicensed products
-		global $pagenow;
-		if ( ( 'update-core.php' == $pagenow ) && $transient && isset( $transient->response ) && ! isset( $_GET['action'] ) ) {
-			$plugins = $this->get_plugins();
-
-			if( empty( $plugins ) ) return $transient;
-
-			$notice_text = __( 'To enable this update please activate your license in Settings > License Manager page.' , 'slswcclient' );
-
-			foreach ( $plugins as $key => $value ) {
-				if( isset( $transient->response[ $value['file'] ] ) && isset( $transient->response[ $value['file'] ]->package ) && '' == $transient->response[ $value['file'] ]->package && ( FALSE === stristr($transient->response[ $value['file'] ]->upgrade_notice, $notice_text ) ) ){
-					$message = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
-					$transient->response[ $value->file ]->upgrade_notice = wp_kses_post( $message );
-				}
-			}
-		}
-
-		return $transient;
-	}
-
-	/**
-	 * Add action for queued products to display message for unlicensed products.
-	 *
-	 * @return void
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function add_unlicensed_products_notices () {
-		$plugins = $this->get_plugins();
-		if( !is_array( $plugins ) || count( $plugins ) < 0 ) return;
-
-		foreach ( $plugins as $key => $update ) {
-			add_action( 'in_plugin_update_message-' . $update['file'], array( $this, 'need_license_message' ), 10, 2 );
-		}
-	}
-
-	/**
-	 * Add action for queued products to display message for unlicensed products.
-	 *
-	 * @param array $plugin_data
-	 * @param object $update
-	 * @return void
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function need_license_message ( $plugin_data, $update ) {
-		if ( empty( $update->package ) ) {
-			echo wp_kses_post('<div class="slswcclient-plugin-upgrade-notice">' . __( 'To enable this update please connect your WooCommerce subscription by visiting the Settings > License Manager page.', 'slswcclient' ) . '</div>' );
-		}
-	}
-
-	/**
-	 * Add extra theme headers.
-	 *
-	 * @param   array $headers The extra theme/plugin headers.
-	 * @return  array
-	 * @since   1.1.0
-	 * @version 1.1.0
-	 */
-	public function extra_headers( $headers ) {
-
-		if ( ! in_array( 'SLSWC', $headers, true ) ) {
-			$headers[] = 'SLSWC';
-		}
-
-		if ( ! in_array( 'SLSWC Updated', $headers, true ) ) {
-			$headers[] = 'SLSWC Updated';
-		}
-
-		if ( ! in_array( 'Author', $headers, true ) ) {
-			$headers[] = 'Author';
-		}
-
-		if ( ! in_array( 'SLSWC Slug', $headers, true ) ) {
-			$headers[] = 'SLSWC Slug';
-		}
-
-		if ( ! in_array( 'Requires at least', $headers, true ) ) {
-			$headers[] = 'Requires at least';
-		}
-
-		if ( ! in_array( 'SLSWC Compatible To', $headers, true ) ) {
-			$headers[] = 'SLSWC Compatible To';
-		}
-
-		if ( ! in_array( 'SLSWC Documentation URL', $headers, true ) ) {
-			$headers[] = 'SLSWC Documentation URL';
-		}
-
-		return $headers;
 	}
 
 	/**

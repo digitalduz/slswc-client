@@ -10,17 +10,57 @@
 
 namespace Madvault\Slswc\Client;
 
-use Madvault\Slswc\Client\Client;
-
-class Theme extends Client {
+/**
+ * Theme update class
+ *
+ * @version 1.0.0
+ * @since   1.0.0
+ */
+class Theme {
 	/**
 	 * Client object
 	 *
-	 * @var [type]
+	 * @var Theme
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
 	public $client;
+
+	/**
+	 * The license details.
+	 *
+	 * @var LicenseDetails
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $license;
+
+	/**
+	 * The plugin slug.
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $slug;
+
+	/**
+	 * The theme version
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $version;
+
+	/**
+	 * The plugin base file name.
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $plugin_file;
 
 	/**
 	 * Initialize the class actions.
@@ -28,12 +68,19 @@ class Theme extends Client {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
-	 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   string $plugin_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 	 * @param   array  $args - array of additional arguments to override default ones.
 	 */
-	public function __construct( $license_server_url, $base_file, ...$args ) {
-		$this->client = Client::get_instance( $license_server_url, $base_file, 'theme', ...$args	 );
+	public function __construct( $license_server_url, $plugin_file, ...$args ) {
+		$this->plugin_file = $plugin_file;
+
+		$args = Helper::get_file_details( $this->plugin_file );
+
+		$this->slug = $args['slug'];
+
+		$this->client = ApiClient::get_instance( $license_server_url, $this->slug );
+		$this->license = new LicenseDetails( $plugin_file );
 	}
 
 	/**
@@ -45,6 +92,7 @@ class Theme extends Client {
 	 */
 	public function init_hooks() {
 		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
+		add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
 	}
 	
 	/**
@@ -61,9 +109,9 @@ class Theme extends Client {
 			return $transient;
 		}
 
-		$server_response = $this->server_request( 'check_update' );
+		$server_response = $this->client->request( 'check_update' );
 
-		if ( $this->check_license( $server_response ) ) {
+		if ( $this->license->check_license( $server_response ) ) {
 
 			if ( isset( $server_response ) && is_object( $server_response->software_details ) ) {
 
@@ -85,4 +133,15 @@ class Theme extends Client {
 		return $transient;
 	}
 
+	/**
+	 * Extra theme headers.
+	 *
+	 * @param array $headers The array of headers.
+	 * @return array
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function extra_headers( $headers ) {
+		return Helper::extra_headers( $headers );
+	}
 }
