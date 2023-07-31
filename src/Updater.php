@@ -71,8 +71,7 @@ class Updater {
 	 */
 	public function init_hooks() {
 		add_action( 'init', array( $this, 'init_products' ), 1 );
-		register_activation_hook( $this->file, array( $this, 'activate' ) );
-		
+		register_activation_hook( $this->file, array( $this, 'activate' ) );		
 	}
 
 	/**

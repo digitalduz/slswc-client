@@ -4,6 +4,23 @@ namespace Madvault\Slswc\Client;
 
 class LicenseDetails {
 	/**
+	 * License server URL
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $license_server_url;
+	/**
+	 * The plugin details
+	 *
+	 * @var array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $plugin_details = array();
+
+	/**
 	 * The option key for saving license details.
 	 *
 	 * @var string
@@ -18,6 +35,13 @@ class LicenseDetails {
 
 	public $client;
 
+	/**
+	 * Plugin file
+	 *
+	 * @var string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
 	public $plugin_file;
 
 	/**
@@ -29,13 +53,38 @@ class LicenseDetails {
 	 */
 	public $license_details = array();
 
-	public function __construct( $plugin_file, $license_details  = array() ) {
-		$this->plugin_file = $plugin_file;
+	/**
+	 * Construct the instance of the class
+	 *
+	 * @param string $plugin_file    The plugin file.
+	 * @param array  $plugin_details The plugin details.
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function __construct( $plugin_file, $plugin_details  = array() ) {
+		$this->plugin_file     = $plugin_file;
+
+		if ( defined( 'SLSWC_LICENSE_SERVER_URL' ) ) {
+			$this->license_server_url = SLSWC_LICENSE_SERVER_URL;
+		}
+
 		
-		$this->license_details = Helper::recursive_parse_args(
-			$license_details,
-			$this->get_default_license_options()
+
+		$this->plugin_details = Helper::recursive_parse_args(
+			$plugin_details,
+			$this->get_default_license_details()
 		);
+
+		$this->client = new ApiClient(
+			$this->license_server_url,
+			$this->plugin_details['slug'],
+		);
+
+		$this->set_license_details();
+
+		if ( $this->license_details['license_status'] !== 'active' ) {
+			$this->validate_license();
+		}
 	}	
 
 	/**
@@ -59,7 +108,13 @@ class LicenseDetails {
 				'staging' => false,
 			);
 		}
+
+		if ( ! $environment ) {
+			return false;
+		}
+
 		$active_status = $options['active_status'][ $environment ];
+
 		return is_bool( $active_status )
 			? $active_status
 			: (
@@ -68,21 +123,6 @@ class LicenseDetails {
 				|| 'true' === strtolower( $active_status )
 				|| '1' === $active_status
 			);
-	}
-
-	/**
-	 * Get the default args
-	 *
-	 * @return  array $args
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public static function get_default_args() {
-		return array(
-			'update_interval' => 12,
-			'debug'           => false,
-			'environment'     => '',
-		);
 	}
 	
 	/**
@@ -93,7 +133,7 @@ class LicenseDetails {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function get_default_license_options( $args = array() ) {
+	public function get_default_license_details( $args = array() ) {
 		$default_options = array(
 			'license_status'     => 'inactive',
 			'license_key'        => '',
@@ -112,6 +152,45 @@ class LicenseDetails {
 		}
 
 		return apply_filters( 'slswc_client_default_license_options', $default_options );
+	}
+
+  /**
+	 * Set the license details
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_license_details() {
+		$this->set_slug( $this->plugin_details['slug'] );
+		$this->set_domain( $this->plugin_details['domain'] );
+		$this->set_license_status( $this->plugin_details['license_status'] );
+		$this->set_license_key( $this->plugin_details['license_key'] );
+		$this->set_license_expires( $this->plugin_details['license_expires'] );
+		$this->set_current_version( $this->plugin_details['version']  );
+		$this->set_active_status( $this->plugin_details['active_status'] );
+	}
+
+	/**
+	 * Get the software slug.
+	 *
+	 * @return string										
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_slug() {
+		return $this->plugin_details['slug'];
+	}
+
+	/**
+	 * Get the domain
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_domain() {
+		return $this->license_details['domain'];
 	}
 
 	/**
@@ -145,6 +224,71 @@ class LicenseDetails {
 		return $this->license_details['license_expires'];
 	}
 
+	/**
+	 * Get the environment
+	 *
+	 * @return string
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_environment() {
+		return $this->license_details['environment'];
+	}
+
+	/**
+	 * Get the current version
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_current_version() {
+		return $this->license_details['version'];
+	}
+
+	/**
+	 * Get the license details.
+	 *
+	 * @return array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_license_details() {
+		return $this->license_details;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Setters
+	 * --------------------------------------------------------------------------
+	 *
+	 * Methods for setting object properties.
+	 */
+
+	/**
+	 * Set the software slug.
+	 *
+	 * @param string $slug
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_slug( $slug )	{
+		$this->license_details['slug'] = $slug;
+	}
+
+	/**
+	 * Set the domain
+	 *
+	 * @param string $domain
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_domain( $domain ) {
+		$this->license_details['domain'] = $domain;
+	}
+
   /**
 	 * Set the license status
 	 *
@@ -153,9 +297,7 @@ class LicenseDetails {
 	 * @param string $license_status license status.
 	 */
 	public function set_license_status( $license_status ) {
-
 		$this->license_details['license_status'] = $license_status;
-
 	}
 
 	/**
@@ -166,10 +308,8 @@ class LicenseDetails {
 	 * @param string $license_key License key.
 	 */
 	public function set_license_key( $license_key ) {
-
 		$this->license_details['license_key'] = $license_key;
-
-	} // set_license_key
+	}
 
 	/**
 	 * Set the license expires.
@@ -179,10 +319,44 @@ class LicenseDetails {
 	 * @param string $license_expires License expiry date.
 	 */
 	public function set_license_expires( $license_expires ) {
-
 		$this->license_details['license_expires'] = $license_expires;
+	}
 
-	} // set_license_expires
+	/**
+	 * Set the current version
+	 *
+	 * @param string $version The version to set.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_current_version( $version ) {
+		$this->license_details['version'] = $version;
+	}
+
+	/**
+	 * Set the environment
+	 *
+	 * @param string $environment The environment to set.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_environment( $environment ) {
+		$this->license_details['environment'] = $environment;
+	}
+
+	/**
+	 * Set the active status
+	 *
+	 * @param array $active_status The active status to set.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_active_status( $active_status ) {
+		$this->license_details['active_status'] = $active_status;
+	}
 
 	/**
 	 * Save the license details.
@@ -219,7 +393,6 @@ class LicenseDetails {
 		}
 
 		return false;
-
 	}
 
 	/**
@@ -252,47 +425,49 @@ class LicenseDetails {
 	 * @version 1.0.2
 	 * @param array $input the input passed from the request.
 	 */
-	public function validate_license( $input ) {
-		$options = $this->license_details;
+	public function validate_license( $input = array() ) {
+		$license = $this->get_license_details();
 		$message = null;
 
 		// Reset the license data if the license key has changed.
-		if ( $options['license_key'] !== $input['license_key'] ) {
-			$options               = $this->get_default_license_options();
-			$this->license_details = $options;
+		if ( isset( $input['license_key'] ) && $license['license_key'] !== $input['license_key'] ) {
+			$license               = $this->get_default_license_details();
+			$this->license_details = $license;
 		}
 
-		$environment   = isset( $input['environment'] ) ? $input['environment'] : '';
+		$environment   = isset( $license['environment'] ) ? $license['environment'] : '';
 		$active_status = $this->get_active_status( $environment );
 
-		$this->license_details['license_key'] = $input['license_key'];
-		$options                              = wp_parse_args( $input, $options );
+		$this->license_details['license_key'] = isset( $input['license_key'] )
+			? $input['license_key']
+			: $this->get_license_key();
+		$license                              = wp_parse_args( $input, $license );
 
-		Helper::log( "Validate license:: key={$input['license_key']}, environment=$environment, status=$active_status" );
+		Helper::log( "Validate license:: key={$license['license_key']}, environment=$environment, status=$active_status" );
 
 		$response = null;
 		$action   = array_key_exists( 'deactivate_license', $input ) ? 'deactivate' : 'activate';
 
 		if ( $active_status && 'activate' === $action ) {
-			$options['license_status'] = 'active';
+			$license['license_status'] = 'active';
 		}
 
 		if ( 'activate' === $action && ! $active_status ) {
 			Helper::log( 'Activating. current status is: ' . $this->get_license_status() );
 
-			unset( $options['deactivate_license'] );
-			$this->license_details = $options;
+			unset( $license['deactivate_license'] );
+			$this->license_details = $license;
 
-			$response = $this->client->request( 'activate' );
+			$response = $this->client->request( 'activate', $license );
 		} elseif ( 'deactivate' === $action ) {
 			Helper::log( 'Deactivating license. current status is: ' . $this->get_license_status() );
 
-			$response = $this->client->request( 'deactivate' );
+			$response = $this->client->request( 'deactivate', $license );
 		} else {
-			unset( $options['deactivate_license'] );
-			$this->license_details = $options;
+			unset( $license['deactivate_license'] );
+			$this->license_details = $license;
 
-			$response = $this->client->request( 'check_license' );
+			$response = $this->client->request( 'check_license', $license );
 		}
 
 		if ( is_null( $response ) ) {
@@ -300,7 +475,7 @@ class LicenseDetails {
 				'Error: Your license might be invalid or there was an unknown error on the license server. Please try again and contact support if this issue persists.',
 				'slswcclient'
 			);
-			update_option( $this->option_name, $options );
+			update_option( $this->option_name, $license );
 			return array (
 				'status'   => 'bad_request',
 				'message'  => $message,
@@ -310,19 +485,19 @@ class LicenseDetails {
 
 		// phpcs:ignore
 		if ( ! $this->client->check_response_status( $response ) ) {
-			update_option( $this->option_name, $options );
+			update_option( $this->option_name, $license );
 			return array(
 				'status'   => 'invalid',
-				'message'  => $response['response'],
+				'message'  => is_array( $response ) ? $response['response'] : $response->response,
 				'response' => $response,
 			);
 		}
 
-		$options['license_key']                   = $input['license_key'];
-		$options['license_status']                = $response->domain->status;
-		$options['domain']                        = $response->domain;
-		$options['license_expires']               = $response->expires;
-		$options['active_status'][ $environment ] = 'activate' === $action && 'active' === $response->domain->status ? 'yes' : 'no';
+		$license['license_key']                   = isset( $input['license_key'] ) ? $input['license_key'] : $this->get_license_key();
+		$license['license_status']                = $response->domain->status;
+		$license['domain']                        = $response->domain;
+		$license['license_expires']               = $response->expires;
+		$license['active_status'][ $environment ] = 'activate' === $action && 'active' === $response->domain->status ? 'yes' : 'no';
 
 		$domain_status = $response->domain->status;
 
@@ -349,13 +524,13 @@ class LicenseDetails {
 
 		Helper::log( $message );
 
-		update_option( $this->option_name, $options );
+		update_option( $this->option_name, $license );
 
-		Helper::log( $options );
+		Helper::log( $license );
 
 		return array(
 			'message'  => $message,
-			'options'  => $options,
+			'options'  => $license,
 			'status'   => $domain_status,
 			'response' => $response
 		);

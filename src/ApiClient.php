@@ -220,13 +220,13 @@ class ApiClient {
 		
 		Helper::log( 'There was an error executing this request, please check the errors below.' );
 		// phpcs:disable
-		Helper::log( print_r( $response, true ) );
+		Helper::log( 'The response object: ' . print_r( $response, true ) );
 		// phpcs:enable
 
 		// Return null to halt the execution.
 		return (object) array(
-			'status' => $response['response']['code'],
-			'response' => $result->get_error_message(),
+			'status' => is_wp_error( $response ) ? $response->get_error_code() : $response['response']['code'],
+			'response' => is_wp_error( $response ) ? $response->get_error_message() : $response['response']['message'],
 		);
 	}
 

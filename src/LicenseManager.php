@@ -306,7 +306,7 @@ class LicenseManager {
 		$this->software_type = $software_type;
 		$this->environment   = isset( $args['environment'] ) ? $args['environment'] : '';
 
-		$default_license_options = $this->license->get_default_license_options();
+		$default_license_options = $this->license->get_default_license_details();
 		$this->license_details   = get_option( $this->option_name, $default_license_options );
 
 		$this->license_manager_url = esc_url( admin_url( 'options-general.php?page=slswc_license_manager&tab=licenses' ) );
@@ -318,13 +318,25 @@ class LicenseManager {
 		// phpcs:ignore
 		$this->license_server_host = apply_filters( 'slswc_license_server_host_for_' . $this->slug, $license_server_host);
 
-
-		
-
 		Helper::log( "License Server Url: $this->license_server_url" );
 		Helper::log( "Base file: $base_file" );
 		Helper::log( "Software type: $software_type" );
 		Helper::log( $args );
+	}
+
+	/**
+	 * Get the default args
+	 *
+	 * @return  array $args
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public static function get_default_args() {
+		return array(
+			'update_interval' => 12,
+			'debug'           => false,
+			'environment'     => '',
+		);
 	}
 
 	/**
@@ -394,7 +406,7 @@ class LicenseManager {
 
 		// Set defaults.
 		if ( empty( $this->license_details ) ) {
-			$this->license_details = $this->license->get_default_license_options();
+			$this->license_details = $this->license->get_default_license_details();
 			update_option( $this->option_name, $this->license_details );
 		}
 
