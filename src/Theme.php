@@ -80,7 +80,11 @@ class Theme {
 		$this->slug = $args['slug'];
 
 		$this->client = ApiClient::get_instance( $license_server_url, $this->slug );
-		$this->license = new LicenseDetails( $plugin_file );
+
+		$this->license = new LicenseDetails(
+			$license_server_url,
+			$plugin_file
+		);
 	}
 
 	/**

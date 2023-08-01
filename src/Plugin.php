@@ -23,15 +23,6 @@ class Plugin {
 	public static $instance = null;
 
 	/**
-	 * The plugin version
-	 *
-	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public $version;
-
-	/**
 	 * The plugin file
 	 *
 	 * @var string
@@ -39,15 +30,6 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	public $plugin_file;
-
-	/**
-	 * Software slug
-	 *
-	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public $slug;
 
 	/**
 	 * The dir and file of the plugin
@@ -75,6 +57,24 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	private $license;
+
+	/**
+	 * License details
+	 *
+	 * @var array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	private $license_details = array();
+
+	/**
+	 * The license server url.
+	 *
+	 * @var [type]
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	private $license_server_url;
 
 	/**
 	 * Get an instance of this class..
@@ -116,13 +116,32 @@ class Plugin {
 
 		$args = Helper::get_file_details( $this->plugin_file, $args );
 
-		$this->slug = $args['slug'];
-		$this->version = $args['version'];
-
 		$this->plugin_dir_file = $this->plugin_dir_file();
+		$this->license_server_url = $license_server_url;
 
-		$this->client  = ApiClient::get_instance( $license_server_url, $this->slug );
-		$this->license = new LicenseDetails( $plugin_file, $args );
+		$license_details = array(
+			'license_key' => isset( $args['license_key'] ) ? esc_attr( $args['license_key'] ) : '',
+			'slug'        => isset( $args['slug'] )
+				? esc_attr( $args['slug'] ) 
+				: (isset( $args['text-domain'] ) ? esc_attr( $args['text-domain'] ) : basename( $plugin_file ) ),
+			'version'     => isset( $args['version'] ) ? esc_attr( $args['version'] ) : '',
+			'domain'      => isset( $args['domain'] ) ? esc_attr( $args['domain'] ) : home_url(),
+		);
+
+		$this->set_license_details( $license_details );
+
+		Helper::log('License details: ' . print_r( $this->get_license_details(), true ) );
+
+		$this->client  = ApiClient::get_instance(
+			$this->license_server_url,
+			$this->get_slug()
+		);
+
+		$this->license = new LicenseDetails(
+			$license_server_url,
+			$plugin_file,
+			$this->get_license_details()
+		);
 	}
 
 	/**
@@ -176,7 +195,7 @@ class Plugin {
 	 * @return object $transient object possibly modified.
 	 */
 	public function update_check( $transient ) {
-		Helper::log('Update check: ' .  print_r( $this->license->get_license_details(), true ));
+		Helper::log('Update check: ' .  print_r( $this->get_license_details(), true ));
 
 		if ( empty( $transient->checked ) ) {
 			return $transient;
@@ -184,7 +203,7 @@ class Plugin {
 
 		$response = $this->client->request(
 			'check_update',
-			$this->license->get_license_details()
+			$this->get_license_details()
 		);
 
 		if ( ! $this->license->check_license( $response ) ) {
@@ -202,10 +221,12 @@ class Plugin {
 			}
 
 			if ( version_compare( $plugin_update_info->new_version, $this->get_version(), '>' ) ) {
+				$plugin_update_info->plugin = $this->plugin_dir_file;
+
 				// Required to cast as array due to how object is returned from api.
-				$plugin_update_info->sections              = (array) $plugin_update_info->sections;
-				$plugin_update_info->banners               = (array) $plugin_update_info->banners;
-				$transient->response[ $this->plugin_file ] = $plugin_update_info;
+				$plugin_update_info->sections                  = (array) $plugin_update_info->sections;
+				$plugin_update_info->banners                   = (array) $plugin_update_info->banners;
+				$transient->response[ $this->plugin_dir_file ] = $plugin_update_info;
 			}
 		}
 
@@ -226,7 +247,7 @@ class Plugin {
 		// Is this about our plugin?
 		if ( isset( $args->slug ) ) {
 
-			if ( $args->slug !== $this->slug ) {
+			if ( $args->slug !== $this->get_slug() ) {
 				return $result;
 			}
 		} else {
@@ -234,16 +255,24 @@ class Plugin {
 		}
 
 		$server_response    = $this->client->request();
-		$plugin_update_info = $server_response->software_details;
+
+		if ( ! isset( $server_response->software_details ) || is_null( $server_response->software_details ) ) {
+			return $result;
+		}
+
+		$plugin_update_info = $server_response->software_details;		
+
+		$plugin_update_info->plugin = $this->plugin_dir_file;
 
 		// Required to cast as array due to how object is returned from api.
 		$plugin_update_info->sections = (array) $plugin_update_info->sections;
 		$plugin_update_info->banners  = (array) $plugin_update_info->banners;
 		$plugin_update_info->ratings  = (array) $plugin_update_info->ratings;
 		if ( isset( $plugin_update_info ) && is_object( $plugin_update_info ) && false !== $plugin_update_info ) {
+			Helper::log('Plugin update info: ' . print_r( $plugin_update_info, true ));
 			return $plugin_update_info;
 		}
-
+		
 		return $result;
 	}
 
@@ -263,7 +292,7 @@ class Plugin {
 				add_query_arg(
 					array(
 						'slswc_check_for_update' => 1,
-						'slswc_slug'             => $this->slug,
+						'slswc_slug'             => $this->get_slug(),
 					),
 					self_admin_url( 'plugins.php' )
 				),
@@ -271,7 +300,7 @@ class Plugin {
 			);
 
 			$update_link_text = apply_filters(
-				'slswc_update_link_text_' . $this->slug,
+				'slswc_update_link_text_' . $this->get_slug(),
 				__( 'Check for updates', 'slswcclient' )
 			);
 
@@ -310,7 +339,9 @@ class Plugin {
 				return $transient;
 			}
 
-			$plugin_response = $transient->response[ $this->plugin_file ];
+			$plugin_response = $transient->response[ $this->plugin_dir_file ];
+
+			$plugin_response->plugin = $this->plugin_dir_file;
 
 			$plugin_has_update = isset( $plugin_response ) && isset( $plugin_response->package ) ? true: false;
 
@@ -320,7 +351,7 @@ class Plugin {
 
 			$has_upgrade_notice = isset( $plugin_response->upgrade_notice ) && ! empty( $plugin_response->upgrade_notice );
 
-			if( $plugin_has_update && '' == $plugin_response->package && $has_upgrade_notice ) {
+			if( $plugin_has_update && '' == $plugin_response->package && ! $has_upgrade_notice ) {
 				Helper::log('Update package: ' . $plugin_response->package . ', upgrade notice: ' . $notice_text );
 				$message = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
 				$plugin_response->upgrade_notice = wp_kses_post( $message );
@@ -379,22 +410,37 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	public function get_version() {
-		return $this->version;
+		return $this->license_details['version'];
 	}
 
 	/**
 	 * Get the slug.
 	 *
-	 * @return void
+	 * @return string
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
 	public function get_slug() {
-		return $this->slug;
+		return $this->license_details['slug'];
 	}
 
 	/**
-	 * Getters & Setters
+	 * Get domain.
+	 *
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function get_domain() {
+		return $this->license_details['domain'];
+	}
+
+	public function get_license_details( ) {
+		return $this->license_details;
+	}
+
+	/**
+	 * Setters
 	 *
 	 * Define getters to get the plugin version and slug.
 	 */
@@ -408,7 +454,7 @@ class Plugin {
 		* @since   1.0.0
 		*/
 	public function set_slug( $slug ) {
-		$this->slug = $slug;
+		$this->license_details['slug'] = $slug;
 	}
 
 	/**
@@ -420,6 +466,30 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	public function set_version( $version ) {
-		$this->version = $version;
+		$this->license_details['version'] = $version;
+	}
+
+	/**
+	 * Set the domain
+	 *
+	 * @param string $domain Set the domain.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_domain( $domain ) {
+		$this->license_details['domain'] = $domain;
+	}
+
+	/**
+	 * Set the license details.
+	 *
+	 * @param array $license_details The license details.
+	 * @return void
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function set_license_details( $license_details ) {
+		$this->license_details = $license_details;
 	}
 }

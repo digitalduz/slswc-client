@@ -11,14 +11,6 @@ class LicenseDetails {
 	 * @since   1.0.0
 	 */
 	public $license_server_url;
-	/**
-	 * The plugin details
-	 *
-	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public $plugin_details = array();
 
 	/**
 	 * The option key for saving license details.
@@ -56,33 +48,31 @@ class LicenseDetails {
 	/**
 	 * Construct the instance of the class
 	 *
-	 * @param string $plugin_file    The plugin file.
-	 * @param array  $plugin_details The plugin details.
+	 * @param string $license_server_url The license server url.
+	 * @param string $plugin_file        The plugin file.
+	 * @param array  $license_details    The plugin details.
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public function __construct( $plugin_file, $plugin_details  = array() ) {
-		$this->plugin_file     = $plugin_file;
+	public function __construct( $license_server_url, $plugin_file, $license_details  = array() ) {
+		$this->plugin_file        = $plugin_file;
+		$this->license_server_url = $license_server_url;
 
-		if ( defined( 'SLSWC_LICENSE_SERVER_URL' ) ) {
-			$this->license_server_url = SLSWC_LICENSE_SERVER_URL;
-		}
-
-		
-
-		$this->plugin_details = Helper::recursive_parse_args(
-			$plugin_details,
+		$license_details = Helper::recursive_parse_args(
+			$license_details,
 			$this->get_default_license_details()
 		);
 
+		$this->set_license_details( $license_details );
+
+		Helper::log('LicenseDetails::__construct(); ' . print_r($this->get_license_details(), true));
+
 		$this->client = new ApiClient(
 			$this->license_server_url,
-			$this->plugin_details['slug'],
-		);
+			$this->get_slug(),
+		);		
 
-		$this->set_license_details();
-
-		if ( $this->license_details['license_status'] !== 'active' ) {
+		if ( $this->get_license_status() !== 'active' ) {
 			$this->validate_license();
 		}
 	}	
@@ -135,6 +125,8 @@ class LicenseDetails {
 	 */
 	public function get_default_license_details( $args = array() ) {
 		$default_options = array(
+			'slug'               => basename( $this->plugin_file ),
+			'domain'             => site_url(),
 			'license_status'     => 'inactive',
 			'license_key'        => '',
 			'license_expires'    => '',
@@ -157,18 +149,20 @@ class LicenseDetails {
   /**
 	 * Set the license details
 	 *
+	 * @param array $license_details The license details.
+	 *
 	 * @return void
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public function set_license_details() {
-		$this->set_slug( $this->plugin_details['slug'] );
-		$this->set_domain( $this->plugin_details['domain'] );
-		$this->set_license_status( $this->plugin_details['license_status'] );
-		$this->set_license_key( $this->plugin_details['license_key'] );
-		$this->set_license_expires( $this->plugin_details['license_expires'] );
-		$this->set_current_version( $this->plugin_details['version']  );
-		$this->set_active_status( $this->plugin_details['active_status'] );
+	public function set_license_details( $license_details ) {
+		$this->set_slug( $license_details['slug'] );
+		$this->set_domain( $license_details['domain'] );
+		$this->set_license_status( $license_details['license_status'] );
+		$this->set_license_key( $license_details['license_key'] );
+		$this->set_license_expires( $license_details['license_expires'] );
+		$this->set_current_version( $license_details['version']  );
+		$this->set_active_status( $license_details['active_status'] );
 	}
 
 	/**
@@ -179,7 +173,7 @@ class LicenseDetails {
 	 * @since   1.0.0
 	 */
 	public function get_slug() {
-		return $this->plugin_details['slug'];
+		return $this->license_details['slug'];
 	}
 
 	/**
@@ -442,6 +436,8 @@ class LicenseDetails {
 			? $input['license_key']
 			: $this->get_license_key();
 		$license                              = wp_parse_args( $input, $license );
+
+		error_log( 'License to check: ' .  print_r( $license, true ) );
 
 		Helper::log( "Validate license:: key={$license['license_key']}, environment=$environment, status=$active_status" );
 
