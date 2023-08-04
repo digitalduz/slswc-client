@@ -316,7 +316,6 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * @since   1.1.0
 	 */
 	public function need_license_message ( $plugin_data, $update ) {
-		error_log('In plugin update needs license');
 		if ( ! empty( $update->package ) ) {
 			return;
 		}

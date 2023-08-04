@@ -44,22 +44,22 @@ class ClientManager {
 	public $text_domain;
 
 	/**
-	 * List of locally installed plugins
+	 * Holds a list of plugins
 	 *
-	 * @var     array $plugins The list of plugins.
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @var array
+	 * @version 1.1.0
+	 * @since   1.1.0
 	 */
-	public $plugins;
+	public $plugins = array();
 
 	/**
-	 * List of locally installed themes.
+	 * Holds a list of themes
 	 *
-	 * @var     array $themes The list of themes.
+	 * @var array
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public $themes;
+	public $themes = array();
 
 	/**
 	 * List of products
@@ -98,14 +98,13 @@ class ClientManager {
 	public $server_url;
 
 	/**
-	 * The license updater
+	 * The ApiClient instance
 	 *
-	 * @var Updater
+	 * @var ApiClient
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public $updater;
-
+	public $client;
 	/**
 	 * Return instance of this class
 	 *
@@ -132,11 +131,12 @@ class ClientManager {
 	 * @version 1.0.0
 	 */
 	private function __construct( $server_url ) {
-		$this->updater = new Updater(SLSWC_CLIENT_FILE, SLSWC_CLIENT_VERSION);
 		$this->server_url = $server_url;
+		
+		$this->client = new ApiClient( $this->server_url, 'slswc-client' );
 
-		$this->plugins = $this->updater->get_local_plugins();
-		$this->themes  = $this->updater->get_local_themes();
+		$this->plugins = $this->get_local_plugins();
+		$this->themes  = $this->get_local_themes();
 
 		$this->localization = array(
 			'ajax_url'        => esc_url( admin_url( 'admin-ajax.php' ) ),
@@ -159,6 +159,137 @@ class ClientManager {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'wp_ajax_slswc_install_product', array( $this, 'product_background_installer' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		add_action( 'init', array( $this, 'init_products' ), 1 );
+	}
+
+	/**
+	 * Initialize products
+	 *
+	 * @return void
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function init_products() {
+		$this->get_local_plugins();
+		$this->get_local_themes();
+
+		//$this->add_unlicensed_products_notices();
+	}
+
+	/**
+	 * Get local themes.
+	 *
+	 * Get locally installed themes that have SLSWC file headers.
+	 *
+	 * @return  array $installed_themes List of plugins.
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function get_local_themes() {
+
+		if ( ! function_exists( 'wp_get_themes' ) ) {
+			return array();
+		}
+
+		$themes = wp_cache_get( 'slswc_themes', 'slswc' );
+
+		if ( $themes == false ) {
+			$wp_themes = wp_get_themes();
+			$themes    = array();
+
+			foreach ( $wp_themes as $theme_file => $theme_details ) {
+				if ( ! $theme_details->get( 'SLSWC' ) || 'theme' !== $theme_details->get( 'SLSWC' ) ) {
+					continue;
+				}
+				$theme_data = Helper::format_theme_data( $theme_details, $theme_file );
+				$themes[ $theme_details->get( 'Slug' ) ] = wp_parse_args( $theme_data, $this->default_remote_product( 'theme' ) );
+			}
+		}
+
+		$this->set_themes( $themes );
+
+		wp_cache_add( 'slswc_themes', $themes, 'slswc', apply_filters( 'slswc_themes_cache_expiry', HOUR_IN_SECONDS * 2 ) );
+
+		return $themes;
+	}
+
+	/**
+	 * Get local plugins.
+	 *
+	 * Get locally installed plugins that have SLSWC file headers.
+	 *
+	 * @return  array $installed_plugins List of plugins.
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function get_local_plugins() {
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			return array();
+		}
+
+		$plugins = wp_cache_get( 'slswc_plugins', 'slswc' );
+
+		if ( $plugins === false  ) {
+			$plugins    = array();
+			$wp_plugins = get_plugins();
+
+			foreach ( $wp_plugins as $plugin_file => $plugin_details ) {
+				if ( ! isset( $plugin_details['SLSWC'] ) || 'plugin' !== $plugin_details['SLSWC'] ) {
+					continue;
+				}
+
+				$plugin_data = Helper::format_plugin_data( $plugin_details, $plugin_file, 'plugin' );
+				$plugins[ $plugin_data['slug'] ] = wp_parse_args( $plugin_data, $this->default_remote_product( 'theme' ) );
+			}
+
+			wp_cache_add(
+				'slswc_plugins',
+				$plugins,
+				'slswc',
+				apply_filters( 'slswc_plugins_cache_expiry', HOUR_IN_SECONDS * 2 )
+			);
+		}
+
+		$this->set_plugins( $plugins );
+
+		$this->save_products( $plugins, 'slswc_plugins' );
+
+		return $plugins;
+	}
+
+	/**
+	 * Get default remote product data
+	 *
+	 * @param   string $type The software type. Expects plugin, theme or other. Default plugin.
+	 * @return  array $default_data The default product data.
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function default_remote_product( $type = 'plugin' ) {
+
+		$default_data = array(
+			'thumbnail'      => '',
+			'updated'        => gmdate( 'Y-m-d' ),
+			'reviews_count'  => 0,
+			'average_rating' => 0,
+			'activations'    => 0,
+			'type'           => $type,
+			'download_url'   => '',
+		);
+
+		return $default_data;
+	}
+
+	/**
+	 * Activate the updater
+	 *
+	 * @return void
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function activate() {
+		update_option( 'slswc_update_client_version', $this->version );
 	}
 
 	/**
@@ -570,8 +701,6 @@ class ClientManager {
 		echo empty( $status ) ? '' : esc_attr( $license_labels[ $status ] );
 	}
 
-	
-
 	/**
 	 * Connect to the api server using API keys
 	 *
@@ -581,13 +710,13 @@ class ClientManager {
 	 */
 	public function connect() {
 		$keys       = Helper::get_api_keys();
-		$connection = helper::server_request( $this->server_url, 'connect', $keys );
+		$connection = $this->client->request( 'connect', $keys );		
 
 		Helper::log( 'Connecting...' );
 
 		if ( $connection && $connection->connected && 'ok' === $connection->status ) {
-			update_option( 'slswc_api_connected', apply_filters( 'slswc_api_connected', 'yes' ) );
-			update_option( 'slswc_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
+			update_option( 'slswc_client_api_connected', apply_filters( 'slswc_api_connected', 'yes' ) );
+			update_option( 'slswc_client_api_auth_user', apply_filters( 'slswc_api_auth_user', $connection->auth_user ) );
 
 			return true;
 		}
@@ -619,7 +748,7 @@ class ClientManager {
 			$request_info['license_key'] = trim( $license_data['license_key'] );
 		}
 
-		$response = Helper::server_request( $this->server_url, 'product', $request_info );
+		$response = $this->client->request( 'product', $request_info );
 
 		if ( is_object( $response ) && 'ok' === $response->status ) {
 			return $response->product;
@@ -678,9 +807,7 @@ class ClientManager {
 			$request_info['api_keys'] = Helper::get_api_keys();
 		}
 
-		$response = Helper::server_request( $this->server_url, 'products', $request_info );
-
-		error_log('Response: ' . print_r( $response, true ));
+		$response = $this->client->request( 'products', $request_info );
 
 		Helper::log( 'Getting remote products' );
 		Helper::log( $response );
@@ -852,5 +979,53 @@ class ClientManager {
 				wp_kses_post( $message['message'] )
 			);
 		}
+	}
+
+	/**
+	 * Get a list of plugins
+	 *
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 * @return array
+	 */
+	public function get_plugins() {
+		return $this->plugins;
+	}
+
+	/**
+	 * Set a list of all plugins
+	 *
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 * @return object
+	 */
+	public function set_plugins( $plugins ) {
+		$this->plugins = $plugins;
+
+		return $this;
+	}
+
+	/**
+	 * Get a list of all themes
+	 *
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 * @return array
+	 */
+	public function get_themes() {
+		return $this->themes;
+	}
+
+	/**
+	 * Set a list of themes
+	 *
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 * @return object
+	 */
+	public function set_themes( $themes ) {
+		$this->themes = $themes;
+
+		return $this;
 	}
 }

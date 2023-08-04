@@ -103,7 +103,7 @@ class Helper {
 	 * @param array  $data The data to format.
 	 * @param string $file The plugin file.
 	 * @param string $type The product type.
-	 * @return void
+	 * @return array
 	 * @version 1.1.0
 	 * @since   1.1.0
 	 */

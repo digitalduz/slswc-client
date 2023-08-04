@@ -18,7 +18,6 @@ use \WP_Error;
  * @since   1.0.0
  * @version 1.0.0
  */
-//phpcs:ignore
 class ApiClient {
 
 	/**
@@ -33,7 +32,7 @@ class ApiClient {
 	/**
 	 * The plugin updater client
 	 *
-	 * @var Madvalut\Slswc\Client\Client
+	 * @var ApiClient
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
