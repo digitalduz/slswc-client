@@ -76,15 +76,13 @@ add_action( 'plugins_loaded', function () {
 		return;
 	}
 
-	$license_key =  'd16b60d0ee549a1cba8ac4922739dc68b1755165';
-
-	$args = array(
-		'license_key' => $license_key,
+	$license_details = array(
+		'license_key' => 'd16b60d0ee549a1cba8ac4922739dc68b1755165',
 		'domain'      => site_url(), // 'http://localhost:10029/',
 		'slug'	      => 'slswc-client',
 	);
 
-	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $args );
+	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $license_details );
 	$plugin->init_hooks();
 });
 

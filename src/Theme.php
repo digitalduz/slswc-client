@@ -10,21 +10,15 @@
 
 namespace Madvault\Slswc\Client;
 
+use SoftwareUpdaterInterface;
+
 /**
  * Theme update class
  *
  * @version 1.0.0
  * @since   1.0.0
  */
-class Theme {
-	/**
-	 * Client object
-	 *
-	 * @var Theme
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public $client;
+class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 
 	/**
 	 * The license details.
@@ -60,7 +54,24 @@ class Theme {
 	 * @version 1.0.0
 	 * @since   1.0.0
 	 */
-	public $plugin_file;
+	public $theme_file;
+
+	/**
+	 * Get an instance of this class..
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 * @param   string $license_server_url - The base url to your WooCommerce shop.
+	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   array  $args               - array of additional arguments to override default ones.
+	 */
+	public static function get_instance( $license_server_url, $base_file, $args ) {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self( $license_server_url, $base_file, $args );
+		}
+
+		return self::$instance;
+	}
 
 	/**
 	 * Initialize the class actions.
@@ -68,14 +79,16 @@ class Theme {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
-	 * @param   string $plugin_file - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   string $theme_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 	 * @param   array  $args - array of additional arguments to override default ones.
 	 */
-	public function __construct( $license_server_url, $plugin_file, ...$args ) {
-		$this->plugin_file = $plugin_file;
+	public function __construct( $license_server_url, $theme_file, $args ) {
+		parent::__construct( $license_server_url, $theme_file, $args );
 
-		$args = Helper::get_file_details( $this->plugin_file );
+		$this->theme_file = $theme_file;
+
+		$args = Helper::get_file_details( $this->theme_file );
 
 		$this->slug = $args['slug'];
 
@@ -83,7 +96,7 @@ class Theme {
 
 		$this->license = new LicenseDetails(
 			$license_server_url,
-			$plugin_file
+			$theme_file
 		);
 	}
 
@@ -95,7 +108,7 @@ class Theme {
 	 * @since   1.0.0
 	 */
 	public function init_hooks() {
-		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
+		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'update_check' ), 21, 1 );
 		add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
 	}
 	
@@ -107,13 +120,13 @@ class Theme {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function theme_update_check( $transient ) {
+	public function update_check( $transient ) {
 
 		if ( empty( $transient->checked ) ) {
 			return $transient;
 		}
 
-		$server_response = $this->client->request( 'check_update' );
+		$server_response = $this->client->request( 'check_update', $this->get_license_details() );
 
 		if ( $this->license->check_license( $server_response ) ) {
 
@@ -135,17 +148,5 @@ class Theme {
 		}
 
 		return $transient;
-	}
-
-	/**
-	 * Extra theme headers.
-	 *
-	 * @param array $headers The array of headers.
-	 * @return array
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function extra_headers( $headers ) {
-		return Helper::extra_headers( $headers );
 	}
 }

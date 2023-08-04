@@ -11,16 +11,9 @@
 namespace Madvault\Slswc\Client;
 
 use Madvault\Slswc\Client\ApiClient;
+use SoftwareUpdaterInterface;
 
-class Plugin {
-	/**
-	 * The instance of this class.
-	 *
-	 * @var plugin
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public static $instance = null;
+class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {	
 
 	/**
 	 * The plugin file
@@ -39,42 +32,6 @@ class Plugin {
 	 * @since   1.0.0
 	 */
 	public $plugin_dir_file;
-
-	/**
-	 * The instance of the ApiClient class.
-	 *
-	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	private $client;
-
-	/**
-	 * The license details class.
-	 *
-	 * @var LicenseDetails
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	private $license;
-
-	/**
-	 * License details
-	 *
-	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	private $license_details = array();
-
-	/**
-	 * The license server url.
-	 *
-	 * @var [type]
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	private $license_server_url;
 
 	/**
 	 * Get an instance of this class..
@@ -111,6 +68,7 @@ class Plugin {
 	 *   ) );
 	 */
 	public function __construct( $license_server_url, $plugin_file, $args = array() ) {
+		parent::__construct( $license_server_url, $plugin_file, $args );
 		
 		$this->plugin_file  = $plugin_file;
 
@@ -129,19 +87,6 @@ class Plugin {
 		);
 
 		$this->set_license_details( $license_details );
-
-		Helper::log('License details: ' . print_r( $this->get_license_details(), true ) );
-
-		$this->client  = ApiClient::get_instance(
-			$this->license_server_url,
-			$this->get_slug()
-		);
-
-		$this->license = new LicenseDetails(
-			$license_server_url,
-			$plugin_file,
-			$this->get_license_details()
-		);
 	}
 
 	/**
@@ -364,8 +309,8 @@ class Plugin {
 	/**
 	 * Add action for queued products to display message for unlicensed products.
 	 *
-	 * @param array $plugin_data
-	 * @param object $update
+	 * @param array  $plugin_data The update data.
+	 * @param object $update      The update object.
 	 * @return void
 	 * @version 1.1.0
 	 * @since   1.1.0
@@ -382,114 +327,5 @@ class Plugin {
 			 __( 'To enable this update please activate your license', 'slswcclient' )
 			)
 		);
-	}
-
-	/**
-	 * Extra plugin headers.
-	 *
-	 * @param array $headers The array of headers.
-	 * @return array
-	 * @version 1.1.0
-	 * @since   1.1.0
-	 */
-	public function extra_headers( $headers ) {
-		return Helper::extra_headers( $headers );
-	}
-
-	/**
-	 * Getters
-	 *
-	 * Define getters to get the plugin version and slug.
-	 */
-
-	/**
-	 * Get the plugin version.
-	 *
-	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function get_version() {
-		return $this->license_details['version'];
-	}
-
-	/**
-	 * Get the slug.
-	 *
-	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function get_slug() {
-		return $this->license_details['slug'];
-	}
-
-	/**
-	 * Get domain.
-	 *
-	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function get_domain() {
-		return $this->license_details['domain'];
-	}
-
-	public function get_license_details( ) {
-		return $this->license_details;
-	}
-
-	/**
-	 * Setters
-	 *
-	 * Define getters to get the plugin version and slug.
-	 */
-
-	 /**
-		* Set the plugin slug.
-		*
-		* @param string $slug The plugin slug.
-		* @return void
-		* @version 1.0.0
-		* @since   1.0.0
-		*/
-	public function set_slug( $slug ) {
-		$this->license_details['slug'] = $slug;
-	}
-
-	/**
-	 * Set the plugin version
-	 *
-	 * @param string $version The plugin version.
-	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function set_version( $version ) {
-		$this->license_details['version'] = $version;
-	}
-
-	/**
-	 * Set the domain
-	 *
-	 * @param string $domain Set the domain.
-	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function set_domain( $domain ) {
-		$this->license_details['domain'] = $domain;
-	}
-
-	/**
-	 * Set the license details.
-	 *
-	 * @param array $license_details The license details.
-	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
-	 */
-	public function set_license_details( $license_details ) {
-		$this->license_details = $license_details;
 	}
 }
