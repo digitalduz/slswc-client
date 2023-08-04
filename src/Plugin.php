@@ -68,25 +68,14 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 *   ) );
 	 */
 	public function __construct( $license_server_url, $plugin_file, $args = array() ) {
-		parent::__construct( $license_server_url, $plugin_file, $args );
-		
 		$this->plugin_file  = $plugin_file;
 
 		$args = Helper::get_file_details( $this->plugin_file, $args );
 
-		$this->plugin_dir_file = $this->plugin_dir_file();
+		$this->plugin_dir_file    = $this->plugin_dir_file();
 		$this->license_server_url = $license_server_url;
 
-		$license_details = array(
-			'license_key' => isset( $args['license_key'] ) ? esc_attr( $args['license_key'] ) : '',
-			'slug'        => isset( $args['slug'] )
-				? esc_attr( $args['slug'] ) 
-				: (isset( $args['text-domain'] ) ? esc_attr( $args['text-domain'] ) : basename( $plugin_file ) ),
-			'version'     => isset( $args['version'] ) ? esc_attr( $args['version'] ) : '',
-			'domain'      => isset( $args['domain'] ) ? esc_attr( $args['domain'] ) : home_url(),
-		);
-
-		$this->set_license_details( $license_details );
+		parent::__construct( $license_server_url, $plugin_file, $args );
 	}
 
 	/**

@@ -77,11 +77,37 @@ class GenericSoftwareUpdater {
 			$this->get_slug()
 		);
 
+		$this->license_details_from_file_data( $args, $base_file );
+
 		$this->license = new LicenseDetails(
 			$license_server_url,
 			$base_file,
 			$this->get_license_details()
 		);
+	}
+
+	/**
+	 * Get license details from plugin details.
+	 *
+	 * @param array  $file_data The plugin details.
+	 * @param string $base_file The base file.
+	 * @return array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public function license_details_from_file_data( $file_data, $base_file ) {
+		$license_details = array(
+			'license_key' => isset( $file_data['license_key'] ) ? esc_attr( $file_data['license_key'] ) : '',
+			'slug'        => isset( $file_data['slug'] )
+				? esc_attr( $file_data['slug'] ) 
+				: (isset( $file_data['text-domain'] ) ? esc_attr( $file_data['text-domain'] ) : basename( $base_file ) ),
+			'version'     => isset( $file_data['version'] ) ? esc_attr( $file_data['version'] ) : '',
+			'domain'      => isset( $file_data['domain'] ) ? esc_attr( $file_data['domain'] ) : home_url(),
+		);
+
+		$this->set_license_details( $license_details );
+
+		return $license_details;
 	}
 
 	/**

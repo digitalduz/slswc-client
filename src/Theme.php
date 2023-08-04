@@ -65,7 +65,7 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
 	 */
-	public static function get_instance( $license_server_url, $base_file, $args ) {
+	public static function get_instance( $license_server_url, $base_file, $args = array() ) {
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self( $license_server_url, $base_file, $args );
 		}
@@ -83,21 +83,15 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 	 * @param   array  $args - array of additional arguments to override default ones.
 	 */
-	public function __construct( $license_server_url, $theme_file, $args ) {
-		parent::__construct( $license_server_url, $theme_file, $args );
+	public function __construct( $license_server_url, $theme_file, $args = array() ) {
+		$this->theme_file         = $theme_file;
+		$this->license_server_url = $license_server_url;
 
-		$this->theme_file = $theme_file;
-
-		$args = Helper::get_file_details( $this->theme_file );
+		$args = Helper::get_file_details( $this->theme_file, $args, 'theme' );
 
 		$this->slug = $args['slug'];
 
-		$this->client = ApiClient::get_instance( $license_server_url, $this->slug );
-
-		$this->license = new LicenseDetails(
-			$license_server_url,
-			$theme_file
-		);
+		parent::__construct( $license_server_url, $theme_file, $args );
 	}
 
 	/**

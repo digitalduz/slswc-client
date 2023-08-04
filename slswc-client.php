@@ -46,6 +46,7 @@
  * Description:       Manage updates for your plugins and themes sold using the License Server for WooCommerce plugin
  * Documentation URL: https://licenseserver.io/documentation
  * Version:           1.1.0
+ * SLSWC:             plugin
  */
 
 namespace Madvault\Slswc\Client;
@@ -56,9 +57,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-use Madvault\Slswc\Client\Updater;
 use Madvault\Slswc\Client\ClientManager;
-use Madvault\Slswc\Client\Client;
 
 define ( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 
@@ -87,6 +86,10 @@ add_action( 'plugins_loaded', function () {
 });
 
 function slswc_client_manager () {
+
+	if ( ! is_admin() ) {
+		return;
+	}
 	
 	$client_manager = ClientManager::get_instance( SLSWC_LICENSE_SERVER_URL );
 	$client_manager->init_hooks();
@@ -94,5 +97,5 @@ function slswc_client_manager () {
 	return $client_manager;
 }
 
-//slswc_client_manager();
+slswc_client_manager();
 

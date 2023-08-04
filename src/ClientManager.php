@@ -105,6 +105,17 @@ class ClientManager {
 	 * @since   1.0.0
 	 */
 	public $client;
+
+	/**
+	 * The updaters for each plugin.
+	 *
+	 * @var array
+	 * @version 1.0.0
+	 * @since   1.0.0
+	 */
+	public $updaters = [];
+
+
 	/**
 	 * Return instance of this class
 	 *
@@ -137,6 +148,19 @@ class ClientManager {
 
 		$this->plugins = $this->get_local_plugins();
 		$this->themes  = $this->get_local_themes();
+
+		$this->products = array(
+			'plugins' => $this->get_plugins(),
+			'themes' => $this->get_themes()
+		);
+
+		foreach ( $this->get_plugins() as $plugin ) {
+			$this->updaters[ $plugin['slug'] ] = new Plugin( $this->server_url, $plugin['slug'] );
+		}
+
+		foreach ( $this->get_themes() as $theme ) {
+			$this->updaters[ $theme['slug'] ] = new Theme( $this->server_url, $theme['slug'] );
+		}
 
 		$this->localization = array(
 			'ajax_url'        => esc_url( admin_url( 'admin-ajax.php' ) ),
@@ -253,7 +277,7 @@ class ClientManager {
 
 		$this->set_plugins( $plugins );
 
-		$this->save_products( $plugins, 'slswc_plugins' );
+		$this->save_products( $plugins  );
 
 		return $plugins;
 	}
@@ -440,7 +464,7 @@ class ClientManager {
 			}
 
 			if ( ! empty( $_POST['connect_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['connect_nonce'] ) ), 'connect' ) ) {
-				$connected = $this->connect( $this->server_url );
+				$connected = $this->connect();
 				if ( $connected ) {
 					?>
 					<div class="updated"><p>
