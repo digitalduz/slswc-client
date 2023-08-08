@@ -10,9 +10,6 @@
 
 namespace Madvault\Slswc\Client;
 
-use Madvault\Slswc\Client\ApiClient;
-use SoftwareUpdaterInterface;
-
 class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {	
 
 	/**

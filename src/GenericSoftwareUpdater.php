@@ -72,12 +72,12 @@ class GenericSoftwareUpdater {
 	 * @param   array  $args               - array of additional arguments to override default ones.
 	 */
 	public function __construct( $license_server_url, $base_file, $args ) {
+		$this->license_details_from_file_data( $args, $base_file );
+
 		$this->client  = ApiClient::get_instance(
 			$this->license_server_url,
 			$this->get_slug()
-		);
-
-		$this->license_details_from_file_data( $args, $base_file );
+		);		
 
 		$this->license = new LicenseDetails(
 			$license_server_url,

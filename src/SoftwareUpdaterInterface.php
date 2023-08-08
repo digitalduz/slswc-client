@@ -6,6 +6,8 @@
  * @since   1.0.0
  */
 
+ namespace Madvault\Slswc\Client;
+
  /**
   * Software Updater Interface
   *

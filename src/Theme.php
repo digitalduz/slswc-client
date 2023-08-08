@@ -10,8 +10,6 @@
 
 namespace Madvault\Slswc\Client;
 
-use SoftwareUpdaterInterface;
-
 /**
  * Theme update class
  *
