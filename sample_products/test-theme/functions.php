@@ -26,7 +26,7 @@ function theme_slswc_client() {
 		'slug' 	      => 'test-theme',
 	);
 	
-	$theme = Theme::get_instance(
+	Theme::get_instance(
 		'http://example.com',
 		WP_CONTENT_DIR . '/themes/test-theme',
 		$license_details

@@ -58,11 +58,16 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * @return void
 	 * 
 	 * @example
-	 *   $plugin = new Plugin( 'https://licenseserver.io', __FILE__, array(
-	 * 		 'slug'        => 'my-plugin',
-	 * 		 'version'     => '1.1.0',
-	 * 		 'license_key' => 'LICENSE_KEY',
-	 *   ) );
+	 *   $plugin = Plugin::get_instance(
+	 *     'https://example.com',
+	 *      __FILE__,
+	 *      array(
+	 * 		  'slug'        => 'my-plugin',
+	 * 		  'version'     => '1.1.0',
+	 * 		  'license_key' => 'LICENSE_KEY',
+	 *        'domain'      => 'example.com',
+	 *      )
+	 *   );
 	 */
 	public function __construct( $license_server_url, $plugin_file, $args = array() ) {
 		$this->plugin_file  = $plugin_file;

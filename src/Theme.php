@@ -62,6 +62,16 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
+	 * @example
+	 *   Theme::get_instance(
+	 *     'https://licenseserver.io',
+	 *      WP_CONTENT_DIR . '/themes/test-theme',
+	 *      array(
+	 *         'license_key' => 'REPLACE_WITH_YOUR_LICENSE_KEY',
+	 *         'domain'      => site_url(),
+	 *         'slug'        => 'version'
+	 *      )
+	 *    );
 	 */
 	public static function get_instance( $license_server_url, $base_file, $args = array() ) {
 		if ( is_null( self::$instance ) ) {

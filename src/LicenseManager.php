@@ -10,7 +10,6 @@
 
 namespace Madvault\Slswc\Client;
 
-use Madvault\Slswc\Client\ClientManager;
 use Madvault\Slswc\Client\Helper;
 
 /**
