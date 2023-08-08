@@ -16,16 +16,26 @@
  * Author URI: https://licenseserver.io
  * License: https://www.gnu.org/licenses/gpl-2.0.html
  * Version: 1.0.0
- * Author: License Server 
+ * Author: License Server
  * Domain Path: /languages
- * SLSWC: plugin
- * Slug: test-plugin
- * Documentation URL: https://www.gnu.org/licenses/gpl-2.0.html
- * Required WP: 5.7
- * Compatible To: 5.8.1
+ * Requires at least : 5.7
+ *
+ * SLSWC                   : plugin
+ * SLSWC Slug              : test-plugin
+ * SLSWC Documentation URL : https://www.gnu.org/licenses/gpl-2.0.html
+ * SLSWC Compatible To     : 5.8.1
  */
-function slswc_client() {
-	require_once dirname( __FILE__ ) . '/class-slswc-client.php';
-	return SLSWC_Client::get_instance( 'http://example.com/', __FILE__, 'plugin' );
+use Madvault\SLSWC\Client\Plugin;
+
+function your_prefix_slswc_client() {
+	require_once dirname( __FILE__ ) . '/vendor/autoload.php';
+
+	$license_details = array(
+		'license_key' => 'REPLACE_THIS_WITH_LICENSE_KEY',
+		'domain'      => site_url(),
+		'slug' 	      => 'test-plugin',
+	);
+
+	return Plugin::get_instance( 'http://example.com/', __FILE__, $license_details );
 }
 add_action( 'plugins_loaded', 'slswc_client', 11 );

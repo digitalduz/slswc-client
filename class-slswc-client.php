@@ -8,22 +8,31 @@
  *
  * To integrate this into your software product include the following code in your MAIN plugin file, do not attempt.
  * to add this code in any other file but your main plugin file.
- *
- *      // Required Parameters.
+ * 
+ * Required Parameters.
  *
  *      @param string  required $license_server_url - The url to the license server.
  *      @param string  required $plugin_file - The path to the main plugin file.
  *
- *      // Optional Parameters.
+ * Optional Parameters.
  *      @param string  optional $product_type - The type of product. plugin/theme
  *
  *  require_once plugin_dir_path( __FILE__ ) . 'path/to/class-slswc-client.php';
  *
- *  function slswc_instance(){
+ *  function your_prefix_slswc_instance(){
  *      return SLSWC_Client::get_instance( 'http://yourshopurl.here.com', $plugin_file, $product_type );
  *  } // slswc_instance()
  *
- *  slswc_instance();
+ *  your_prefix_slswc_instance();
+ * 
+ * All plugins and themes must have the following file headers in order to be used by the client:
+ * SLSWC                   (required) The type of product this is (theme/plugin). This is also required by the client to filter plugins/themes updated by the client.
+ * SLSWC Slug              (required) The plugin or theme slug. It must be the same as the slug of the WooCommerce product selling the theme/plugin.
+ * SLSWC Documentation URL (optional) The link to the plugin/theme's documentation.
+ * SLSWC Compatible To     (optional) The maximum version of wordpress the plugin/theme is compatible with.
+ * 
+ * And the optional WordPress header:
+ * Requires at least:      (optional) The minimum WordPress version required by the plugin or theme.
  *
  * @version     1.0.2
  * @since       1.0.0
@@ -47,7 +56,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		/**
 		 * Instance of this class.
 		 *
-		 * @var object
+		 * @var array
 		 */
 		private static $instances = array();
 
@@ -61,7 +70,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		public $version;
 
 		/**
-		 * License URL - The base URL for your woocommerce install
+		 * License URL - The base URL for your WooCommerce install
 		 *
 		 * @var string $license_server_url
 		 * @version 1.0.0
@@ -178,11 +187,65 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		public $client_manager;
 
 		/**
+		 * The plugin file
+		 *
+		 * @var string
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $plugin_file;
+		
+		/**
+		 * Whether to enable debugging or not.
+		 *
+		 * @var bool
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $debug;
+		
+		/**
+		 * License details
+		 *
+		 * @var array
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $license_details;
+
+		/**
+		 * Theme file.
+		 *
+		 * @var string
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $theme_file = '';
+
+		/**
+		 * The license server url.
+		 *
+		 * @var string
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $license_manager_url;
+
+		/**
+		 * The software type.
+		 *
+		 * @var string
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public $software_type;
+
+		/**
 		 * Return an instance of this class.
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @param   string $license_server_url - The base url to your woocommerce shop.
+		 * @param   string $license_server_url - The base url to your WooCommerce shop.
 		 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 		 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 		 * @param   mixed  ...$args - array of additional arguments to override default ones.
@@ -206,7 +269,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @param   string $license_server_url - The base url to your woocommerce shop.
+		 * @param   string $license_server_url - The base url to your WooCommerce shop.
 		 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 		 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
 		 * @param   array  $args - array of additional arguments to override default ones.
@@ -267,6 +330,8 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				// Internal methods.
 				add_filter( 'http_request_host_is_external', array( $this, 'fix_update_host' ), 10, 2 );
 
+				add_action( 'wp_ajax_slswc_activate_license', array( $this, 'activate_license' ) );
+
 				// Validate license on save.
 				add_action( 'slswc_save_license_' . $this->slug, array( $this, 'validate_license' ), 99 );
 
@@ -280,7 +345,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 						add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
 						add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
 					} else {
-						add_action( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
+						add_filter( 'pre_set_site_transient_update_themes', array( $this, 'theme_update_check' ), 21, 1 );
 					}
 
 					add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
@@ -322,7 +387,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			return array(
 				'update_interval' => 12,
 				'debug'           => false,
-				'environment'     => SLSWC_Client_Manager::get_environment(),
+				'environment'     => '',
 			);
 		}
 
@@ -704,7 +769,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 */
 		public function fix_update_host( $allow, $host ) {
 
-			if ( strtolower( $host ) === strtolower( $this->license_server_url ) ) {
+			if ( strtolower( $host ) === strtolower( $this->license_server_host ) ) {
 				return true;
 			}
 			return $allow;
@@ -781,7 +846,7 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		} // license_status_field
 
 		/**
-		 * License acivated field
+		 * License activated field
 		 *
 		 * @since 1.0.0
 		 * @version 1.0.0
@@ -814,6 +879,62 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		}
 
 		/**
+		 * Activate a license
+		 *
+		 * @return void
+		 * @version 1.0.2
+		 * @since   1.0.2
+		 */
+		public function activate_license( ) {
+
+			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( wp_unslash ( $_POST['nonce'] ), 'activate-license-' . esc_attr( $_POST['slug'] ) ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Security verification failed. Please reload the page and try again.', 'slswcclient'),
+					)
+				);
+			}
+
+			$request_args = array (
+				'slug' => isset( $_POST['slug'] ) && ! empty( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '',
+				'license_key' => isset( $_POST['license_key'] ) && ! empty( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '',
+				'domain'      =>isset( $_POST['domain'] ) && ! empty( $_POST['domain'] ) ? sanitize_text_field( wp_unslash( $_POST['domain'] ) ) : '',
+				'version'     => isset( $_POST['version'] ) && ! empty( $_POST['version'] ) ? sanitize_text_field( wp_unslash( $_POST['version'] ) ) : '',
+				'environment' => isset( $_POST['environment'] ) && ! empty( $_POST['environment'] ) ? sanitize_text_field( wp_unslash( $_POST['environment'] ) ) : '',
+			);
+
+			$empty_args = array();
+			$has_empty  = false;
+
+			foreach ( $request_args as $key => $value ) {
+				if ( $value == '' && $key !== 'environment' ) {
+					$has_empty = true;
+					$empty_args[] = $key;
+				}
+			}
+
+			if ( ! empty( $empty_args ) && $has_empty ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							__( 'Missing required parameter. The following args are required but not included in your request: %s' , 'slswclient' ),
+							implode ( ',', $empty_args )
+						),
+					)
+				);
+			}
+
+			$license_action = isset( $_POST['license_action'] ) && ! empty( $_POST['license_action'] ) ? sanitize_text_field( wp_unslash( $_POST['license_action'] ) ) : '';
+			if ( $license_action == 'deactivate' ) {
+				$request_args['deactivate_license' ] = 'yes'; 
+			}
+
+			$response = $this->validate_license( $request_args );
+
+			wp_send_json( $response );
+		}
+
+		/**
 		 * Validate the license key information sent from the form.
 		 *
 		 * @since   1.0.0
@@ -821,18 +942,17 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 		 * @param array $input the input passed from the request.
 		 */
 		public function validate_license( $input ) {
-
 			$options = $this->license_details;
 			$type    = null;
 			$message = null;
 
 			// Reset the license data if the license key has changed.
-			if ( $options['license_key'] === $input['license_key'] ) {
+			if ( $options['license_key'] !== $input['license_key'] ) {
 				$options               = self::get_default_license_options();
 				$this->license_details = $options;
 			}
 
-			$environment   = isset( $input['environment'] ) ? $input['environment'] : 'live';
+			$environment   = isset( $input['environment'] ) ? $input['environment'] : '';
 			$active_status = $this->get_active_status( $environment );
 
 			$this->environment                    = $environment;
@@ -867,19 +987,28 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			}
 
 			if ( is_null( $response ) ) {
+				$message = __( 'Error: Your license might be invalid or there was an unknown error on the license server. Please try again and contact support if this issue persists.', 'slswcclient' );
 				SLSWC_Client_Manager::add_message(
 					'error',
-					__( 'Error: Your license might be invalid or there was an unknown error on the license server. Please try again and contact support if this issue persists.', 'slswcclient' ),
+					$message,
 					$type
 				);
 				update_option( $this->option_name, $options );
-				return;
+				return array (
+					'status'   => 'bad_request',
+					'message'  => $message,
+					'response' => $response
+				);
 			}
 
 			// phpcs:ignore
 			if ( ! SLSWC_Client_Manager::check_response_status( $response ) ) {
 				update_option( $this->option_name, $options );
-				return;
+				return array(
+					'status'   => 'invalid',
+					'message'  => $response['response'],
+					'response' => $response,
+				);
 			}
 
 			$options['license_key']                   = $input['license_key'];
@@ -926,6 +1055,13 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 			update_option( $this->option_name, $options );
 
 			SLSWC_Client_Manager::log( $options );
+
+			return array(
+				'message'  => $message,
+				'options'  => $options,
+				'status'   => $domain_status,
+				'response' => $response
+			);
 		} // validate_license
 
 		/**
@@ -1032,52 +1168,14 @@ if ( ! class_exists( 'SLSWC_Client' ) ) :
 				}
 				$plugin = get_plugin_data( $base_file, false );
 
-				$data = array(
-					'name'              => $plugin['Name'],
-					'title'             => $plugin['Title'],
-					'description'       => $plugin['Description'],
-					'author'            => $plugin['Author'],
-					'author_uri'        => $plugin['AuthorURI'],
-					'version'           => $plugin['Version'],
-					'plugin_url'        => $plugin['PluginURI'],
-					'text_domain'       => $plugin['TextDomain'],
-					'domain_path'       => $plugin['DomainPath'],
-					'network'           => $plugin['Network'],
-
-					// SLSWC Headers.
-					'slswc'             => ! empty( $plugin['SLSWC'] ) ? $plugin['SLSWC'] : '',
-					'slug'              => ! empty( $plugin['Slug'] ) ? $plugin['Slug'] : $plugin['TextDomain'],
-					'required_wp'       => ! empty( $plugin['RequiredWP'] ) ? $plugin['RequiredWP'] : '',
-					'compatible_to'     => ! empty( $plugin['CompatibleTo'] ) ? $plugin['CompatibleTo'] : '',
-					'documentation_url' => ! empty( $plugin['DocumentationURL'] ) ? $plugin['DocumentationURL'] : '',
-					'type'              => $type,
-				);
+				$data = SLSWC_CLient_Manager::format_plugin_data( $plugin, $base_file, $type );
 			} elseif ( 'theme' === $type ) {
 				if ( ! function_exists( 'wp_get_theme' ) ) {
 					require_once ABSPATH . 'wp-includes/theme.php';
 				}
 				$theme = wp_get_theme( basename( $base_file ) );
 
-				$data = array(
-					'name'              => $theme->get( 'Name' ),
-					'theme_url'         => $theme->get( 'ThemeURI' ),
-					'description'       => $theme->get( 'Description' ),
-					'author'            => $theme->get( 'Author' ),
-					'author_uri'        => $theme->get( 'AuthorURI' ),
-					'version'           => $theme->get( 'Version' ),
-					'template'          => $theme->get( 'Template' ),
-					'status'            => $theme->get( 'Status' ),
-					'tags'              => $theme->get( 'Tags' ),
-					'text_domain'       => $theme->get( 'TextDomain' ),
-					'domain_path'       => $theme->get( 'DomainPath' ),
-					// SLSWC Headers.
-					'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
-					'slug'              => ! empty( $theme->get( 'Slug' ) ) ? $theme->get( 'Slug' ) : $theme->get( 'TextDomain' ),
-					'required_wp'       => ! empty( $theme->get( 'RequiredWP' ) ) ? $theme->get( 'RequiredWP' ) : '',
-					'compatible_to'     => ! empty( $theme->get( 'CompatibleTo' ) ) ? $theme->get( 'CompatibleTo' ) : '',
-					'documentation_url' => ! empty( $theme->get( 'DocumentationURL' ) ) ? $theme->get( 'DocumentationURL' ) : '',
-					'type'              => $type,
-				);
+				$data = SLSWC_Client_Manager::format_theme_data( $theme, $base_file);
 			}
 
 			return $data;
@@ -1176,7 +1274,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		public static $version;
 
 		/**
-		 * License URL - The base URL for your woocommerce install.
+		 * License URL - The base URL for your WooCommerce install.
 		 *
 		 * @var string
 		 * @since 1.0.0
@@ -1238,6 +1336,15 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		public static $messages = array();
 
 		/**
+		 * The localization strings
+		 *
+		 * @var array
+		 * @version 1.0.0
+		 * @since   1.0.0
+		 */
+		public static $localization = array();
+
+		/**
 		 * Return instance of this class
 		 *
 		 * @param   string $license_server_url The url to the license server.
@@ -1264,7 +1371,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since 1.0.0
 		 * @version 1.0.0
-		 * @param string $license_server_url - The base url to your woocommerce shop.
+		 * @param string $license_server_url - The base url to your WooCommerce shop.
 		 * @param string $slug - The software slug.
 		 * @param string $text_domain - The plugin's text domain.
 		 */
@@ -1280,9 +1387,22 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			add_action( 'wp_ajax_slswc_install_product', array( $this, 'product_background_installer' ) );
 
 			if ( self::is_products_page() ) {
-				add_action( 'admin_footer', array( $this, 'admin_footer_script' ) );
+				add_action( 'admin_footer', array( $this, 'admin_footer_products_script' ) );
 				add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_scripts' ) );
 			}
+
+			if ( self::is_licenses_tab() ) {
+				add_action( 'admin_footer', array( $this, 'admin_footer_licenses_script' ) );
+			}
+
+			self::$localization = array(
+				'ajax_url'        => esc_url( admin_url( 'admin-ajax.php' ) ),
+				'loader_url'      => esc_url( admin_url( 'images/loading.gif' ) ),				
+				'text_activate'   => esc_attr( __( 'Activate', 'slswcclient' ) ),
+				'text_deactivate' => esc_attr( __( 'Deactivate', 'slswcclient' ) ),
+				'text_done'       => esc_attr( __( 'Done', 'slswcclient' ) ),				
+				'text_processing' => esc_attr( __( 'Processing', 'slswcclient' ) ),
+			);
 		}
 
 		/**
@@ -1303,7 +1423,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * Check if the current page is a product list page.
 		 *
 		 * @return  boolean
-		 * @version 1.0.0
+		 * @version 1.0.3
 		 * @since   1.0.0
 		 */
 		public static function is_products_page() {
@@ -1322,60 +1442,219 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		}
 
 		/**
+		 * Check if we are on the licenses tab on the license manager page.
+		 *
+		 * @return boolean
+		 * @version 1.0.3
+		 * @since   1.0.3
+		 */
+		public static function is_licenses_tab() {
+			$tab  = self::get_tab();
+			$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+
+			return is_admin() && $tab == 'licenses' && $page == 'slswc_license_manager';
+		}
+
+		/**
 		 * Add script to admin footer.
 		 *
 		 * @return  void
-		 * @version 1.0.0
-		 * @since   1.0.0
+		 * @version 1.0.3
+		 * @since   1.0.3 - Rewrote the script
 		 */
-		public static function admin_footer_script() {
+		public static function admin_footer_products_script() {
 			?>
 		<script type="text/javascript">
 			jQuery( function( $ ){
-				$('.slswc-install-now, .slswc-update-now').on( 'click', function(e){
-					e.preventDefault();
-					let $el = $(this);
-					let package = $(this).data('package');
-					let name = $(this).data('name');
-					let slug = $(this).data('slug');
-					let type = $(this).data('type');
-					let label = $(this).html();
-					let nonce = $(this).data('nonce');
-					let action_label = "<?php esc_attr_e( 'Processing', 'slswcclient' ); ?>";
-					$(this).html('<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" /> ' + action_label );
-					$.ajax({
-						url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
-						data: {
-							action:  'slswc_install_product',
-							package: package,
-							name:    name,
-							slug:    slug,
-							type:    type,
-							nonce:   nonce
-						},
-						dataType: 'json',
-						type: 'POST',
-						success: function( response ) {
-							if ( response.success ) {
-								$('#slswc-product-install-message p').html( response.data.message );
-								$('#slswc-product-install-message').addClass('updated').show();
-							} else {
-								$('#slswc-product-install-message p').html( response.data.message );
-								$('#slswc-product-install-message').addClass('notice-warning').show();
-							}
-							$el.html( '<?php echo esc_attr( __( 'Done', 'slswcclient' ) ); ?>' );
-							$el.attr('disabled', 'disabled');
-						},
-						error: function( error ) {
-							$('#slswc-product-install-message p').html( error.data.message );
-							$('#slswc-product-install-message').addClass('notice-error').show();
-						}
-					});
+
+				"use strict";
+
+				$(document).ready( function() {
+					slswcClient.init();
 				});
+
+				window.slswcClientOptions = <?php echo wp_json_encode( self::$localization ); ?>
+
+				const slswcClient = {
+					init: function() {
+						slswcClient.installer();
+					},
+					installer: function() {
+						if ( ! $( '.slswc-install-now' ) && ! $( '.slswc-update-now' ) ) {
+							return;
+						}
+
+						$('.slswc-install-now, .slswc-update-now').on( 'click', function(e){
+							e.preventDefault();
+							let $el = $(this);
+							let download_url = $(this).data('download_url');
+							let name = $(this).data('name');
+							let slug = $(this).data('slug');
+							let type = $(this).data('type');
+							let label = $(this).html();
+							let nonce = $(this).data('nonce');
+							
+							let action_label = window.slswcClientOptions.processing_label;
+							$(this).html(`<img src="${window.slswcClientOptions.loaderUrl}" /> ` + action_label );
+							$.ajax({
+								url: window.ajaxUrl,
+								data: {
+									action:  'slswc_install_product',
+									download_url: download_url,
+									name:    name,
+									slug:    slug,
+									type:    type,
+									nonce:   nonce
+								},
+								dataType: 'json',
+								type: 'POST',
+								success: function( response ) {
+									if ( response.success ) {
+										$('#slswc-product-install-message p').html( response.data.message );
+										$('#slswc-product-install-message').addClass('updated').show();
+									} else {
+										$('#slswc-product-install-message p').html( response.data.message );
+										$('#slswc-product-install-message').addClass('notice-warning').show();
+									}
+									$el.html( slswcClientOptions.done_label );
+									$el.attr('disabled', 'disabled');
+								},
+								error: function( error ) {
+									$('#slswc-product-install-message p').html( error.data.message );
+									$('#slswc-product-install-message').addClass('notice-error').show();
+								}
+							});
+						});
+					}
+				}
 			} );
 		</script>
 			<?php
 		}
+
+		/**
+		 * Add footer script to manage licenses.
+		 *
+		 * @return void
+		 * @version 1.0.3
+		 * @since   1.0.3
+		 */
+		public function admin_footer_licenses_script() {
+			?>
+			<script type="text/javascript">
+				jQuery( function( $ ){
+
+					"use strict";
+
+					$(document).ready( function() {
+						slswcClient.init();
+					});
+
+					window.slswcClientOptions = <?php echo wp_json_encode( self::$localization ); ?>;
+
+					const slswcClient = {
+						init: function() {
+							$('.force-client-environment').on( 'click', slswcClient.toggleEnvironment );
+							$('.license-action').on('click', slswcClient.processAction );
+						},
+						toggleEnvironment: function(event) {
+							const id = $(this).attr('id');
+							const slug = $(this).data('slug');
+
+							if ( $(this).is(':checked') ) {
+								$('#'+ slug + '_environment').show();
+								$('#'+ slug + '_environment-label').show();
+							} else {
+								$('#'+ slug + '_environment').hide();
+								$('#'+ slug + '_environment-label').hide();
+							}
+						},
+						processAction: function(e) {
+							e.preventDefault();
+
+							let button = $(this);
+
+							let currentLabel = $(button).html();
+							$(button).html(`<img src="${window.slswcClientOptions.loader_url}" width="12" height="12"/> Processing`);
+
+							let slug = $(this).data('slug');
+							let license_key = $(this).data('license_key');
+							let license_action = $(this).data('action');
+							let nonce = $(this).data('nonce');
+							let domain = $(this).data('domain');
+							let version = $(this).data('version');
+							let environment = '';
+
+							if ( $( '#'+ slug + '_force-client-environment' ).is(':checked') && $( '#'+ slug + '_environment').is(':visible') ) {
+								environment = $( '#'+ slug + '_environment' ).val();
+							}
+
+							console.log(slug, license_key, license_action, domain, nonce, version, environment);
+
+							$.ajax({
+								url: window.slswcClientOptions.ajax_url,
+								data: {
+									action: 'slswc_activate_license',
+									license_action: license_action,
+									license_key: license_key,
+									slug:        slug,
+									domain:      domain,
+									version:     version,
+									environment: environment,
+									nonce:       nonce
+								},
+								dataType: 'json',
+								type: 'POST',
+								success: function(response) {
+									const message = `The license for ${slug} activated successfully`;
+									
+									$(button).html(currentLabel);
+
+									$('#'+slug+'_license_status').val(response.status);
+									$('#'+slug+'_license_status_text').html(response.status);
+
+									if ( response.success == false ) {
+										slswcClient.notice(response.data.message, 'error');
+										return;
+									}
+
+									switch (response.status) {
+										case 'active':
+											slswcClient.notice(response.message);
+											$(button).html(window.slswcClientOptions.text_deactivate);
+											$(button).data('action', 'deactivate');
+											break;
+										default:
+											slswcClient.notice(response.message, 'error');
+											$(button).html(window.slswcClientOptions.text_activate);
+											$(button).data('action', 'activate');
+											break;
+									}
+								},
+								error: function(error) {
+									const message = error.message;
+									slswcClient.notice( message, 'error' );
+									$(button).html(currentLabel);
+								}
+							});
+						},
+						notice: function(message, type = 'success', isDismissible = true) {
+							let notice = `<div class="${type} notice is-dismissible"><p>${message}</p>`;
+
+							if ( isDismissible ) {
+								notice += `<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>`;
+							}
+									
+							notice += `</div>`;
+
+							$('#license-action-response-message').html(notice);
+						}
+					}
+				});
+			</script>
+		<?php
+		}
+			
 		/**
 		 * ------------------------------------------------------------------
 		 * Output Functions
@@ -1406,7 +1685,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @version 1.0.0
 		 */
 		public static function show_installed_products() {
-			$license_admin_url = admin_url( 'admin.php?page=slswc_license_manager' );
+			$license_admin_url = admin_url( 'options-general.php?page=slswc_license_manager' );
 			// phpcs:ignore
 			$tab = self::get_tab();
 
@@ -1420,7 +1699,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			</style>
 			<div class="wrap plugin-install-tab">				
 				<div id="slswc-product-install-message" class="notice inline hidden"><p></p></div>
-				<h1><?php esc_attr_e( 'Licensed Plugins and Themes.', 'slswcclient' ); ?></h1>
+				<h1><?php esc_attr_e( 'Licensed Plugins and Themes', 'slswcclient' ); ?></h1>
 				<?php
 
 				if ( isset( $_POST['save_api_keys_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_api_keys_nonce'] ) ), 'save_api_keys' ) ) {
@@ -1565,15 +1844,42 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			.licenses-table{margin-top: 9px;}
 			.licenses-table th, .licenses-table td {padding: 8px 10px;}
 			.licenses-table .actions {vertical-align: middle;width: 20px;}
-			.licenses-table .license-field input[type="text"], .licenses-table .license-field select{
-				width: 100% !important;
+			.plugin-card input[type="text"], .plugin-card select{
+				width: 100%;
+			}
+			.plugin-card .column-license-key {
+				display: flex;
+				flex-direction: column;
+			}
+			.plugin-card .column-license-key label {
+				margin-bottom: 5px;
+				font-weight: 600;
+			}
+			.plugin-card label {
+				margin-top: 10px
+			}
+			.chip {
+				align-items: center;
+				display: inline-flex;
+				justify-content: center;
+				background-color: #d1d5db;
+				border-radius: 9999px;
+				padding: 0.25rem 0.5rem;
+			}
+
+			.chip_content {
+				margin-right: 0.25rem;
+			}
+			.chip.active {
+				background-color: green;
+				color: #ffffff;
 			}
 			</style>
 			<?php
 
 			if ( ! empty( $_POST['licenses'] ) && ! empty( $_POST['save_licenses_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_licenses_nonce'] ) ), 'save_licenses' ) ) {
 				// phpcs:ignore
-				$post_licenses       = isset( $_POST['licenses'] ) ? wp_unslash( $_POST['licenses'] ) : array();
+				$post_licenses = isset( $_POST['licenses'] ) ? wp_unslash( $_POST['licenses'] ) : array();
 
 				if ( ! empty( $post_licenses ) ) {
 					foreach ( $post_licenses as $slug => $license_details ) {
@@ -1584,7 +1890,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 								'license_key'     => '',
 								'license_expires' => '',
 								'current_version' => self::$version,
-								'environment'     => self::get_environment(),
+								'environment'     => '',
 							)
 						);
 
@@ -1595,39 +1901,23 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 			self::display_messages();
 			?>
+			<h2 class="screen-reader-text"><?php echo esc_attr( __( 'Licenses', 'slswcclient' ) ); ?></h2>
+			<div id="license-action-response-message"></div>
 			<form name="licenses-form" action="" method="post">
 				<?php wp_nonce_field( 'save_licenses', 'save_licenses_nonce' ); ?>
-				<table class="form-table licenses-table widefat striped" >
-					<thead>
-						<tr>
-							<th><?php esc_attr_e( 'Product Name', 'slswcclient' ); ?></th>
-							<th><?php esc_attr_e( 'License Key', 'slswcclient' ); ?></th>
-							<th><?php esc_attr_e( 'License Status', 'slswcclient' ); ?></th>
-							<th><?php esc_attr_e( 'License Expires', 'slswcclient' ); ?></th>
-							<th><?php esc_attr_e( 'Deactivate', 'slswcclient' ); ?></th>
-							<th><?php esc_attr_e( 'Environment', 'slswcclient' ); ?></th>
-							<?php do_action( 'slswc_after_licenses_column_headings' ); ?>
-							<!--<th><?php esc_attr_e( 'Action', 'slswcclient' ); ?></th>-->
-						</tr>
-					</thead>
-					<tbody>
-						<?php
-						if ( ! empty( self::$plugins ) ) :
-							self::licenses_rows( self::$plugins );
-							do_action( 'slswc_after_plugins_licenses_list' );
-							endif;
+				<div id="the-list">
+					<?php if ( ! empty( self::$plugins ) ) : 
+						self::licenses_rows( self::$plugins );
+						do_action( 'slswc_after_plugins_licenses_rows' );
+					endif;
 
-						if ( ! empty( self::$themes ) ) :
-							self::licenses_rows( self::$themes );
-							do_action( 'slswc_after_themes_licenses_list' );
-							endif;
-						?>
-						<?php do_action( 'slswc_after_products_licenses_list', self::$plugins, self::$themes ); ?>
-					</tbody>
-				</table>
-				<p>
-					<?php submit_button( __( 'Save Licenses', 'slswcclient' ), 'primary', 'save_licenses' ); ?>
-				</p>
+					if ( ! empty( self::$themes ) ) :
+						self::licenses_rows( self::$themes );
+						do_action( 'slswc_after_themes_licenses_list' );
+						endif;
+					?>
+					<?php do_action( 'slswc_after_products_licenses_list', self::$plugins, self::$themes ); ?>
+				</div>
 			</form>
 			<?php
 		}
@@ -1653,67 +1943,110 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				$current_version     = $has_license_info ? trim( $license_info['current_version'] ) : '';
 				$license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
 				$license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
-				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : self::get_environment();
+				$license_environment = $has_license_info ? trim( $license_info['environment'] ) : '';
 				$active_status       = $has_license_info ? ( array_key_exists( 'active_status', $license_info ) && 'yes' === $license_info['active_status'][ $license_environment ] ? true : false ) : false;
+				
+				$is_active = wc_string_to_bool( $active_status );
+
+				$chip_class = $is_active ? 'active' : 'inactive';
 				?>
-				<tr>
-					<td><?php echo esc_attr( $product_name ); ?></td>
-					<td class="license-field">
-						<input type="text"
+				<div class="plugin-card plugin-card-<?php echo esc_attr( $product['slug'] ); ?>">
+					<div class="plugin-card-top">
+						<div class="column-name">
+							<h3><?php echo esc_attr( $product_name ); ?></h3>
+						</div>
+						<div class="action-links">
+							<ul class="plugin-action-buttons">
+								<li>
+									<span class="chip <?php echo esc_attr( $chip_class ); ?>" id="<?php echo esc_attr( $slug ); ?>_license_status_text">
+										<span class="chip-content">
+											<?php self::license_status_field( $license_status ); ?>
+										</span>
+									</span>
+									<input
+										type="hidden"
+										name="licenses[<?php echo esc_attr( $slug ); ?>][license_status]"
+										id="<?php echo esc_attr( $slug ); ?>_license_status"
+										value="<?php echo esc_attr( $license_status ); ?>"
+									/>
+								</li>
+							</ul>
+						</div>
+						<div class="column-license-key">
+							<label for="<?php echo esc_attr( $slug ); ?>_license_key">
+								<?php echo esc_attr( __( 'License Key', 'slswcclient' ) ); ?>
+							</label>							
+							<input type="text"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][license_key]"
 								id="<?php echo esc_attr( $slug ); ?>_license_key"
 								value="<?php echo esc_attr( $license_key ); ?>"
-						/>
-						<input type="hidden"
+								class="input-text regular-text"
+							/>
+							
+							<label for="<?php echo esc_attr( $slug ); ?>_force-client-environment">
+								<input type="checkbox"
+									name="<?php echo esc_attr( $slug ); ?>_force-client-environment"
+									id="<?php echo esc_attr( $slug ); ?>_force-client-environment"
+									class="input-checkbox force-client-environment"
+									data-slug="<?php echo esc_attr( $slug ); ?>"
+									value="0"
+								/>
+								<?php esc_attr_e( 'Force client environment' ); ?>
+							</label>
+							
+							<label for="<?php echo esc_attr( $slug ); ?>_environment" id="<?php echo esc_attr( $slug ); ?>_environment-label" class="hidden">
+								<?php esc_attr_e( 'Environment', 'slswcclient' ); ?>
+							</label>
+
+							<select id="<?php echo esc_attr( $slug ); ?>_environment"
+								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
+								class="input-select <?php echo esc_attr( $slug ); ?>_environment hidden"
+								data-slug="<?php echo esc_attr( $slug ); ?>"
+							>
+								<option value="" <?php selected( $license_environment, '' ); ?>><?php esc_attr_e( 'Select environment', 'slswcclient' ); ?></option>
+								<option value="staging" <?php selected( $license_environment, 'staging'); ?>><?php esc_attr_e( 'Staging' ); ?></option>
+								<option value="live" <?php selected( $license_environment, 'live' ); ?>><?php esc_attr_e( 'Live' ); ?></option>
+							</select>
+
+
+							<input type="hidden"
 								name="licenses[<?php echo esc_attr( $slug ); ?>][current_version]"
 								id="<?php echo esc_attr( $slug ); ?>_current_version"
 								value="<?php echo esc_attr( $current_version ); ?>"
-						/>
-					</td>
-					<td class="license-field">
-						<?php self::license_status_field( $license_status ); ?>
-						<input type="hidden"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][license_status]"
-								id="<?php echo esc_attr( $slug ); ?>_license_status"
-								value="<?php echo esc_attr( $license_status ); ?>"
-						/>
-					</td>
-					<td class="license-field">
-						<?php echo esc_attr( $license_expires ); ?>
-						<input type="hidden"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][license_expires]"
-								id="<?php echo esc_attr( $slug ); ?>_license_expires"
-								value="<?php echo esc_attr( $license_expires ); ?>"
-						/>
-					</td>
-					<td class="license-field">
-						<input type="checkbox"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][deactivate_license]"
-								value="deactivate_license"
-								id="<?php echo esc_attr( $slug ); ?>_deactivate_license"
-								<?php is_array( $license_info ) && array_key_exists( 'deactivate_license', $license_info ) && ! $active_status ? checked( $license_info['deactivate_license'], 'deactivate_license' ) : ''; ?>
-						/>
-					</td>
-					<td class="license-field">
-						<input type="radio"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>_environment_live"
-								value="live"
-								<?php checked( $license_environment, 'live' ); ?>
-						/> <?php echo esc_attr( __( 'Live', 'slswcclient' ) ); ?>
-
-						<input type="radio"
-								name="licenses[<?php echo esc_attr( $slug ); ?>][environment]"
-								id="<?php echo esc_attr( $slug ); ?>_environment_staging"
-								value="staging"
-								<?php checked( $license_environment, 'staging' ); ?>
-						/> <?php echo esc_attr( __( 'Staging', 'slswcclient' ) ); ?>
-					</td>
-					<?php do_action( 'slswc_after_license_column', $product ); ?>
-					<!--<td>
-						<a href="#"><span class="dashicons dashicons-yes"></span> Check</a>
-					</td>-->
-				</tr>
+							/>
+						</div>
+					</div>
+					<div class="plugin-card-bottom slswc-plugin-card-bottom">					
+						<div class="column-updated">
+							<?php if ( $license_expires != '' ): ?>
+								<?php esc_attr_e( 'License expires in ', 'slswcclient' ); ?>
+								<?php echo esc_attr( human_time_diff( strtotime( $license_expires ) ) ); ?>								
+								<?php echo wc_help_tip( $license_expires ); ?>
+								<input
+									type="hidden"
+									name="licenses[<?php echo esc_attr( $slug ); ?>][license_expires]"
+									id="<?php echo esc_attr( $slug ); ?>_license_expires"
+									value="<?php echo esc_attr(  $license_expires ); ?>"
+								/>
+							<?php endif; ?>
+						</div>
+						<div class="column-compatibility">
+							<a
+								id="<?php echo esc_attr( $slug ); ?>-license-action"
+								href="#"
+								data-action="<?php echo ( $is_active ? 'deactivate' : 'activate' ); ?>"							
+								data-slug="<?php echo esc_attr( $slug ); ?>"
+								data-license_key="<?php echo esc_attr( $license_key ); ?>"
+								data-version="<?php echo esc_attr( $current_version ); ?>"
+								data-domain="<?php echo esc_url_raw( get_site_url('') ); ?>"
+								data-nonce="<?php echo esc_attr( wp_create_nonce( 'activate-license-' . esc_attr( $slug ) ) ); ?>"
+								data-environment="<?php echo esc_attr( $license_environment ); ?>"
+								class='button button-primary license-action'>							
+								<?php echo esc_attr( $is_active ? __( 'Deactivate', 'slswcclient' ) : __( 'Activate', 'slswcclient' ) ); ?>
+							</a>
+						</div>
+					</div>
+				</div>				
 				<?php do_action( 'slswc_after_license_row', $product ); ?>
 				<?php
 			endforeach;
@@ -1795,7 +2128,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 											<?php esc_attr_e( 'Manual Download Only.', 'slswcclient' ); ?>
 										<?php else : ?>
 										<a class="slswc-<?php echo esc_attr( $action_class ); ?>-now <?php echo esc_attr( $action_class ); ?>-now button aria-button-if-js"
-											data-package="<?php echo esc_url_raw( $product['download_url'] ); ?>"
+											data-download_url="<?php echo esc_url_raw( $product['download_url'] ); ?>"
 											data-slug="<?php echo esc_attr( $product['slug'] ); ?>"
 											href="#"
 											<?php // translators: %s - The license name and version. ?>
@@ -1839,7 +2172,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				</div>
 			<?php else : ?>
 				<div class="no-products">
-					<p><?php esc_attr_e( 'It seems you currently do not have any products in this category yet.', 'slswcclient' ); ?></p>
+					<p><?php esc_attr_e( 'No products in this category yet.', 'slswcclient' ); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
@@ -1855,15 +2188,18 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		public static function api_form() {
 			$keys = self::get_api_keys();
 			?>
-			<h2><?php esc_attr_e( 'API Settings', 'slswcclient' ); ?></h2>
+			<h2><?php esc_attr_e( 'Downloads API Settings', 'slswcclient' ); ?></h2>
 			<?php if ( empty( $keys ) && ! self::is_connected() ) : ?>
 				<?php
 				$username        = isset( $keys['username'] ) ? $keys['username'] : '';
 				$consumer_key    = isset( $keys['consumer_key'] ) ? $keys['consumer_key'] : '';
 				$consumer_secret = isset( $keys['consumer_secret'] ) ? $keys['consumer_secret'] : '';
 				?>
+			<p>
+				<?php esc_attr_e( 'The Downloads API allows you to install plugins directly from the Updates Server into your website instead of downloading and uploading manually.', 'slswcclient' ); ?>
+			</p>
 			<p class="about-text">
-				<?php esc_attr_e( 'Enter your marketplace API details and click save. On the next step click Connect to get your subscriptions listed here.', 'slswcclient' ); ?>
+				<?php esc_attr_e( 'Enter API details then save to proceed to the next step to connect', 'slswcclient' ); ?>
 			</p>
 			<form name="api-keys" method="post" action="">
 				<?php wp_nonce_field( 'save_api_keys', 'save_api_keys_nonce' ); ?>
@@ -1994,7 +2330,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		}
 
 		/**
-		 * License acivated field.
+		 * License activated field.
 		 *
 		 * @since 1.0.0
 		 * @since 1.0.1
@@ -2174,7 +2510,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			}
 
 			$maybe_type_key = '' !== $type ? $type : '';
-			return apply_filters( 'slswc_client_licence_data_for_all' . $maybe_type_key, $licenses_data );
+			return apply_filters( 'slswc_client_license_data_for_all' . $maybe_type_key, $licenses_data );
 		}
 
 		/**
@@ -2211,7 +2547,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 */
 		public static function get_tab() {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
-			return isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['tab'] ) ) ) : '';
+			return isset( $_GET['tab'] ) && ! empty( $_GET['tab'] ) ? esc_attr( sanitize_text_field( wp_unslash( $_GET['tab'] ) ) ) : 'licenses';
 			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		}
 
@@ -2238,28 +2574,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 				foreach ( $wp_themes as $theme_file => $theme_details ) {
 					if ( $theme_details->get( 'SLSWC' ) && 'theme' === $theme_details->get( 'SLSWC' ) ) {
-
-						$theme_data = array(
-							'file'              => WP_CONTENT_DIR . "/themes/{$theme_file}",
-							'name'              => $theme_details->get( 'Name' ),
-							'theme_url'         => $theme_details->get( 'ThemeURI' ),
-							'description'       => $theme_details->get( 'Description' ),
-							'author'            => $theme_details->get( 'Author' ),
-							'author_uri'        => $theme_details->get( 'AuthorURI' ),
-							'version'           => $theme_details->get( 'Version' ),
-							'template'          => $theme_details->get( 'Template' ),
-							'status'            => $theme_details->get( 'Status' ),
-							'tags'              => $theme_details->get( 'Tags' ),
-							'text_domain'       => $theme_details->get( 'TextDomain' ),
-							'domain_path'       => $theme_details->get( 'DomainPath' ),
-							// SLSWC Headers.
-							'slswc'             => ! empty( $theme_details->get( 'SLSWC' ) ) ? $theme_details->get( 'SLSWC' ) : '',
-							'slug'              => ! empty( $theme_details->get( 'Slug' ) ) ? $theme_details->get( 'Slug' ) : $theme_details->get( 'TextDomain' ),
-							'required_wp'       => ! empty( $theme_details->get( 'RequiredWP' ) ) ? $theme_details->get( 'RequiredWP' ) : '',
-							'compatible_to'     => ! empty( $theme_details->get( 'CompatibleTo' ) ) ? $theme_details->get( 'CompatibleTo' ) : '',
-							'documentation_url' => ! empty( $theme_details->get( 'DocumentationURL' ) ) ? $theme_details->get( 'DocumentationURL' ) : '',
-							'type'              => 'theme',
-						);
+						$theme_data = self::format_theme_data( $theme_details, $theme_file );
 
 						$themes[ $theme_details->get( 'Slug' ) ] = wp_parse_args( $theme_data, self::default_remote_product( 'theme' ) );
 					}
@@ -2295,28 +2610,9 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				foreach ( $wp_plugins as $plugin_file => $plugin_details ) {
 					if ( isset( $plugin_details['SLSWC'] ) && 'plugin' === $plugin_details['SLSWC'] ) {
 
-						$plugin_data = array(
-							'file'              => WP_CONTENT_DIR . "/plugins/{$plugin_file}",
-							'name'              => $plugin_details['Name'],
-							'title'             => $plugin_details['Title'],
-							'description'       => $plugin_details['Description'],
-							'author'            => $plugin_details['Author'],
-							'author_uri'        => $plugin_details['AuthorURI'],
-							'version'           => $plugin_details['Version'],
-							'plugin_url'        => $plugin_details['PluginURI'],
-							'text_domain'       => $plugin_details['TextDomain'],
-							'domain_path'       => $plugin_details['DomainPath'],
-							'network'           => $plugin_details['Network'],
-							// SLSWC Headers.
-							'slswc'             => ! empty( $plugin_details['SLSWC'] ) ? $plugin_details['SLSWC'] : '',
-							'slug'              => ! empty( $plugin_details['Slug'] ) ? $plugin_details['Slug'] : $plugin_details['TextDomain'],
-							'required_wp'       => ! empty( $plugin_details['RequiredWP'] ) ? $plugin_details['RequiredWP'] : '',
-							'compatible_to'     => ! empty( $plugin_details['CompatibleTo'] ) ? $plugin_details['CompatibleTo'] : '',
-							'documentation_url' => ! empty( $plugin_details['DocumentationURL'] ) ? $plugin_details['DocumentationURL'] : '',
-							'type'              => 'plugin',
-						);
+						$plugin_data = self::format_plugin_data( $plugin_details, $plugin_file, 'plugin' );
 
-						$plugins[ $plugin_details['Slug'] ] = wp_parse_args( $plugin_data, self::default_remote_product( 'theme' ) );
+						$plugins[ $plugin_data['slug'] ] = wp_parse_args( $plugin_data, self::default_remote_product( 'theme' ) );
 					}
 				}
 
@@ -2324,6 +2620,61 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 			}
 
 			return $plugins;
+		}
+
+		public static function format_plugin_data( $data, $file = '', $type = 'plugin' ) {
+			$formated_data = array(				
+				'name'              => $data['Name'],
+				'title'             => $data['Title'],
+				'description'       => $data['Description'],
+				'author'            => $data['Author'],
+				'author_uri'        => $data['AuthorURI'],
+				'version'           => $data['Version'],
+				'plugin_url'        => $data['PluginURI'],
+				'text_domain'       => $data['TextDomain'],
+				'domain_path'       => $data['DomainPath'],
+				'network'           => $data['Network'],
+				// SLSWC Headers.
+				'slswc'             => ! empty( $data['SLSWC'] ) ? $data['SLSWC'] : '',
+				'slug'              => ! empty( $data['SLSWCSlug'] ) ? $data['Slug'] : $data['TextDomain'],
+				'requires_wp'       => ! empty( $data['RequiresWP'] ) ? $data['RequiresWP'] : '',
+				'compatible_to'     => ! empty( $data['SLSWCCompatibleTo'] ) ? $data['SLSWCCompatibleTo'] : '',
+				'documentation_url' => ! empty( $data['SLSWCDocumentationURL'] ) ? $data['SLSWCDocumentationURL'] : '',
+				'type'              => $type,
+			);
+
+			if ( $file != '' ) {
+				$sub_dir = $type === 'theme' ? 'themes' : 'plugins';
+				$formated_data['file'] = WP_CONTENT_DIR . "/{$sub_dir}/{$file}";
+			}
+
+			return apply_filters( 'slswc_client_formated_plugin_data', $formated_data, $data, $file, $type );
+		}
+
+		public static function format_theme_data ( $theme, $theme_file ) {
+			$formated_data = array(
+				'file'              => WP_CONTENT_DIR . "/themes/{$theme_file}",
+				'name'              => $theme->get( 'Name' ),
+				'theme_url'         => $theme->get( 'ThemeURI' ),
+				'description'       => $theme->get( 'Description' ),
+				'author'            => $theme->get( 'Author' ),
+				'author_uri'        => $theme->get( 'AuthorURI' ),
+				'version'           => $theme->get( 'Version' ),
+				'template'          => $theme->get( 'Template' ),
+				'status'            => $theme->get( 'Status' ),
+				'tags'              => $theme->get( 'Tags' ),
+				'text_domain'       => $theme->get( 'TextDomain' ),
+				'domain_path'       => $theme->get( 'DomainPath' ),
+				// SLSWC Headers.
+				'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
+				'slug'              => ! empty( $theme->get( 'SLSWCSlug' ) ) ? $theme->get( 'SLSWCSlug' ) : $theme->get( 'TextDomain' ),
+				'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) ) ? $theme->get( 'RequiresWP' ) : '',
+				'compatible_to'     => ! empty( $theme->get( 'SLSWCCompatibleTo' ) ) ? $theme->get( 'SLSWCCompatibleTo' ) : '',
+				'documentation_url' => ! empty( $theme->get( 'SLSWCDocumentationURL' ) ) ? $theme->get( 'SLSWCDocumentationURL' ) : '',
+				'type'              => 'theme',
+			);
+
+			return apply_filters( 'slswc_client_formated_theme_data', $formated_data, $theme, $theme_file );
 		}
 
 		/**
@@ -2479,7 +2830,10 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 				);
 
 				// Return null to halt the execution.
-				return null;
+				return array(
+					'status' => $response['response']['code'],
+					'response' => $result->get_error_message(),
+				);
 			}
 		}
 
@@ -2516,16 +2870,20 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 
 					$body = json_decode( $response['body'] );
 
+					$response_message = '';
+
 					foreach ( $body->data->params as $param => $message ) {
-						return new WP_Error(
-							'slswc_validation_failed',
-							sprintf(
-								// translators: %s: Error/response message.
-								__( 'There was a problem with your license: %s', 'slswcclient' ),
-								$message
-							)
-						);
+						$response_message .= $message;
 					}
+
+					return new WP_Error(
+						'slswc_validation_failed',
+						sprintf(
+							// translators: %s: Error/response message.
+							__( 'There was a problem with your license: %s', 'slswcclient' ),
+							$response_message
+						)
+					);
 				}
 
 				// The server is broken.
@@ -2703,8 +3061,12 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 * @version 1.0.0
 		 * @since   1.0.0
 		 */
-		public static function is_dev( $url = '', $environment = 'live' ) {
+		public static function is_dev( $url = '', $environment = '' ) {
 			$is_dev = false;
+
+			if ( $environment === 'staging' ) {
+				return apply_filters( 'slswc_client_is_dev', true, $url, $environment );
+			}
 
 			if ( 'live' === $environment ) {
 				return apply_filters( 'slswc_client_is_dev', false, $url, $environment );
@@ -2829,18 +3191,6 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		}
 
 		/**
-		 * Get the current environment the client is running on.
-		 *
-		 * @version 1.0.0
-		 * @since   1.0.0
-		 *
-		 * @return string
-		 */
-		public static function get_environment() {
-			return self::is_dev( get_option( 'siteurl', '' ) ) ? 'staging' : 'live';
-		}
-
-		/**
 		 * Class logger so that we can keep our debug and logging information cleaner
 		 *
 		 * @version 1.0.0
@@ -2955,28 +3305,28 @@ if ( ! function_exists( 'slswc_extra_headers' ) ) {
 			$headers[] = 'SLSWC';
 		}
 
-		if ( ! in_array( 'Updated', $headers, true ) ) {
-			$headers[] = 'Updated';
+		if ( ! in_array( 'SLSWC Updated', $headers, true ) ) {
+			$headers[] = 'SLSWC Updated';
 		}
 
 		if ( ! in_array( 'Author', $headers, true ) ) {
 			$headers[] = 'Author';
 		}
 
-		if ( ! in_array( 'Slug', $headers, true ) ) {
-			$headers[] = 'Slug';
+		if ( ! in_array( 'SLSWC Slug', $headers, true ) ) {
+			$headers[] = 'SLSWC Slug';
 		}
 
-		if ( ! in_array( 'Required WP', $headers, true ) ) {
-			$headers[] = 'Required WP';
+		if ( ! in_array( 'Requires at least', $headers, true ) ) {
+			$headers[] = 'Requires at least';
 		}
 
-		if ( ! in_array( 'Compatible To', $headers, true ) ) {
-			$headers[] = 'Compatible To';
+		if ( ! in_array( 'SLSWC Compatible To', $headers, true ) ) {
+			$headers[] = 'SLSWC Compatible To';
 		}
 
-		if ( ! in_array( 'Documentation URL', $headers, true ) ) {
-			$headers[] = 'Documentation URL';
+		if ( ! in_array( 'SLSWC Documentation URL', $headers, true ) ) {
+			$headers[] = 'SLSWC Documentation URL';
 		}
 
 		return $headers;
@@ -2998,7 +3348,7 @@ add_filter( 'extra_plugin_headers', 'slswc_extra_headers' );
 add_filter( 'extra_theme_headers', 'slswc_extra_headers' );
 
 add_action( 'admin_init', 'slswc_client_manager', 12 );
-add_action( 'after_setup_theme', 'slswc_client_manager' );
+// add_action( 'after_setup_theme', 'slswc_client_manager' );
 add_action( 'admin_footer', 'slswc_client_admin_script', 11 );
 
 if ( ! function_exists( 'slswc_client_admin_script' ) ) {
