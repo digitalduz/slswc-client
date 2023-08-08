@@ -1,6 +1,7 @@
 {
     "name": "madvault/slswc-client",
     "description": "Software License Server for WooCommerce",
+    "license": "GPL-2.0-or-later",
     "keywords": [
         "wordpress",
         "plugin"
