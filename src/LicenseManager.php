@@ -16,8 +16,8 @@ use Madvault\Slswc\Client\Helper;
 /**
  * Class responsible for a single product.
  *
- * @version 1.0.0
- * @since   1.0.0
+ * @version 1.1.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
  */
 //phpcs:ignore
 class LicenseManager {
@@ -32,8 +32,8 @@ class LicenseManager {
 	 * Version - current plugin version
 	 *
 	 * @var string $version
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $version;
 
@@ -41,8 +41,8 @@ class LicenseManager {
 	 * License URL - The base URL for your WooCommerce install
 	 *
 	 * @var string $license_server_url
-	 * @version 1.0.0
-	 * @since 1.0.0
+	 * @version 1.1.0
+	 * @since 1.1.0
 	 */
 	public $license_server_url;
 
@@ -50,8 +50,8 @@ class LicenseManager {
 	 * Slug - the plugin slug to check for updates with the server
 	 *
 	 * @var string $slug
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $slug;
 
@@ -59,8 +59,8 @@ class LicenseManager {
 	 * Plugin text domain
 	 *
 	 * @var string $text_domain
-	 * @version 1.0.0
-	 * @since 1.0.0
+	 * @version 1.1.0
+	 * @since 1.1.0
 	 */
 	public $text_domain;
 
@@ -68,8 +68,8 @@ class LicenseManager {
 	 * Path to the plugin file or directory, relative to the plugins directory
 	 *
 	 * @var string $base_file
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $base_file;
 
@@ -77,8 +77,8 @@ class LicenseManager {
 	 * Path to the plugin file or directory, relative to the plugins directory
 	 *
 	 * @var string $name
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $name;
 
@@ -86,8 +86,8 @@ class LicenseManager {
 	 * Update interval - what period in hours to check for updates defaults to 12;
 	 *
 	 * @var string $update_interval
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $update_interval;
 
@@ -95,8 +95,8 @@ class LicenseManager {
 	 * Option name - wp option name for license and update information stored as $slug_wc_software_license.
 	 *
 	 * @var string $option_name
-	 * @version 1.0.0
-	 * @since 1.0.0
+	 * @version 1.1.0
+	 * @since 1.1.0
 	 */
 	public $option_name;
 
@@ -104,8 +104,8 @@ class LicenseManager {
 	 * The license server host.
 	 *
 	 * @var string $version
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	private $license_server_host;
 
@@ -113,8 +113,8 @@ class LicenseManager {
 	 * The plugin license key.
 	 *
 	 * @var string $version
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	private $license_key;
 
@@ -122,8 +122,8 @@ class LicenseManager {
 	 * The domain the plugin is running on.
 	 *
 	 * @var string $version
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	private $domain;
 
@@ -131,8 +131,8 @@ class LicenseManager {
 	 * The plugin license key.
 	 *
 	 * @var string $version
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	private $admin_notice;
 
@@ -140,8 +140,8 @@ class LicenseManager {
 	 * The current environment on which the client is install.
 	 *
 	 * @var     string
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	private $environment;
 
@@ -149,8 +149,8 @@ class LicenseManager {
 	 * The plugin file
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $plugin_file;
 
@@ -158,8 +158,8 @@ class LicenseManager {
 	 * Whether to enable debugging or not.
 	 *
 	 * @var bool
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $debug;
 	
@@ -167,8 +167,8 @@ class LicenseManager {
 	 * License details
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_details;
 
@@ -176,8 +176,8 @@ class LicenseManager {
 	 * The theme file
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $theme_file;
 
@@ -185,8 +185,8 @@ class LicenseManager {
 	 * The license server url.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_manager_url;
 
@@ -194,8 +194,8 @@ class LicenseManager {
 	 * The software type.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $software_type;
 
@@ -203,8 +203,8 @@ class LicenseManager {
 	 * Additional arguments to override default ones.
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $args = array();
 
@@ -212,8 +212,8 @@ class LicenseManager {
 	 * List of messages
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $messages = array();
 
@@ -221,8 +221,8 @@ class LicenseManager {
 	 * Instance of ApiClient
 	 *
 	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	private $client;
 
@@ -230,16 +230,16 @@ class LicenseManager {
 	 * License details
 	 *
 	 * @var LicenseDetails
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license;
 
 	/**
 	 * Return an instance of this class.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
@@ -262,8 +262,8 @@ class LicenseManager {
 	/**
 	 * Initialize the class actions.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
@@ -287,7 +287,7 @@ class LicenseManager {
 
 		$this->base_file   = $base_file;
 		$this->name        = empty( $args['name'] ) && ! empty( $args['title'] ) ? $args['title'] : $args['name'];
-		$this->version     = empty( $args['version'] ) ? '1.0.0' : $args['version'];
+		$this->version     = empty( $args['version'] ) ? '1.1.0' : $args['version'];
 		$this->text_domain = empty( $args['text_domain'] ) ? $this->slug : $args['text_domain'];
 
 		$this->license_server_url = apply_filters(
@@ -328,8 +328,8 @@ class LicenseManager {
 	 * Get the default args
 	 *
 	 * @return  array $args
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public static function get_default_args() {
 		return array(
@@ -343,8 +343,8 @@ class LicenseManager {
 	 * Initialize action hooks and filters
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function init_hooks() {
 		if ( ! is_admin() ) {
@@ -398,8 +398,8 @@ class LicenseManager {
 	/**
 	 * Check the installation and configure any defaults that are required
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @todo move this to a plugin activation hook
 	 */
 	public function check_install() {
@@ -473,7 +473,7 @@ class LicenseManager {
 	/**
 	 * Process the manual check for update if check for update is clicked on the plugins page.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 */
 	public function process_manual_update_check() {
 		if ( current_user_can( 'update_plugins' ) || check_admin_referer( 'slswc_check_for_update' ) ) {
@@ -530,7 +530,7 @@ class LicenseManager {
 	/**
 	 * Out the results of the manual check
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 */
 	public function output_manual_update_check_result() {
 
@@ -575,8 +575,8 @@ class LicenseManager {
 	 *
 	 * Source for this solution: Plugin Update Checker Library 3387.1 by Janis Elsts.
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 * @param bool   $allow Whether to allow or not.
 	 * @param string $host  The host name.
 	 * @return bool
@@ -638,8 +638,8 @@ class LicenseManager {
 	 * @param string $type    The type of message.
 	 * @param string $key     The message key.
 	 * @return array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function add_message( $message, $type = 'success', $key = '' ) {
 		$this->messages[ $type ][] = array(

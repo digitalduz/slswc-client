@@ -82,7 +82,6 @@ add_action( 'plugins_loaded', function () {
 	);
 
 	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $license_details );
-	$plugin->init_hooks();
 });
 
 function slswc_client_manager () {

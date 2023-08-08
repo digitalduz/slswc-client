@@ -2,8 +2,8 @@
 /**
  * Defines the plugin updater class
  *
- * @version     1.0.2
- * @since       1.0.2
+ * @version     1.1.0
+ * @since       1.1.0 - Refactored into classes and converted into a composer package.
  * @package     Client
  * @link        https://licenseserver.io/
  */
@@ -13,8 +13,8 @@ namespace Madvault\Slswc\Client;
 /**
  * Theme update class
  *
- * @version 1.0.0
- * @since   1.0.0
+ * @version 1.1.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
  */
 class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 
@@ -22,8 +22,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * The license details.
 	 *
 	 * @var LicenseDetails
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license;
 
@@ -31,8 +31,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * The plugin slug.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $slug;
 
@@ -40,8 +40,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * The theme version
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $version;
 
@@ -49,16 +49,16 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 * The plugin base file name.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $theme_file;
 
 	/**
 	 * Get an instance of this class..
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
@@ -74,8 +74,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	/**
 	 * Initialize the class actions.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $theme_file - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
@@ -90,14 +90,16 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 		$this->slug = $args['slug'];
 
 		parent::__construct( $license_server_url, $theme_file, $args );
+
+		$this->init_hooks();
 	}
 
 	/**
 	 * Initialize the hooks
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function init_hooks() {
 		add_filter( 'pre_set_site_transient_update_themes', array( $this, 'update_check' ), 21, 1 );
@@ -109,8 +111,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 	 *
 	 * @param   mixed $transient transient object from update api.
 	 * @return  mixed $transient transient object from update api.
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function update_check( $transient ) {
 

@@ -16,8 +16,8 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * The plugin file
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $plugin_file;
 
@@ -25,16 +25,16 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * The dir and file of the plugin
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $plugin_dir_file;
 
 	/**
 	 * Get an instance of this class..
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
@@ -50,8 +50,8 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	/**
 	 * Initialize the class.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $plugin_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
 	 *
@@ -60,7 +60,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * @example
 	 *   $plugin = new Plugin( 'https://licenseserver.io', __FILE__, array(
 	 * 		 'slug'        => 'my-plugin',
-	 * 		 'version'     => '1.0.0',
+	 * 		 'version'     => '1.1.0',
 	 * 		 'license_key' => 'LICENSE_KEY',
 	 *   ) );
 	 */
@@ -73,14 +73,16 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 		$this->license_server_url = $license_server_url;
 
 		parent::__construct( $license_server_url, $plugin_file, $args );
+
+		$this->init_hooks();
 	}
 
 	/**
 	 * Initialize Hooks
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function init_hooks() {
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
@@ -95,8 +97,8 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * Get the plugin folder and base name based on the file path
 	 *
 	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	function plugin_dir_file() {
 		$plugin_folder = '';
@@ -121,7 +123,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	/**
 	 * Check for updates with the license server.
 	 *
-	 * @since  1.0.0
+	 * @since  1.1.0
 	 * @param  object $transient object from the update api.
 	 * @return object $transient object possibly modified.
 	 */
@@ -167,7 +169,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	/**
 	 * Add the plugin information to the WordPress Update API.
 	 *
-	 * @since  1.0.0
+	 * @since  1.1.0
 	 * @param  bool|object $result The result object. Default false.
 	 * @param  string      $action The type of information being requested from the Plugin Install API.
 	 * @param  object      $args Plugin API arguments.
@@ -211,7 +213,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * Add a check for update link on the plugins page. You can change the link with the supplied filter.
 	 * returning an empty string will disable this link
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 * @param array  $links The array having default links for the plugin.
 	 * @param string $file The name of the plugin file.
 	 */
@@ -248,8 +250,8 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 *
 	 * @param object $transient The transient object.
 	 * @return object $transient The possibly modified transient object.
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function change_update_information ( $transient ) {
 		//If we are on the update core page, change the update message for unlicensed products
@@ -299,7 +301,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 * @param object $update      The update object.
 	 * @return void
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function need_license_message ( $plugin_data, $update ) {
 		if ( ! empty( $update->package ) ) {

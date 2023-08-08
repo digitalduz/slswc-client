@@ -15,8 +15,8 @@ use \WP_Error;
 /**
  * Class to manage products relying on the Software License Server for WooCommerce.
  *
- * @since   1.0.0
- * @version 1.0.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
+ * @version 1.1.0
  */
 class ApiClient {
 
@@ -24,8 +24,8 @@ class ApiClient {
 	 * Instance of this class.
 	 *
 	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static $instance = null;
 
@@ -33,8 +33,8 @@ class ApiClient {
 	 * The plugin updater client
 	 *
 	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $client;
 
@@ -42,8 +42,8 @@ class ApiClient {
 	 * The url of the server where updates are requested from.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_server_url;
 
@@ -51,8 +51,8 @@ class ApiClient {
 	 * The slug of the product using the client
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $slug;
 
@@ -69,8 +69,8 @@ class ApiClient {
 	 *
 	 * @param string $license_server_url The license server url.
 	 * @param string $slug               The software slug.
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function __construct( $license_server_url, $slug ) {
 		$this->license_server_url = $license_server_url;
@@ -82,8 +82,8 @@ class ApiClient {
 	 *
 	 * @param string $slug
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
   public function set_slug( $slug ) {
 		$this->slug = $slug;
@@ -94,8 +94,8 @@ class ApiClient {
 	 *
 	 * @param string $url The license server url.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_license_server_url($url) {
 		$this->license_server_url = $url;
@@ -105,8 +105,8 @@ class ApiClient {
 	 * Connect to the api server using API keys
 	 *
 	 * @return  boolean
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function connect() {
 		$keys       = $this->get_api_keys();
@@ -128,8 +128,8 @@ class ApiClient {
 	 * Get API Keys
 	 *
 	 * @return array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_api_keys() {
 		return array_filter(
@@ -148,8 +148,8 @@ class ApiClient {
 	 * @param string $consumer_key The consumer key.
 	 * @param string $consumer_secret The consumer secret.
 	 * @return boolean
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function save_api_keys($username, $consumer_key, $consumer_secret) {
 		$keys = array(
@@ -170,8 +170,8 @@ class ApiClient {
 	 * @param   string $action activate|deactivate|check_update.
 	 * @param   array  $request_info The data to be sent to the server.
 	 
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 *
 	 * @return object The response from the server.
 	 */
@@ -232,8 +232,8 @@ class ApiClient {
 	/**
 	 * Validate the license server response to ensure its valid response not what the response is.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param WP_Error|array $response The response or WP_Error.
 	 */
 	public function validate_response( $response ) {
@@ -317,8 +317,8 @@ class ApiClient {
 	/**
 	 * Validate the license server response to ensure its valid response not what the response is.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   object $response_body The data returned.
 	 */
 	public function check_response_status( $response_body ) {

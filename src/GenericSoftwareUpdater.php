@@ -13,16 +13,16 @@ namespace Madvault\Slswc\Client;
 /**
  * Abstract software updater class
  *
- * @version 1.0.0
- * @since   1.0.0
+ * @version 1.1.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
  */
 class GenericSoftwareUpdater {
 	/**
 	 * The instance of this class.
 	 *
 	 * @var plugin
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static $instance = null;
 
@@ -30,8 +30,8 @@ class GenericSoftwareUpdater {
 	 * The instance of the ApiClient class.
 	 *
 	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $client;
 
@@ -39,8 +39,8 @@ class GenericSoftwareUpdater {
 	 * The license details class.
 	 *
 	 * @var LicenseDetails
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license;
 
@@ -48,8 +48,8 @@ class GenericSoftwareUpdater {
 	 * License details
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_details = array();
 
@@ -57,16 +57,16 @@ class GenericSoftwareUpdater {
 	 * The license server url.
 	 *
 	 * @var [type]
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_server_url;
 
 	/**
 	 * Get an instance of this class..
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 * @param   string $license_server_url - The base url to your WooCommerce shop.
 	 * @param   string $base_file          - path to the plugin file or directory, relative to the plugins directory.
 	 * @param   array  $args               - array of additional arguments to override default ones.
@@ -92,8 +92,8 @@ class GenericSoftwareUpdater {
 	 * @param array  $file_data The plugin details.
 	 * @param string $base_file The base file.
 	 * @return array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function license_details_from_file_data( $file_data, $base_file ) {
 		$license_details = array(
@@ -116,7 +116,7 @@ class GenericSoftwareUpdater {
 	 * @param array $headers The array of headers.
 	 * @return array
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function extra_headers( $headers ) {
 		return Helper::extra_headers( $headers );
@@ -132,8 +132,8 @@ class GenericSoftwareUpdater {
 	 * Get the plugin version.
 	 *
 	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_version() {
 		return $this->license_details['version'];
@@ -143,8 +143,8 @@ class GenericSoftwareUpdater {
 	 * Get the slug.
 	 *
 	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_slug() {
 		return $this->license_details['slug'];
@@ -154,8 +154,8 @@ class GenericSoftwareUpdater {
 	 * Get domain.
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_domain() {
 		return $this->license_details['domain'];
@@ -176,8 +176,8 @@ class GenericSoftwareUpdater {
 	 *
 	 * @param string $slug The plugin slug.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_slug( $slug ) {
 		$this->license_details['slug'] = $slug;
@@ -188,8 +188,8 @@ class GenericSoftwareUpdater {
 	 *
 	 * @param string $version The plugin version.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_version( $version ) {
 		$this->license_details['version'] = $version;
@@ -200,8 +200,8 @@ class GenericSoftwareUpdater {
 	 *
 	 * @param string $domain Set the domain.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_domain( $domain ) {
 		$this->license_details['domain'] = $domain;
@@ -212,8 +212,8 @@ class GenericSoftwareUpdater {
 	 *
 	 * @param array $license_details The license details.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_license_details( $license_details ) {
 		$this->license_details = $license_details;

@@ -7,8 +7,8 @@ class LicenseDetails {
 	 * License server URL
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_server_url;
 
@@ -16,8 +16,8 @@ class LicenseDetails {
 	 * The option key for saving license details.
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $option_name = '';
 
@@ -31,8 +31,8 @@ class LicenseDetails {
 	 * Plugin file
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $plugin_file;
 
@@ -40,8 +40,8 @@ class LicenseDetails {
 	 * The license details
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $license_details = array();
 
@@ -51,8 +51,8 @@ class LicenseDetails {
 	 * @param string $license_server_url The license server url.
 	 * @param string $plugin_file        The plugin file.
 	 * @param array  $license_details    The plugin details.
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function __construct( $license_server_url, $plugin_file, $license_details  = array() ) {
 		$this->plugin_file        = $plugin_file;
@@ -120,8 +120,8 @@ class LicenseDetails {
 	 *
 	 * @param array $args Options to override the defaults.
 	 * @return  array
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function get_default_license_details( $args = array() ) {
 		$default_options = array(
@@ -152,8 +152,8 @@ class LicenseDetails {
 	 * @param array $license_details The license details.
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_license_details( $license_details ) {
 		$this->set_slug( $license_details['slug'] );
@@ -169,8 +169,8 @@ class LicenseDetails {
 	 * Get the software slug.
 	 *
 	 * @return string										
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_slug() {
 		return $this->license_details['slug'];
@@ -180,8 +180,8 @@ class LicenseDetails {
 	 * Get the domain
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_domain() {
 		return $this->license_details['domain'];
@@ -190,8 +190,8 @@ class LicenseDetails {
 	/**
 	 * Get the license status.
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 */
 	public function get_license_status() {
 		return $this->license_details['license_status'];
@@ -200,8 +200,8 @@ class LicenseDetails {
 	/**
 	 * Get the license key
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 */
 	public function get_license_key() {
 		return $this->license_details['license_key'];
@@ -211,8 +211,8 @@ class LicenseDetails {
 	/**
 	 * Get the license expiry
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 */
 	public function get_license_expires() {
 		return $this->license_details['license_expires'];
@@ -222,8 +222,8 @@ class LicenseDetails {
 	 * Get the environment
 	 *
 	 * @return string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_environment() {
 		return $this->license_details['environment'];
@@ -233,8 +233,8 @@ class LicenseDetails {
 	 * Get the current version
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_current_version() {
 		return $this->license_details['version'];
@@ -244,8 +244,8 @@ class LicenseDetails {
 	 * Get the license details.
 	 *
 	 * @return array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_license_details() {
 		return $this->license_details;
@@ -264,8 +264,8 @@ class LicenseDetails {
 	 *
 	 * @param string $slug
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_slug( $slug )	{
 		$this->license_details['slug'] = $slug;
@@ -276,8 +276,8 @@ class LicenseDetails {
 	 *
 	 * @param string $domain
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_domain( $domain ) {
 		$this->license_details['domain'] = $domain;
@@ -286,8 +286,8 @@ class LicenseDetails {
   /**
 	 * Set the license status
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 * @param string $license_status license status.
 	 */
 	public function set_license_status( $license_status ) {
@@ -297,8 +297,8 @@ class LicenseDetails {
 	/**
 	 * Set the license key
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 * @param string $license_key License key.
 	 */
 	public function set_license_key( $license_key ) {
@@ -308,8 +308,8 @@ class LicenseDetails {
 	/**
 	 * Set the license expires.
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 * @param string $license_expires License expiry date.
 	 */
 	public function set_license_expires( $license_expires ) {
@@ -321,8 +321,8 @@ class LicenseDetails {
 	 *
 	 * @param string $version The version to set.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_current_version( $version ) {
 		$this->license_details['version'] = $version;
@@ -333,8 +333,8 @@ class LicenseDetails {
 	 *
 	 * @param string $environment The environment to set.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_environment( $environment ) {
 		$this->license_details['environment'] = $environment;
@@ -345,8 +345,8 @@ class LicenseDetails {
 	 *
 	 * @param array $active_status The active status to set.
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function set_active_status( $active_status ) {
 		$this->license_details['active_status'] = $active_status;
@@ -356,8 +356,8 @@ class LicenseDetails {
 	 * Save the license details.
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function save() {
 		update_option( $this->option_name, $this->license_details );
@@ -369,7 +369,7 @@ class LicenseDetails {
 	/**
 	 * Validate the license is active and if not, set the status and return false
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 * @param object $response_body Response body.
 	 */
 	public function check_license( $response_body ) {
@@ -392,8 +392,8 @@ class LicenseDetails {
 	/**
 	 * The available license status types.
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 */
 	public function license_status_types() {
 
@@ -415,7 +415,7 @@ class LicenseDetails {
 	/**
 	 * Validate the license key information sent from the form.
 	 *
-	 * @since   1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @version 1.0.2
 	 * @param array $input the input passed from the request.
 	 */

@@ -17,14 +17,14 @@ use \Exception;
  * Helper class with static helper methods
  *
  * @version 1.1.0
- * @since   1.1.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
  */
 class Helper {
 	/**
 	 * Check if the account is connected to the api
 	 *
 	 * @return  boolean
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @version 1.1.0
 	 */
 	public static function is_connected() {
@@ -36,7 +36,7 @@ class Helper {
 	 * Get the API Keys stored in database
 	 *
 	 * @return  array
-	 * @since   1.1.0 - Moved from client manager class
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package. - Moved from client manager class
 	 * @version 1.1.0
 	 */
 	public static function get_api_keys() {
@@ -56,8 +56,8 @@ class Helper {
 	 * @param array  $args          Default details
 	 * @param string $software_type The type of software. plugin|theme
 	 * @return array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function get_file_details( $base_file, $args = array(), $software_type = 'plugin' ) {
 		return self::recursive_parse_args(
@@ -72,8 +72,8 @@ class Helper {
 	 * @param   string $base_file - Plugin file or theme slug.
 	 * @param   string $type - Product type. plugin|theme.
 	 * @return  array
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public static function get_file_information( $base_file, $type = 'plugin' ) {
 		$data = array();
@@ -105,7 +105,7 @@ class Helper {
 	 * @param string $type The product type.
 	 * @return array
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function format_plugin_data( $data, $file = '', $type = 'plugin' ) {
 		$formatted_data = array(				
@@ -143,7 +143,7 @@ class Helper {
 	 * @param string $theme_file The theme file.
 	 * @return array
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function format_theme_data ( $theme, $theme_file ) {
 		$formatted_data = array(
@@ -205,8 +205,8 @@ class Helper {
 	 * @param string $slug    Product slug.
 	 * @param string $package The product download url.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public static function product_background_installer( $slug = '', $package = '' ) {
 		global $wp_filesystem;
@@ -316,8 +316,8 @@ class Helper {
 	 * @param string $url The url to be checked.
 	 * @param string $environment The user specified environment of the url.
 	 * @return boolean
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function is_dev( $url = '', $environment = '' ) {
 		$is_dev = false;
@@ -366,8 +366,8 @@ class Helper {
 	 *
 	 * @param string $host The host to be checked.
 	 * @return boolean
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function is_ip_local( $host ) {
 		if ( 'localhost' === $host ) {
@@ -388,8 +388,8 @@ class Helper {
 	 *
 	 * @param string $host The host to be checked.
 	 * @return boolean
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function is_tld_dev( $host ) {
 		$tlds_to_check = apply_filters(
@@ -415,8 +415,8 @@ class Helper {
 	 *
 	 * @param string $host The domain to be checked.
 	 * @return boolean
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public static function is_subdomain_dev( $host ) {
 		if ( substr_count( $host, '.' ) <= 1 ) {
@@ -451,7 +451,7 @@ class Helper {
 	/**
 	 * The available license status types
 	 *
-	 * @since   1.1.0 - Moved from ClientManager class
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package. - Moved from ClientManager class
 	 * @version 1.1.0
 	 */
 	public static function license_status_types() {
@@ -475,7 +475,7 @@ class Helper {
 	 * Class logger so that we can keep our debug and logging information cleaner
 	 *
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @param mixed $data - The data to go to the error log.
 	 */
 	public static function log( $data ) {
@@ -496,7 +496,7 @@ class Helper {
 	 *
 	 * @param   array $headers The extra theme/plugin headers.
 	 * @return  array
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @version 1.1.0
 	 */
 	public static function extra_headers( $headers ) {

@@ -13,15 +13,15 @@ use Madvault\Slswc\Client\Helper;
 /**
  * Class to manage products relying on the Software License Server for WooCommerce.
  *
- * @since   1.0.0
- * @version 1.0.0
+ * @since   1.1.0 - Refactored into classes and converted into a composer package.
+ * @version 1.1.0
  */
 //phpcs:ignore
 class ClientManager {
 	/**
 	 * Instance of this class.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 * @var object
 	 */
 	private static $instance = null;
@@ -29,7 +29,7 @@ class ClientManager {
 	/**
 	 * Version - current plugin version.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 * @var string
 	 */
 	public $version;
@@ -37,7 +37,7 @@ class ClientManager {
 	/**
 	 * Plugin text domain.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 *
 	 * @var string
 	 */
@@ -48,7 +48,7 @@ class ClientManager {
 	 *
 	 * @var array
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $plugins = array();
 
@@ -56,8 +56,8 @@ class ClientManager {
 	 * Holds a list of themes
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $themes = array();
 
@@ -65,8 +65,8 @@ class ClientManager {
 	 * List of products
 	 *
 	 * @var     array
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public $products;
 
@@ -83,8 +83,8 @@ class ClientManager {
 	 * The localization strings
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $localization = array();
 
@@ -92,8 +92,8 @@ class ClientManager {
 	 * The url of the license server
 	 *
 	 * @var string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $server_url;
 
@@ -101,8 +101,8 @@ class ClientManager {
 	 * The ApiClient instance
 	 *
 	 * @var ApiClient
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $client;
 
@@ -110,8 +110,8 @@ class ClientManager {
 	 * The updaters for each plugin.
 	 *
 	 * @var array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public $updaters = [];
 
@@ -121,8 +121,8 @@ class ClientManager {
 	 *
 	 * @param   string $server_url The url to the license server.
 	 * @return  object
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public static function get_instance( $server_url ) {
 
@@ -138,8 +138,8 @@ class ClientManager {
 	 *
 	 * @param string $server_url The url to the license server.
 	 *
-	 * @since 1.0.0
-	 * @version 1.0.0
+	 * @since 1.1.0
+	 * @version 1.1.0
 	 */
 	private function __construct( $server_url ) {
 		$this->server_url = $server_url;
@@ -176,8 +176,8 @@ class ClientManager {
 	 * Initialize hooks
 	 *
 	 * @return void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function init_hooks() {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
@@ -191,7 +191,7 @@ class ClientManager {
 	 *
 	 * @return void
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function init_products() {
 		$this->get_local_plugins();
@@ -207,7 +207,7 @@ class ClientManager {
 	 *
 	 * @return  array $installed_themes List of plugins.
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_local_themes() {
 
@@ -244,7 +244,7 @@ class ClientManager {
 	 *
 	 * @return  array $installed_plugins List of plugins.
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_local_plugins() {
 
@@ -287,8 +287,8 @@ class ClientManager {
 	 *
 	 * @param   string $type The software type. Expects plugin, theme or other. Default plugin.
 	 * @return  array $default_data The default product data.
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function default_remote_product( $type = 'plugin' ) {
 
@@ -310,7 +310,7 @@ class ClientManager {
 	 *
 	 * @return void
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function activate() {
 		update_option( 'slswc_update_client_version', $this->version );
@@ -320,8 +320,8 @@ class ClientManager {
 	 * Enqueue scripts.
 	 *
 	 * @return  void
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function admin_enqueue_scripts() {
 		if ( $this->is_products_page() ) {
@@ -355,7 +355,7 @@ class ClientManager {
 	 *
 	 * @return  boolean
 	 * @version 1.0.3
-	 * @since   1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function is_licenses_page() {
 		$page = 'slswc_license_manager';
@@ -375,7 +375,7 @@ class ClientManager {
 	 *
 	 * @return  boolean
 	 * @version 1.0.3
-	 * @since   1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function is_products_page() {
 
@@ -415,8 +415,8 @@ class ClientManager {
 	/**
 	 * Add the admin menu to the dashboard
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function add_admin_menu() {
 		add_options_page(
@@ -432,8 +432,8 @@ class ClientManager {
 	 * List all products installed on this server.
 	 *
 	 * @return  void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function show_installed_products() {
 		// phpcs:ignore
@@ -528,8 +528,8 @@ class ClientManager {
 	 * Output licenses form
 	 *
 	 * @return  void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function licenses_form() {
 
@@ -587,8 +587,8 @@ class ClientManager {
 	 *
 	 * @param   array $products The list of software products.
 	 * @return  void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function licenses_rows( $products ) {
 
@@ -619,8 +619,8 @@ class ClientManager {
 	 *
 	 * @param   array $products The list of products.
 	 * @return  void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function list_products( $products ) {
 		$products = is_array( $products ) ? $products : (array) $products;
@@ -656,8 +656,8 @@ class ClientManager {
 	 * Output API Settings form
 	 *
 	 * @return void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function api_form() {
 		$keys = Helper::get_api_keys();
@@ -668,8 +668,8 @@ class ClientManager {
 	 * Output the product ratings
 	 *
 	 * @return void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 *
 	 * @param array $args The options for the rating.
 	 */
@@ -685,8 +685,8 @@ class ClientManager {
 	 *
 	 * @param   string $version - The version to compare with installed WordPress version.
 	 * @return  void
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function show_compatible( $version ) {
 		global $wp_version;
@@ -712,9 +712,9 @@ class ClientManager {
 	/**
 	 * License activated field.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 * @since 1.0.1
-	 * @version 1.0.0
+	 * @version 1.1.0
 	 *
 	 * @param string $status The license status.
 	 */
@@ -729,8 +729,8 @@ class ClientManager {
 	 * Connect to the api server using API keys
 	 *
 	 * @return  boolean
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function connect() {
 		$keys       = Helper::get_api_keys();
@@ -754,8 +754,8 @@ class ClientManager {
 	 * @param   string $slug The software slug.
 	 * @param   string $type The type of software. Expects plugin/theme, default 'plugin'.
 	 * @return  array
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function get_remote_product( $slug, $type = 'plugin' ) {
 
@@ -790,8 +790,8 @@ class ClientManager {
 	 * @param   string $type The type of products. Expects plugins|themes, default 'plugins'.
 	 * @param   array  $args The arguments to form the query to search for the products.
 	 * @return  array
-	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
+	 * @version 1.1.0
 	 */
 	public function get_remote_products( $type = 'plugins', $args = array() ) {
 		$licensed_products = array();
@@ -848,8 +848,8 @@ class ClientManager {
 	 *
 	 * @param   string $type The type of products to return license details for. Expects plugins/themes, default empty.
 	 * @return  array
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_license_data_for_all( $type = '' ) {
 		global $slswc_updater;
@@ -881,8 +881,8 @@ class ClientManager {
 	 *
 	 * @param   string $type The plural product type plugins|themes.
 	 * @return  bool
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function valid_type( $type ) {
 		return in_array( $type, array( 'themes', 'plugins' ), true );
@@ -893,8 +893,8 @@ class ClientManager {
 	 *
 	 * @param   string $status The status tp check.
 	 * @return  bool
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function ignore_status( $status ) {
 		$ignored_statuses = array( 'expired', 'max_activations', 'failed' );
@@ -905,8 +905,8 @@ class ClientManager {
 	 * Get the current tab.
 	 *
 	 * @return  string
-	 * @version 1.0.0
-	 * @since   1.0.0
+	 * @version 1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function get_tab() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -1009,7 +1009,7 @@ class ClientManager {
 	 * Get a list of plugins
 	 *
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @return array
 	 */
 	public function get_plugins() {
@@ -1020,7 +1020,7 @@ class ClientManager {
 	 * Set a list of all plugins
 	 *
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @return object
 	 */
 	public function set_plugins( $plugins ) {
@@ -1033,7 +1033,7 @@ class ClientManager {
 	 * Get a list of all themes
 	 *
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @return array
 	 */
 	public function get_themes() {
@@ -1044,7 +1044,7 @@ class ClientManager {
 	 * Set a list of themes
 	 *
 	 * @version 1.1.0
-	 * @since   1.1.0
+	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @return object
 	 */
 	public function set_themes( $themes ) {

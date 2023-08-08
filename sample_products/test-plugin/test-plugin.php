@@ -25,8 +25,17 @@
  * SLSWC Documentation URL : https://www.gnu.org/licenses/gpl-2.0.html
  * SLSWC Compatible To     : 5.8.1
  */
+use Madvault\SLSWC\Client\Plugin;
+
 function your_prefix_slswc_client() {
-	require_once dirname( __FILE__ ) . '/class-slswc-client.php';
-	return SLSWC_Client::get_instance( 'http://example.com/', __FILE__, 'plugin' );
+	require_once dirname( __FILE__ ) . '/vendor/autoload.php';
+
+	$license_details = array(
+		'license_key' => 'REPLACE_THIS_WITH_LICENSE_KEY',
+		'domain'      => site_url(),
+		'slug' 	      => 'test-plugin',
+	);
+
+	return Plugin::get_instance( 'http://example.com/', __FILE__, $license_details );
 }
 add_action( 'plugins_loaded', 'slswc_client', 11 );
