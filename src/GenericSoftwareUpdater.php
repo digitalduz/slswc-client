@@ -101,7 +101,7 @@ class GenericSoftwareUpdater {
 			'slug'        => isset( $file_data['slug'] )
 				? esc_attr( $file_data['slug'] ) 
 				: (isset( $file_data['text-domain'] ) ? esc_attr( $file_data['text-domain'] ) : basename( $base_file ) ),
-			'version'     => isset( $file_data['version'] ) ? esc_attr( $file_data['version'] ) : '',
+			'version'     => isset( $file_data['version'] ) ? esc_attr( $file_data['version'] ) : '0',
 			'domain'      => isset( $file_data['domain'] ) ? esc_attr( $file_data['domain'] ) : home_url(),
 		);
 

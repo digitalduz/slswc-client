@@ -2,7 +2,7 @@
 /**
  * @version     1.0.2
  * @since       1.0.2
- * @package     Client
+ * @package     SLSWC_Client
  * @link        https://licenseserver.io/
  */
 
@@ -219,7 +219,7 @@ class ApiClient {
 		
 		Helper::log( 'There was an error executing this request, please check the errors below.' );
 		// phpcs:disable
-		Helper::log( 'The response object: ' . print_r( $response, true ) );
+		Helper::log( 'The response body: ' . print_r( wp_remote_retrieve_body( $response ), true ) );
 		// phpcs:enable
 
 		// Return null to halt the execution.

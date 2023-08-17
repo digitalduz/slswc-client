@@ -52,8 +52,8 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 	 *
 	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 * @version 1.1.0
-	 * @param   string $plugin_file          - path to the plugin file or directory, relative to the plugins directory.
-	 * @param   array  $args               - array of additional arguments to override default ones.
+	 * @param   string $plugin_file - path to the plugin file or directory, relative to the plugins directory.
+	 * @param   array  $args        - array of additional arguments to override default ones.
 	 *
 	 * @return void
 	 * 
@@ -78,8 +78,6 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 		$this->license_server_url = $license_server_url;
 
 		parent::__construct( $license_server_url, $plugin_file, $args );
-
-		$this->init_hooks();
 	}
 
 	/**

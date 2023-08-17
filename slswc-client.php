@@ -75,13 +75,24 @@ add_action( 'plugins_loaded', function () {
 		return;
 	}
 
+	// Get the license details from the database or anywhere.
 	$license_details = array(
 		'license_key' => 'd16b60d0ee549a1cba8ac4922739dc68b1755165',
 		'domain'      => site_url(), // 'http://localhost:10029/',
 		'slug'	      => 'slswc-client',
 	);
 
+	// OR: Get the license details from the built in option.
+	$license_details = get_option( 'slswc-client_license_details', array() );
+
 	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $license_details );
+
+	$plugin->init_hooks();
+
+	// Example of how to update the plugin. Run this on a hook.
+	if ( $plugin->license->get_license_status() !== 'active' ) {
+		$plugin->license->validate_license();
+	}
 });
 
 function slswc_client_manager () {

@@ -55,15 +55,6 @@ class LicenseManager {
 	public $slug;
 
 	/**
-	 * Plugin text domain
-	 *
-	 * @var string $text_domain
-	 * @version 1.1.0
-	 * @since 1.1.0
-	 */
-	public $text_domain;
-
-	/**
 	 * Path to the plugin file or directory, relative to the plugins directory
 	 *
 	 * @var string $base_file
@@ -287,7 +278,6 @@ class LicenseManager {
 		$this->base_file   = $base_file;
 		$this->name        = empty( $args['name'] ) && ! empty( $args['title'] ) ? $args['title'] : $args['name'];
 		$this->version     = empty( $args['version'] ) ? '1.1.0' : $args['version'];
-		$this->text_domain = empty( $args['text_domain'] ) ? $this->slug : $args['text_domain'];
 
 		$this->license_server_url = apply_filters(
 			'slswc_license_server_url_for_' . $this->slug,
@@ -373,12 +363,6 @@ class LicenseManager {
 		 * Only allow updates if they have a valid license key.
 		 * Or API keys are set to check for updates.
 		 */
-
-		//TODO:Remove this test data
-		$this->license_details['license_status'] = 'active';
-		$this->license_details['active_status']['live'] = 'yes';
-		// End todo
-
 		$allowed_statuses = array( 'active', 'expiring' );
 		$license_status   = $this->license_details['license_status'];
 
@@ -386,10 +370,8 @@ class LicenseManager {
 			return;
 		}
 
-		error_log(' License Data: ' . print_r( $this->license_details, true ) );
-
 		add_action( 'admin_init', array( $this, 'process_manual_update_check' ) );
-		add_action( 'all_admin_notices', array( $this, 'output_manual_update_check_result' ) );
+		add_action( 'admin_notices', array( $this, 'output_manual_update_check_result' ) );
 	}
 
 	
@@ -649,6 +631,4 @@ class LicenseManager {
 
 		return $this->messages;
 	}
-
-	
 }

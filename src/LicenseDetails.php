@@ -63,6 +63,16 @@ class LicenseDetails {
 			$this->get_default_license_details()
 		);
 
+		$this->set_slug( $license_details['slug'] );
+		$this->set_option_name( $this->get_slug() . '_license_details' );
+
+		$saved_license_details = get_option( $this->get_option_name(), $license_details );
+
+		$license_details = Helper::recursive_parse_args(
+			$saved_license_details,
+			$license_details
+		);
+
 		$this->set_license_details( $license_details );
 
 		Helper::log('LicenseDetails::__construct(); ' . print_r($this->get_license_details(), true));
@@ -70,11 +80,7 @@ class LicenseDetails {
 		$this->client = new ApiClient(
 			$this->license_server_url,
 			$this->get_slug(),
-		);		
-
-		if ( $this->get_license_status() !== 'active' ) {
-			$this->validate_license();
-		}
+		);
 	}	
 
 	/**
@@ -161,8 +167,22 @@ class LicenseDetails {
 		$this->set_license_status( $license_details['license_status'] );
 		$this->set_license_key( $license_details['license_key'] );
 		$this->set_license_expires( $license_details['license_expires'] );
-		$this->set_current_version( $license_details['version']  );
+		$this->set_current_version( $license_details['current_version']  );
 		$this->set_active_status( $license_details['active_status'] );
+	}
+
+	/**
+	 * Get the option name.
+	 *
+	 * @return array
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function get_option_name() {
+		return apply_filters(
+			'slswc_client_license_option_name',
+			$this->option_name
+		);
 	}
 
 	/**
@@ -341,6 +361,18 @@ class LicenseDetails {
 	}
 
 	/**
+	 * Set the option name.
+	 *
+	 * @param string $option_name The name of the option.
+	 * @return void
+	 * @version 1.1.0
+	 * @since   1.1.0 - Added.
+	 */
+	public function set_option_name( $option_name ) {
+		$this->option_name = $option_name;
+	}
+
+	/**
 	 * Set the active status
 	 *
 	 * @param array $active_status The active status to set.
@@ -360,7 +392,7 @@ class LicenseDetails {
 	 * @since   1.1.0 - Refactored into classes and converted into a composer package.
 	 */
 	public function save() {
-		update_option( $this->option_name, $this->license_details );
+		update_option( $this->get_option_name(), $this->license_details );
 	}
 
 	/**
@@ -437,33 +469,29 @@ class LicenseDetails {
 			: $this->get_license_key();
 		$license                              = wp_parse_args( $input, $license );
 
-		error_log( 'License to check: ' .  print_r( $license, true ) );
-
 		Helper::log( "Validate license:: key={$license['license_key']}, environment=$environment, status=$active_status" );
 
 		$response = null;
 		$action   = array_key_exists( 'deactivate_license', $input ) ? 'deactivate' : 'activate';
 
 		if ( $active_status && 'activate' === $action ) {
-			$license['license_status'] = 'active';
+			$this->set_license_status( 'active' );
 		}
 
-		if ( 'activate' === $action && ! $active_status ) {
-			Helper::log( 'Activating. current status is: ' . $this->get_license_status() );
+		$this->set_license_details( $license );
 
-			unset( $license['deactivate_license'] );
-			$this->license_details = $license;
-
-			$response = $this->client->request( 'activate', $license );
-		} elseif ( 'deactivate' === $action ) {
-			Helper::log( 'Deactivating license. current status is: ' . $this->get_license_status() );
-
-			$response = $this->client->request( 'deactivate', $license );
-		} else {
-			unset( $license['deactivate_license'] );
-			$this->license_details = $license;
-
-			$response = $this->client->request( 'check_license', $license );
+		switch ( $action ) {
+			case 'activate':
+				Helper::log( 'Activating. current status is: ' . $this->get_license_status() );
+				$response = $this->client->request( 'activate', $this->get_license_details() );
+				break;
+			case 'deactivate':
+				Helper::log( 'Deactivating license. current status is: ' . $this->get_license_status() );
+				$response = $this->client->request( 'deactivate', $this->get_license_details() );
+				break;
+			default:
+				$response = $this->client->request( 'check_license', $this->get_license_details() );
+				break;
 		}
 
 		if ( is_null( $response ) ) {
@@ -471,7 +499,10 @@ class LicenseDetails {
 				'Error: Your license might be invalid or there was an unknown error on the license server. Please try again and contact support if this issue persists.',
 				'slswcclient'
 			);
-			update_option( $this->option_name, $license );
+
+			$this->set_license_status( 'invalid' );
+			$this->save();
+
 			return array (
 				'status'   => 'bad_request',
 				'message'  => $message,
@@ -481,7 +512,10 @@ class LicenseDetails {
 
 		// phpcs:ignore
 		if ( ! $this->client->check_response_status( $response ) ) {
-			update_option( $this->option_name, $license );
+
+			$this->set_license_status( 'invalid' );
+			$this->save();
+
 			return array(
 				'status'   => 'invalid',
 				'message'  => is_array( $response ) ? $response['response'] : $response->response,
@@ -489,46 +523,70 @@ class LicenseDetails {
 			);
 		}
 
-		$license['license_key']                   = isset( $input['license_key'] ) ? $input['license_key'] : $this->get_license_key();
-		$license['license_status']                = $response->domain->status;
-		$license['domain']                        = $response->domain;
-		$license['license_expires']               = $response->expires;
-		$license['active_status'][ $environment ] = 'activate' === $action && 'active' === $response->domain->status ? 'yes' : 'no';
+		$_license_key = isset( $input['license_key'] ) ? $input['license_key'] : $this->get_license_key();
+
+		$is_activating = 'activate' === $action;
+		$is_active     = 'active' === $response->domain->status;
+
+		$_active_status = $license['active_status'];
+
+		$_active_status[ $environment ] = $is_activating && $is_active ? 'yes' : 'no';
+		
+		$this->set_license_key( $_license_key );
+		$this->set_license_status( $response->domain->status );
+		$this->set_domain( $response->domain );
+		$this->set_license_expires( $response->expires );
+		$this->set_active_status( $_active_status );
 
 		$domain_status = $response->domain->status;
 
-		$messages = $this->license_status_types();
-
-		if ( ( 'valid' === $domain_status || 'active' === $domain_status ) && 'activate' === $action ) {
-			$message = __( 'License activated.', 'slswcclient' );
-		} elseif ( 'active' !== $domain_status && 'activate' === $action ) {
-			$message = sprintf(
-				__( 'Failed to activate license. %s', 'slswcclient' ),
-				$messages[ $domain_status ]
-			);
-		} elseif ( 'deactivate' === $action && 'deactivated' === $domain_status ) {
-			$message = __( 'License Deactivated', 'slswcclient' );
-		} elseif ( 'deactivate' === $action && 'deactivate' !== $domain_status ) {
-			$message = sprintf(
-				// translators: %s - The message describing the license status.
-				__( 'Unable to deactivate license. Please deactivate on the store. %s', 'slswcclient' ),
-				$messages[ $domain_status ]
-			);
-		} else {
-			$message = $messages[ $response->status ];
-		}
+		$message = $this->get_status_message( $domain_status, $action, $response->status );
 
 		Helper::log( $message );
 
-		update_option( $this->option_name, $license );
+		$this->save();
 
 		Helper::log( $license );
 
 		return array(
 			'message'  => $message,
-			'options'  => $license,
+			'options'  => $this->get_license_details(),
 			'status'   => $domain_status,
 			'response' => $response
 		);
+	}
+
+	/**
+	 * Get the status message.
+	 *
+	 * @param string $domain_status   The activation status.
+	 * @param string $action          The action taken. activate or deactivate.
+	 * @param string $response_status The response status.
+	 * @return string
+	 * @version 1.1.0
+	 * @since   1.1.0
+	 */
+	public function get_status_message( $domain_status, $action, $response_status ) {
+		$messages = $this->license_status_types();
+
+		switch ( $action ) {
+			case 'activate':
+				return 'active' === $domain_status
+					?  __( 'License activated.', 'slswcclient' ) 
+					: sprintf(
+						__( 'Failed to activate license. %s', 'slswcclient' ),
+						$messages[ $domain_status ]
+					);
+			case 'deactivate':
+				return 'deactivated' === $domain_status 
+					? __( 'License Deactivated', 'slswcclient' )
+					: sprintf(
+						// translators: %s - The message describing the license status.
+						__( 'Unable to deactivate license. Please deactivate on the store. %s', 'slswcclient' ),
+						$messages[ $domain_status ]
+					);
+			default:
+				return $messages[ $response_status ];					
+		}
 	}
 }
