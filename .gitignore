@@ -84,8 +84,5 @@ releases
 tmp
 reports
 
-# Dist files
-!assets/src/
-
 # Language files
 *.pot

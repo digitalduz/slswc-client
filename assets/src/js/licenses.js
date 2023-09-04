@@ -5,8 +5,6 @@ jQuery(function($) {
     slswcClient.init();
   });
 
-  window.slswcClientOptions = window.slswcClientLocalization || {};
-
   const slswcClient = {
     init: function() {
       $('.force-client-environment').on('click', slswcClient.toggleEnvironment);

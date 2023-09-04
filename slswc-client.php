@@ -66,7 +66,7 @@ define( 'SLSWC_CLIENT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SLSWC_CLIENT_PARTIALS_DIR', SLSWC_CLIENT_PATH . '/partials/' );
 define( 'SLSWC_CLIENT_ASSETS_URL', plugin_dir_url( __FILE__ ) . '/assets/' );
 define( 'SLSWC_CLIENT_LOGGING', true );
-define( 'SLSWC_LICENSE_SERVER_URL', 'http://localhost:10029/' );
+define( 'SLSWC_LICENSE_SERVER_URL', 'https://equal-paperclip.localsite.io' );
 
 add_action( 'plugins_loaded', function () {
 	global $plugin;
@@ -77,13 +77,13 @@ add_action( 'plugins_loaded', function () {
 
 	// Get the license details from the database or anywhere.
 	$license_details = array(
-		'license_key' => 'd16b60d0ee549a1cba8ac4922739dc68b1755165',
-		'domain'      => site_url(), // 'http://localhost:10029/',
+		'license_key' => 'e0ddc4b09c624ab1a0b91b148fe6d22cd1dacebb',
+		'domain'      => site_url(),
 		'slug'	      => 'slswc-client',
 	);
 
 	// OR: Get the license details from the built in option.
-	$license_details = get_option( 'slswc-client_license_details', array() );
+	$license_details = get_option( 'slswc-client_license_details', $license_details );
 
 	$plugin = Plugin::get_instance( SLSWC_LICENSE_SERVER_URL, __FILE__, $license_details );
 
@@ -107,5 +107,5 @@ function slswc_client_manager () {
 	return $client_manager;
 }
 
-slswc_client_manager();
+// slswc_client_manager();
 

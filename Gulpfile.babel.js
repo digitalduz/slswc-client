@@ -1,68 +1,63 @@
 import gulp from 'gulp';
 import notify from 'gulp-notify';
+import beeper from 'beeper';
 import plumber from 'gulp-plumber';
 import sourcemaps from 'gulp-sourcemaps';
-import sasscompiler from 'sass';
-import gulpsass from 'gulp-sass';
+import dSass from 'sass';
+import gulpSass from 'gulp-sass';
 import postcss from 'gulp-postcss';
 import autoprefixer from 'autoprefixer';
 import mqpacker from 'css-mqpacker';
 import browserSync from 'browser-sync';
 import csso from 'gulp-csso';
-import svgmin from 'gulp-svgmin';
-import svgstore from 'gulp-svgstore';
-import cheerio from 'gulp-cheerio';
-import imagemin from 'gulp-imagemin';
-import spritesmith from 'gulp.spritesmith';
-import eslint from 'gulp-eslint';
-import stylelint from 'gulp-stylelint';
 import wpPot from 'gulp-wp-pot';
 import sort from 'gulp-sort';
 import uglify from 'gulp-uglify';
-import browserify from 'browserify';
-import babelify from 'babelify';
-import buffer from 'gulp-buffer';
-import tap from 'gulp-tap';
-import log from 'fancy-log';
 import zip from 'gulp-zip';
 import del from 'del';
-import replace from 'gulp-replace';
+import rename from 'gulp-rename';
+import cache from 'gulp-cached';
+import yaml from 'js-yaml';
+import fs from 'fs';
+import dotenv from 'dotenv';
+import path from 'path';
 
 import * as pkg from './package.json';
-
-const sass = gulpsass(sasscompiler);
-
-const paths = {
-    images: [
-    './assets/src/images/*',
-    './assets/src/images/**/*',
-    '!assets/src/images/sprites',
-    '!assets/src/images/sprites/*',
-    '!assets/src/images/icons',
-    '!assets/src/images/icons/*'
-    ],
-    svg: './assets/src/images/icons/*.svg',
-    scss: './assets/src/scss/**/*.scss',
-    js: './assets/src/js/**/*.js',
-    css: './assets/css/**/*.css',
-    sprites: './assets/src/images/sprites/*.png',
-    php: [ './*.php', './**/*.php', '!./vendor/**/*.php' ]
+const sass = gulpSass(dSass);
+const _paths = {
+  scss: ['./**/src/**/*.scss'],
+  css: ['./**/src/**/*.css'],
+  js: ['./**/src/**/*.js'],
+  distJs: ['./**/assets/js/**/*.js'],
+  php: ['./**/*.php']
 };
+const paths = {};
+for (let key in _paths)
+  paths[key] = [
+    ..._paths[key],
+    '!./vendor/**/*',
+    '!./releases/**/*',
+    '!./tmp/**/*',
+    '!node_modules/**/*',
+    '!**/*.min.*',
+    '!Gulpfile.babel.js',
+    '!**/lib/**/*'
+  ];
 
 /**
  * Handle errors and alert the user.
  */
 const handleErrors = err => {
-    notify.onError(
-        {
-            title: 'Task Failed [<%= error.message %>',
-            message: 'See console.',
-            sound: 'Sosumi' // See: https://github.com/mikaelbr/node-notifier#all-notification-options-with-their-defaults
-        }
-    )(err);
+  notify.onError({
+    title: 'Task Failed [<%= error.message %>',
+    message: 'See console.',
+    sound: 'Sosumi' // See: https://github.com/mikaelbr/node-notifier#all-notification-options-with-their-defaults
+  })(err);
 
-    // Prevent the 'watch' task from stopping.
-    this.emit('end');
+  beeper(); // Beep 'sosumi' again.
+
+  // Prevent the 'watch' task from stopping.
+  //this.emit('end');
 };
 
 /**
@@ -73,35 +68,44 @@ const handleErrors = err => {
  * https://www.npmjs.com/package/gulp-autoprefixer
  * https://www.npmjs.com/package/css-mqpacker
  */
-export function compileStyles()
-{
-    return gulp
-    .src(paths.scss, { since: gulp.lastRun(compileStyles) })
+export function compileStyles() {
+  return gulp
+    .src(paths.scss)
+    .pipe(cache('styles'))
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(sourcemaps.init())
     .pipe(
-        sass(
-            {
-                includePaths: [],
-                errLogToConsole: true,
-                outputStyle: 'expanded' // Options: nested, expanded, compact, compressed
-                }
-        )
+      sass({
+        includePaths: [],
+        errLogToConsole: true,
+        outputStyle: 'expanded' // Options: nested, expanded, compact, compressed
+      })
     )
     .pipe(
-        postcss(
-            [
-                autoprefixer( { } ),
-                mqpacker(
-                    {
-                        sort: true
-                    }
-                )
-                ]
-        )
+      postcss([
+        autoprefixer(),
+        mqpacker({
+          sort: true
+        })
+      ])
     )
-    .pipe(sourcemaps.write())
-    .pipe(gulp.dest('./assets/css/'))
+    .pipe(
+      sourcemaps.mapSources(function(sourcePath) {
+        return `${path.basename(__dirname)}/${sourcePath}`;
+      })
+    )
+    .pipe(
+      sourcemaps.write('.', {
+        includeContent: false,
+        sourceRoot: '.'
+      })
+    )
+    .pipe(
+      rename(path => {
+        path.dirname = path.dirname.replace('src/', '');
+      })
+    )
+    .pipe(gulp.dest('.'))
     .pipe(browserSync.stream());
 }
 
@@ -110,13 +114,18 @@ export function compileStyles()
  *
  * https://www.npmjs.com/package/gulp-csso
  */
-export function minifyStyles()
-{
-    return gulp
+export function minifyStyles() {
+  return gulp
     .src(paths.css)
+    .pipe(cache('styles-min'))
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(csso())
-    .pipe(gulp.dest('./assets/css/'));
+    .pipe(
+      rename(path => {
+        path.basename += '.min';
+      })
+    )
+    .pipe(gulp.dest('.'));
 }
 
 /**
@@ -124,68 +133,47 @@ export function minifyStyles()
  *
  * @returns {*}
  */
-export function compileScripts()
-{
-    return gulp
-    .src(paths.js, { read: false, since: gulp.lastRun(compileScripts) })
-    .pipe(
-        tap(
-            function ( file ) {
-                log.info('Bundling ' + file.path);
-                file.contents = browserify(file.path, { debug: true })
-                .transform('babelify', { presets: [ '@babel/preset-env' ] })
-                .bundle();
-            }
-        )
-    )
-    .pipe(buffer())
+export function compileScripts() {
+  return gulp
+    .src(paths.js)
     .pipe(sourcemaps.init())
-    .pipe(sourcemaps.write())
-    .pipe(gulp.dest('./assets/js'));
+    .pipe(cache('scripts'))
+    .pipe(
+      rename(path => {
+        path.dirname = path.dirname.replace('src/', '');
+      })
+    )
+    .pipe(gulp.dest('.'));
+}
+
+export function compileScriptsProduction() {
+  return gulp
+    .src(paths.js)
+    .pipe(cache('scripts'))
+    .pipe(
+      rename(path => {
+        path.dirname = path.dirname.replace('src/', '');
+      })
+    )
+    .pipe(gulp.dest('.'));
 }
 
 /**
  * Minify script files using UglifyJS
- *
  * @returns {*}
  */
-export function minifyScripts()
-{
-    return gulp
-    .src('./assets/js/**/*.js')
+export function minifyScripts() {
+  return gulp
+    .src(paths.distJs)
+    .pipe(cache('scripts-min'))
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(uglify())
-    .pipe(gulp.dest('./assets/js/'));
-}
-
-/**
- * Minify, concatenate, and clean SVG icons.
- *
- * https://www.npmjs.com/package/gulp-svgmin
- * https://www.npmjs.com/package/gulp-svgstore
- * https://www.npmjs.com/package/gulp-cheerio
- */
-export function generateIcons()
-{
-    return gulp
-    .src(paths.svg)
-    .pipe(plumber({ errorHandler: handleErrors }))
-    .pipe(svgmin())
-    .pipe(svgstore({ inlineSvg: true }))
     .pipe(
-        cheerio(
-            {
-                run: $ => {
-                    $('svg').attr('style', 'display:none');
-                    $('[fill]').removeAttr('fill');
-                    $('path').removeAttr('class');
-                },
-                parserOptions: { xmlMode: true }
-                }
-        )
+      rename(path => {
+        path.basename += '.min';
+      })
     )
-    .pipe(gulp.dest('./assets/images/'))
-    .pipe(browserSync.stream());
+    .pipe(gulp.dest('.'));
 }
 
 /**
@@ -193,103 +181,17 @@ export function generateIcons()
  *
  * @returns {*}
  */
-export function copyImages()
-{
-    return gulp
+export function copyImages() {
+  return gulp
     .src(paths.images, { since: gulp.lastRun(copyImages) })
     .pipe(plumber({ errorHandler: handleErrors }))
-    .pipe(gulp.dest('./assets/images'))
+    .pipe(
+      rename(path => {
+        path.dirname = path.dirname.replace('src/', '');
+      })
+    )
+    .pipe(gulp.dest('.'))
     .pipe(browserSync.stream());
-}
-
-/**
- * Optimize images with imagemin.
- *
- * https://www.npmjs.com/package/gulp-imagemin
- */
-export function optimizeImages()
-{
-    return gulp
-    .src(paths.images)
-    .pipe(plumber({ errorHandler: handleErrors }))
-    .pipe(
-        imagemin(
-            {
-                optimizationLevel: 5,
-                progressive: true,
-                interlaced: true
-                }
-        )
-    )
-    .pipe(gulp.dest('./assets/images'));
-}
-
-/**
- * Concatenate images into a single PNG sprite.
- *
- * https://www.npmjs.com/package/gulp.spritesmith
- */
-export function generateSprites()
-{
-    return gulp
-    .src(paths.sprites)
-    .pipe(plumber({ errorHandler: handleErrors }))
-    .pipe(
-        spritesmith(
-            {
-                imgName: 'sprites.png',
-                cssName: '../src/scss/base/_sprites.scss',
-                algorithm: 'binary-tree'
-                }
-        )
-    )
-    .pipe(gulp.dest('assets/images/'))
-    .pipe(browserSync.stream());
-}
-
-/**
- * JavaScript linting.
- *
- * https://www.npmjs.com/package/gulp-eslint
- */
-export function lintScripts()
-{
-    return gulp
-    .src(paths.js, { since: gulp.lastRun(lintScripts) })
-    .pipe(
-        eslint(
-            {
-                globals: [ 'jQuery', '$' ],
-                envs: [ 'browser' ]
-                }
-        )
-    )
-    .pipe(eslint.format());
-}
-
-/**
- * SCSS linting.
- *
- * https://www.npmjs.com/package/sass-lint
- */
-export function lintStyles()
-{
-    return gulp
-    .src(
-        [
-                './assets/src/**/*.scss',
-                '!./assets/src/scss/base/_normalize.scss',
-                '!./assets/src/scss/base/_sprites.scss'
-        ],
-        { since: gulp.lastRun(lintStyles) }
-    )
-    .pipe(
-        stylelint(
-            {
-                reporters: [ { formatter: 'string', console: true } ]
-                }
-        )
-    );
 }
 
 /**
@@ -297,24 +199,47 @@ export function lintStyles()
  *
  * https://www.npmjs.com/package/gulp-wp-pot
  */
-export function i18n()
-{
-    const domainName  = pkg.name;
-    const packageName = pkg.title;
+export function i18n() {
+  const domainName = pkg.name;
+  const packageName = pkg.title;
 
-    return gulp
+  return gulp
     .src(paths.php)
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(sort())
     .pipe(
-        wpPot(
-            {
-                domain: domainName,
-                package: packageName
-                }
-        )
+      wpPot({
+        domain: domainName,
+        package: packageName
+      })
     )
     .pipe(gulp.dest('./languages/' + domainName + '.pot'));
+}
+
+function getProxyUrl() {
+  let config;
+
+  try {
+    config = dotenv.parse(fs.readFileSync('.env'));
+    if ('WP_DEV_URL' in config) return config.WP_DEV_URL;
+  } catch (e) {
+    // eslint-disable-next-line
+    console.log('Local environment variable file not found! Use chassis URL.');
+  }
+
+  try {
+    config = yaml.safeLoad(
+      fs.readFileSync('../../../config.local.yaml', 'utf8')
+    );
+    if (config.hosts.length > 0) return config.hosts[0];
+  } catch (e) {
+    // eslint-disable-next-line
+    console.log(
+      'Chassis local config not found! Use `localhost` as proxy URL.'
+    );
+  }
+
+  return 'localhost';
 }
 
 /**
@@ -322,130 +247,93 @@ export function i18n()
  *
  * https://www.npmjs.com/package/browser-sync
  */
-export function watch()
-{
+export function watch() {
+  // Kick off BrowserSync.
+  browserSync({
+    open: false,
+    injectChanges: true,
+    proxy: getProxyUrl(),
+    watchOptions: {
+      debounceDelay: 1000 // Wait 1 second before injecting.
+    }
+  });
 
-    // Kick off BrowserSync.
-    browserSync(
-        {
-            open: false, // Open project in a new tab?
-            injectChanges: true, // Auto inject changes instead of full reload.
-            proxy: 'localhost', // Use http://_s.com:3000 to use BrowserSync.
-            watchOptions: {
-                debounceDelay: 1000 // Wait 1 second before injecting.
-            }
-        }
-    );
-
-    // Run tasks when files change.
-    gulp.watch(paths.images, copyImages);
-    gulp.watch(paths.svg, generateIcons);
-    gulp.watch(paths.scss, compileStyles);
-    gulp.watch(paths.js, compileScripts);
-    gulp.watch(paths.sprites, generateSprites);
+  // Run tasks when files change.
+  gulp.watch(paths.scss, compileStyles);
+  gulp.watch(paths.css, minifyStyles);
+  gulp.watch(paths.js, compileScripts);
+  gulp.watch(paths.distJs, minifyScripts);
 }
 
 /**
  * Build dist files for release
  */
 export const build = gulp.parallel(
-    generateIcons,
-    generateSprites,
-    gulp.series(compileStyles, minifyStyles),
-    gulp.series(compileScripts, minifyScripts),
-    optimizeImages,
-    i18n
+  gulp.series(compileStyles, minifyStyles),
+  gulp.series(compileScriptsProduction, minifyScripts),
+  i18n
 );
 
 /**
  * Copy build files to tmp folder for creating archive
- *
  * @returns {*}
  */
-export function copyBuild()
-{
-    return gulp
+export function copyBuild() {
+  return gulp
     .src(
-        [
-        './**/*',
-        '!./assets/src/',
-        '!./assets/src/**',
-        '!./node_modules/',
-        '!./node_modules/**',
-        '!./tmp/',
-        '!./tmp/**',
-        '!./releases/',
-        '!./releases/**',
-        '!./tests/',
-        '!./tests/**',
-        '!./bin/',
-        '!./bin/**',
-        '!./composer.json',
-        '!./composer.lock',
-        '!./Gulpfile.babel.js',
-        '!./package.json',
-        '!./package-lock.json',
-        '!./phpcs.xml',
-        '!./phpunit.xml',
-        '!./cypress/',
-        '!./cypress/**'
-        ]
+      [
+        './languages/*',
+        './changelog.txt',
+        './slswc-client.php',
+        './changelog.txt',
+        './src/*.php',
+        './vendor/**/*',
+        './partials/**/*',
+        '!**/*.map',
+        '!./assets/src/**/*',
+        '!./assets/src',
+        '!**/package.json',
+        '!**/Gruntfile.js',
+        '!**/bower.json',
+        '!**/bower_components/**/*',
+        '!**/bower_components',
+        '!**/node_modules/**/*',
+        '!**/node_modules',
+        '!**/*.log',
+        '!**/*.swp',
+        '!**/.DS_Store'
+      ],
+      { base: '.' }
     )
-    .pipe(gulp.dest(`./tmp/${pkg.name}`));
+    .pipe(gulp.dest(`./tmp/${pkg.slug}`));
 }
 
 /**
  * Zip the build
- *
  * @returns {*}
  */
-export function zipBuild()
-{
-    return gulp
+export function zipBuild() {
+  return gulp
     .src('./tmp/**/*')
-    .pipe(zip(`${pkg.name}-${pkg.version}.zip`))
+    .pipe(zip(`${pkg.slug}-${pkg.version}.zip`))
     .pipe(gulp.dest('./releases'));
 }
 
 /**
  * Delete tmp folder
- *
  * @returns {*}
  */
-export function cleanBuild()
-{
-    return del([ './tmp' ]);
+export function cleanBuild() {
+  return del(['./tmp']);
 }
 
 /**
  * Combine three tasks above to make the release.
  */
-export const release = gulp.series(cleanBuild, copyBuild, zipBuild, cleanBuild);
-
-export function version()
-{
-    return gulp
-    .src(`./${pkg.name}.php`)
-    .pipe(
-        replace(/Version:(\s*?)[a-zA-Z0-9\.\-\+]+$/m, 'Version:$1' + pkg.version)
-    )
-    .pipe(
-        replace(/@version(\s*?)[a-zA-Z0-9\.\-\+]+$/m, '@version$1' + pkg.version)
-    )
-    .pipe(
-        replace(
-            /VERSION(\s*?)=(\s*?['"])[a-zA-Z0-9\.\-\+]+/gm,
-            'VERSION$1=$2' + pkg.version
-        )
-    )
-    .pipe(gulp.dest('./'));
-}
+export const release = gulp.series(copyBuild, zipBuild, cleanBuild);
 
 export default gulp.parallel(
-    generateIcons,
-    generateSprites,
-    copyImages,
-    i18n,
-    compileStyles,
-    compileScripts
+  i18n,
+  gulp.series(compileStyles, minifyStyles),
+  gulp.series(compileScripts, minifyScripts)
 );

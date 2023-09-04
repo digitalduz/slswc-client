@@ -2842,7 +2842,7 @@ if ( ! class_exists( 'SLSWC_Client_Manager' ) ) :
 		 *
 		 * @since   1.0.0
 		 * @version 1.0.0
-		 * @param WP_Error|Array $response The response or WP_Error.
+		 * @param WP_Error|array $response The response or WP_Error.
 		 */
 		public static function validate_response( $response ) {
 

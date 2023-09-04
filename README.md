@@ -4,25 +4,62 @@ This is the class file required to be included with your plugin or theme to prov
 
 ## Usage
 
-First download the `class-slswc-client.php` into a convenient folder in your theme or plugin. You may include the file and initialize it in your plugin's main file or theme's functions.php file. In it's basic form, the license client can be initialized like this:
+Install the SDK using the composer package manager.
 
-```SLSWC_Client::get_instance( $license_server_url, $base_file, $software_type );```
+`composer require madvault/slswc-client`
+
+Then use the client as follows for a plugin:
+
+
+```require __DIR__ . 'vendor/autoload.php';
+
+$license_server_url = 'http://example.com';
+$license_details = array(
+    'license_key' => 'LICENSE_KEY', // Required
+    'domain' => 'THE_CURRENT_DOMAIN', // Optional: will default to WordPress site url.
+    'slug' => 'plugin-slug', // optional. Will use plugin text domain. Must be the product slug on license server.
+);
+
+$plugin = Plugin::get_instance( $license_server_url, __FILE__, $license_details );
+$plugin->init_hooks();
+```
 
 `$license_server_url` - Is the domain of the license server.
-`$base_file` - Is the plugin main file for a plugin or the theme root folder for the a theme
-`$software_type` - Specify if this is a `plugin` or `theme`, default is plugin.
+`$base_file` - Is the plugin main file for a plugin or the theme root folder for the theme
+`$license_details` - Is an array of license details. May include plugin details if not set in plugin headers.
 
 ### Example for plugins:
-`SLSWC_Client::get_instance( 'http://example.test/', __FILE__ );`
+```
+$plugin = Plugin::get_instance( 'http://example.test/', __FILE__, $license_details );
+$plugin->init_hooks();
+```
 
 ### Example for themes:
-`SLSWC_Client::get_instance( 'http://example.test/', WP_CONTENT_DIR . '/themes/theme-directory-name', 'theme' );`
+```
+$license_details = array(
+    'license_key' => 'THE_LICENSE_KEY'
+);
 
-## Advanced Usage
+$theme =  Theme::get_instance( 'http://example.test/', WP_CONTENT_DIR . '/themes/theme-directory-name', $license_details );
+$theme->init_hooks();
+```
+
+### Activating the license
+
+This is an example of how to activate the license. You can hook this to a form save after saving the license key.
+
+```
+// Example of how to update the plugin. Run this on a hook.
+if ( $plugin->license->get_license_status() !== 'active' ) {
+	$plugin->license->validate_license();
+}
+```
+
+## Plugin headers.
 
 The client also searches for additional theme or plugin headers for information about the plugin, these headers are as follows:
 
-* SLSWC - Specifies whether this is a `plugin` or `theme`.
+* SLSWC - Specifies whether this is a `plugin` or `theme` and it is also used to distinguish SLSWC plugins/themes from others.
 * Documentation URL - Link to documentation for this plugin or theme
 * Required WP - Minimum version of WordPress required
 * Compatible To - Maximum compatible WordPress version
@@ -45,9 +82,20 @@ Here is a full example of how to use this in a plugin:
  * Required WP  : 5.8
  * Compatible To: 5.8.1
  */
+
+require __DIR__ . '/vendor/autoload.php';
+use Madvault\Slswc\Client\Plugin;
+
 function test_slswc_client_for_plugin() {
-    require_once 'includes/class-slswc-client.php';
-    return SLSWC_Client::get_instance( 'http://example.com/', __FILE__ );
+    $license_server_url = 'http://example.com';
+    $license_details = array(
+        'license_key' => 'LICENSE_KEY', // Required
+        'domain' => 'THE_CURRENT_DOMAIN', // Optional: will default to WordPress site url.
+        'slug' => 'plugin-slug', // optional. Will use plugin text domain. Must be the product slug on license server.
+    );
+
+    $plugin = Plugin::get_instance( $license_server_url, __FILE__, $license_details );
+    $plugin->init_hooks();
 }
 
 add_action( 'plugins_loaded', 'test_slswc_client_for_plugin', 11 );
@@ -57,9 +105,21 @@ And for a theme:
 
 Put this in `functions.php`
 ```php
+require __DIR__ . '/vendor/autoload.php';
+
+use Madvault\Slswc\Client\Theme;
+
 function theme_slswc_client() {
-    require_once 'includes/class-slswc-client.php';
-    return SLSWC_Client::get_instance( 'http://example.com', WP_CONTENT_DIR . '/themes/theme-folder-name', 'theme' );	
+    $license_details = array(
+        'license_key' => 'LICENSE_KEY',        // Required
+        'domain'      => 'THE_CURRENT_DOMAIN', // Optional: will default to WordPress site url.
+        'slug'        => 'plugin-slug',        // optional. Will use plugin text domain. Must be the product slug on license server.
+    );
+    $theme = Theme::get_instance(
+        'http://example.com',
+        WP_CONTENT_DIR . '/themes/theme-folder-name',
+        $license_details
+    );
 }
 add_action( 'wp_loaded', 'theme_slswc_client', 11 );
 ```
