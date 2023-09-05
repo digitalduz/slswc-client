@@ -4,6 +4,7 @@
  *
  * @version 1.1.0
  * @since   1.1.0 - Refactored into classes and converted into a composer package.
+ * @package Slswc_Client
  */
 
  namespace Madvault\Slswc\Client;

@@ -109,7 +109,7 @@
         <exclude name="Generic.WhiteSpace.DisallowSpaceIndent" />
         <exclude name="WordPress.Files.FileName.InvalidClassFileName" />
         <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBetweenStructureColon" />
-        <exclude name="WordPress.PHP.YodaConditions.NotYoda" />
+        <!-- <exclude name="WordPress.PHP.YodaConditions.NotYoda" /> -->
         <exclude name="WordPress.PHP.DisallowShortTernary.Found" />
     </rule>
 

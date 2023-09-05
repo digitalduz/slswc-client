@@ -2,14 +2,20 @@
 /**
  * Defines the plugin updater class
  *
- * @version     1.0.2
- * @since       1.0.2
+ * @version     1.1.0
+ * @since       1.1.0
  * @package     Client
  * @link        https://licenseserver.io/
  */
 
 namespace Madvault\Slswc\Client;
 
+/**
+ * Plugin updater class
+ *
+ * @version 1.1.0
+ * @since   1.1.0
+ */
 class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
 
     /**
@@ -52,6 +58,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
      *
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      * @version 1.1.0
+     * @param   string $license_server_url - The base url to your WooCommerce shop.
      * @param   string $plugin_file - path to the plugin file or directory, relative to the plugins directory.
      * @param   array  $args        - array of additional arguments to override default ones.
      *
@@ -126,7 +133,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
-    function plugin_dir_file() {
+    public function plugin_dir_file() {
         $plugin_folder = '';
         $plugin_file   = '';
 
@@ -285,7 +292,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
     public function change_update_information( $transient ) {
         // If we are on the update core page, change the update message for unlicensed products
         global $pagenow;
-        $update_core = ( 'update-core.php' == $pagenow ) ? true : false;
+        $update_core = ( $pagenow === 'update-core.php' ) ? true : false;
 
         if ( $update_core && $transient && isset( $transient->response ) && ! isset( $_GET['action'] ) ) {
             Helper::log( 'Change plugin update information. Current transient: ' . print_r( $transient, true ) );
@@ -312,7 +319,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 
             $has_upgrade_notice = isset( $plugin_response->upgrade_notice ) && ! empty( $plugin_response->upgrade_notice );
 
-            if ( $plugin_has_update && '' == $plugin_response->package && ! $has_upgrade_notice ) {
+            if ( $plugin_has_update && $plugin_response->package == '' && ! $has_upgrade_notice ) {
                 Helper::log( 'Update package: ' . $plugin_response->package . ', upgrade notice: ' . $notice_text );
                 $message                         = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
                 $plugin_response->upgrade_notice = $message;

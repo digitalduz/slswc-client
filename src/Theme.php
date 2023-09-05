@@ -88,7 +88,6 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
      * @version 1.1.0
      * @param   string $license_server_url - The base url to your WooCommerce shop.
      * @param   string $theme_file - path to the plugin file or directory, relative to the plugins directory.
-     * @param   string $software_type - the type of software this is. plugin|theme, default: plugin.
      * @param   array  $args - array of additional arguments to override default ones.
      */
     public function __construct( $license_server_url, $theme_file, $args = [] ) {
