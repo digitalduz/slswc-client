@@ -1,12 +1,12 @@
 {
   "name": "slswc-updater",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "slug": "slswc-updater",
   "scripts": {
     "start": "composer install && composer dump-autoload",
     "format-php": "composer run fix",
-    "lint-php": "composer run lint; exit 0",
+    "lint-php": "composer run lint; exit 0"
   },
   "prettier": {
     "singleQuote": true,
