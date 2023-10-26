@@ -1,5 +1,7 @@
 <?php
 /**
+ * The ApiClient class
+ *
  * @version     1.0.2
  * @since       1.0.2
  * @package     SLSWC_Client
@@ -10,7 +12,7 @@ namespace Madvault\Slswc\Client;
 
 use Madvault\Slswc\Client\Helper;
 
-use \WP_Error;
+use WP_Error;
 
 /**
  * Class to manage products relying on the Software License Server for WooCommerce.
@@ -56,8 +58,17 @@ class ApiClient {
      */
     public $slug;
 
+    /**
+     * Single instance of the plugin.
+     *
+     * @param string $license_server_url The license server URL.
+     * @param string $slug The product slug.
+     * @return ApiClient
+     * @version 1.0.0
+     * @since   1.0.0
+     */
     public static function get_instance( $license_server_url, $slug ) {
-        if ( self::$instance == null ) {
+        if ( is_null( self::$instance ) ) {
             self::$instance = new self( $license_server_url, $slug );
         }
 
@@ -80,7 +91,7 @@ class ApiClient {
     /**
      * Set the software slug.
      *
-     * @param string $slug
+     * @param string $slug The product slug.
      * @return void
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
@@ -133,11 +144,11 @@ class ApiClient {
      */
     public function get_api_keys() {
         return array_filter(
-            [
+            array(
                 'username'        => get_option( 'slswc_api_username_' . esc_attr( $this->slug ), '' ),
                 'consumer_key'    => get_option( 'slswc_consumer_key_' . esc_attr( $this->slug ), '' ),
                 'consumer_secret' => get_option( 'slswc_consumer_secret_' . esc_attr( $this->slug ), '' ),
-            ]
+            )
         );
     }
 
@@ -152,11 +163,11 @@ class ApiClient {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
     public function save_api_keys( $username, $consumer_key, $consumer_secret ) {
-        $keys = [
+        $keys = array(
             'username'        => $username,
             'consumer_key'    => $consumer_key,
             'consumer_secret' => $consumer_secret,
-        ];
+        );
         return update_option(
             'slswc_api_keys_' . esc_attr( $this->slug ),
             $keys
@@ -166,7 +177,6 @@ class ApiClient {
     /**
      * Send a request to the server.
      *
-     * @param   string $domain The domain to send the data to.
      * @param   string $action activate|deactivate|check_update.
      * @param   array  $request_info The data to be sent to the server.
 
@@ -175,7 +185,7 @@ class ApiClient {
      *
      * @return object The response from the server.
      */
-    public function request( $action = 'check_update', $request_info = [] ) {
+    public function request( $action = 'check_update', $request_info = array() ) {
         $domain = $this->license_server_url;
 
         $slug = isset( $request_info['slug'] ) ? $request_info['slug'] : '';
@@ -187,13 +197,13 @@ class ApiClient {
         $server_request_url = esc_url_raw( $domain . 'wp-json/slswc/v1/' . $action . '?' . http_build_query( $request_info ) );
 
         // Options to parse the wp_safe_remote_get() call.
-        $request_options = [ 'timeout' => 30 ];
+        $request_options = array( 'timeout' => 30 );
 
         // Allow filtering the request options.
         $request_options = apply_filters( 'slswc_request_options_' . $slug, $request_options );
 
         // Query the license server.
-        $endpoint_get_actions = apply_filters( 'slswc_client_get_actions', [ 'product', 'products' ] );
+        $endpoint_get_actions = apply_filters( 'slswc_client_get_actions', array( 'product', 'products' ) );
         if ( in_array( $action, $endpoint_get_actions, true ) ) {
             $response = wp_safe_remote_get( $server_request_url, $request_options );
         } else {
@@ -221,10 +231,10 @@ class ApiClient {
 		// phpcs:enable
 
         // Return null to halt the execution.
-        return (object) [
+        return (object) array(
             'status'   => is_wp_error( $response ) ? $response->get_error_code() : $response['response']['code'],
             'response' => is_wp_error( $response ) ? $response->get_error_message() : $response['response']['message'],
-        ];
+        );
     }
 
     /**
@@ -330,5 +340,4 @@ class ApiClient {
 
         return false;
     }
-
 }

@@ -76,7 +76,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
      *      )
      *   );
      */
-    public function __construct( $license_server_url, $plugin_file, $args = [] ) {
+    public function __construct( $license_server_url, $plugin_file, $args = array() ) {
         $this->plugin_file = $plugin_file;
 
         $args = Helper::get_file_details( $this->plugin_file, $args );
@@ -95,14 +95,14 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
     public function init_hooks() {
-        add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'update_check' ] );
-        add_filter( 'plugins_api', [ $this, 'add_plugin_info' ], 10, 3 );
-        add_filter( 'plugin_row_meta', [ $this, 'check_for_update_link' ], 10, 2 );
-        add_filter( 'extra_plugin_headers', [ $this, 'extra_headers' ] );
-        add_filter( 'site_transient_update_plugins', [ $this, 'change_update_information' ] );
-        add_filter( 'transient_update_plugins', [ $this, 'change_update_information' ] );
-        add_action( 'in_plugin_update_message-' . $this->plugin_dir_file, [ $this, 'need_license_message' ], 10, 2 );
-        add_filter( 'http_request_host_is_external', [ $this, 'fix_update_host' ], 10, 2 );
+        add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'update_check' ) );
+        add_filter( 'plugins_api', array( $this, 'add_plugin_info' ), 10, 3 );
+        add_filter( 'plugin_row_meta', array( $this, 'check_for_update_link' ), 10, 2 );
+        add_filter( 'extra_plugin_headers', array( $this, 'extra_headers' ) );
+        add_filter( 'site_transient_update_plugins', array( $this, 'change_update_information' ) );
+        add_filter( 'transient_update_plugins', array( $this, 'change_update_information' ) );
+        add_action( 'in_plugin_update_message-' . $this->plugin_dir_file, array( $this, 'need_license_message' ), 10, 2 );
+        add_filter( 'http_request_host_is_external', array( $this, 'fix_update_host' ), 10, 2 );
     }
 
     /**
@@ -259,10 +259,10 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
         if ( stripos( $this->plugin_file, $file ) && current_user_can( 'update_plugins' ) ) {
             $update_link_url = wp_nonce_url(
                 add_query_arg(
-                    [
+                    array(
                         'slswc_check_for_update' => 1,
                         'slswc_slug'             => $this->get_slug(),
-                    ],
+                    ),
                     self_admin_url( 'plugins.php' )
                 ),
                 'slswc_check_for_update'
@@ -292,7 +292,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
     public function change_update_information( $transient ) {
         // If we are on the update core page, change the update message for unlicensed products
         global $pagenow;
-        $update_core = ( $pagenow === 'update-core.php' ) ? true : false;
+        $update_core = ( 'update-core.php' === $pagenow ) ? true : false;
 
         if ( $update_core && $transient && isset( $transient->response ) && ! isset( $_GET['action'] ) ) {
             Helper::log( 'Change plugin update information. Current transient: ' . print_r( $transient, true ) );
@@ -319,7 +319,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
 
             $has_upgrade_notice = isset( $plugin_response->upgrade_notice ) && ! empty( $plugin_response->upgrade_notice );
 
-            if ( $plugin_has_update && $plugin_response->package == '' && ! $has_upgrade_notice ) {
+            if ( $plugin_has_update && '' === $plugin_response->package && ! $has_upgrade_notice ) {
                 Helper::log( 'Update package: ' . $plugin_response->package . ', upgrade notice: ' . $notice_text );
                 $message                         = '<div class="slswcclient-plugin-upgrade-notice">' . $notice_text . '</div>';
                 $plugin_response->upgrade_notice = $message;
