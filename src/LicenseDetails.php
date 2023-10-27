@@ -92,7 +92,7 @@ class LicenseDetails {
 
         $this->set_license_details( $license_details );
 
-        Helper::log( 'LicenseDetails::__construct(); ' . print_r( $this->get_license_details(), true ) );
+        Helper::log( 'LicenseDetails::__construct(); ' . print_r( $this->get_license_details(), true ) ); // phpcs:ignore
 
         $this->client = new ApiClient(
             $this->license_server_url,
@@ -159,7 +159,6 @@ class LicenseDetails {
                 'live'    => 'no',
                 'staging' => 'no',
             ),
-            // 'deactivate_license' => 'deactivate_license',
         );
 
         if ( ! empty( $args ) ) {
@@ -430,8 +429,6 @@ class LicenseDetails {
         if ( 'active' === $status || 'expiring' === $status ) {
             return true;
         }
-
-        error_log( 'Check license: ' . print_r( $response_body, true ) );
 
         if ( ! is_numeric( $status ) ) {
             $this->set_license_status( $status );
