@@ -2,7 +2,7 @@ Changelog for Software License for WooCommerce Client
 
 Version 1.1.0 - 8th September 2023
 - Complete rewrite into a composer package.
-- Refactor License Manager into a separate plugin.
+- Refactor License Manager.
 - Rewrite integration for plugins and themes.
 
 Version 1.0.0 - 18th May 2022

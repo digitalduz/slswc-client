@@ -29,7 +29,7 @@ const _paths = {
   css: ['./**/src/**/*.css'],
   js: ['./**/src/**/*.js'],
   distJs: ['./**/assets/js/**/*.js'],
-  php: ['./**/*.php']
+  php: ['./**/*.php'],
 };
 const paths = {};
 for (let key in _paths)
@@ -41,17 +41,17 @@ for (let key in _paths)
     '!node_modules/**/*',
     '!**/*.min.*',
     '!Gulpfile.babel.js',
-    '!**/lib/**/*'
+    '!**/lib/**/*',
   ];
 
 /**
  * Handle errors and alert the user.
  */
-const handleErrors = err => {
+const handleErrors = (err) => {
   notify.onError({
     title: 'Task Failed [<%= error.message %>',
     message: 'See console.',
-    sound: 'Sosumi' // See: https://github.com/mikaelbr/node-notifier#all-notification-options-with-their-defaults
+    sound: 'Sosumi', // See: https://github.com/mikaelbr/node-notifier#all-notification-options-with-their-defaults
   })(err);
 
   beeper(); // Beep 'sosumi' again.
@@ -78,30 +78,30 @@ export function compileStyles() {
       sass({
         includePaths: [],
         errLogToConsole: true,
-        outputStyle: 'expanded' // Options: nested, expanded, compact, compressed
+        outputStyle: 'expanded', // Options: nested, expanded, compact, compressed
       })
     )
     .pipe(
       postcss([
         autoprefixer(),
         mqpacker({
-          sort: true
-        })
+          sort: true,
+        }),
       ])
     )
     .pipe(
-      sourcemaps.mapSources(function(sourcePath) {
+      sourcemaps.mapSources(function (sourcePath) {
         return `${path.basename(__dirname)}/${sourcePath}`;
       })
     )
     .pipe(
       sourcemaps.write('.', {
         includeContent: false,
-        sourceRoot: '.'
+        sourceRoot: '.',
       })
     )
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.dirname = path.dirname.replace('src/', '');
       })
     )
@@ -121,7 +121,7 @@ export function minifyStyles() {
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(csso())
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.basename += '.min';
       })
     )
@@ -139,7 +139,7 @@ export function compileScripts() {
     .pipe(sourcemaps.init())
     .pipe(cache('scripts'))
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.dirname = path.dirname.replace('src/', '');
       })
     )
@@ -151,7 +151,7 @@ export function compileScriptsProduction() {
     .src(paths.js)
     .pipe(cache('scripts'))
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.dirname = path.dirname.replace('src/', '');
       })
     )
@@ -169,7 +169,7 @@ export function minifyScripts() {
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(uglify())
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.basename += '.min';
       })
     )
@@ -186,7 +186,7 @@ export function copyImages() {
     .src(paths.images, { since: gulp.lastRun(copyImages) })
     .pipe(plumber({ errorHandler: handleErrors }))
     .pipe(
-      rename(path => {
+      rename((path) => {
         path.dirname = path.dirname.replace('src/', '');
       })
     )
@@ -210,7 +210,7 @@ export function i18n() {
     .pipe(
       wpPot({
         domain: domainName,
-        package: packageName
+        package: packageName,
       })
     )
     .pipe(gulp.dest('./languages/' + domainName + '.pot'));
@@ -254,8 +254,8 @@ export function watch() {
     injectChanges: true,
     proxy: getProxyUrl(),
     watchOptions: {
-      debounceDelay: 1000 // Wait 1 second before injecting.
-    }
+      debounceDelay: 1000, // Wait 1 second before injecting.
+    },
   });
 
   // Run tasks when files change.
@@ -282,16 +282,17 @@ export function copyBuild() {
   return gulp
     .src(
       [
+        './assets/**/*',
         './languages/*',
-        './changelog.txt',
+        './partials/**/*',
+        './src/**/*.php',
         './slswc-client.php',
         './changelog.txt',
-        './src/*.php',
         './vendor/**/*',
-        './partials/**/*',
+        './changelog.txt',
         '!**/*.map',
-        '!./assets/src/**/*',
         '!./assets/src',
+        '!./assets/src/**/*',
         '!**/package.json',
         '!**/Gruntfile.js',
         '!**/bower.json',
@@ -301,7 +302,7 @@ export function copyBuild() {
         '!**/node_modules',
         '!**/*.log',
         '!**/*.swp',
-        '!**/.DS_Store'
+        '!**/.DS_Store',
       ],
       { base: '.' }
     )
