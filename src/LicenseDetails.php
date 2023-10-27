@@ -38,7 +38,7 @@ class LicenseDetails {
     /**
      * The Client object.
      *
-     * @var Client
+     * @var ApiClient
      * @version 1.0.2
      * @since   1.0.2
      */

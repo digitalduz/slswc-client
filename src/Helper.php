@@ -207,7 +207,7 @@ class Helper {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      * @version 1.1.0
      */
-    public static function product_background_installer( $slug = '', $package = '' ) {
+    public static function product_background_installer( $slug = '', $package = '' ) { // phpcs:ignore
         global $wp_filesystem;
 
         $slug = isset( $_REQUEST['slug'] ) ? wp_unslash( sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) ) : '';
