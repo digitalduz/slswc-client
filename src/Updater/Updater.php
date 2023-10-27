@@ -371,7 +371,7 @@ class Updater {
         if ( $this->is_products_page() || $this->is_licenses_tab() ) {
             wp_register_style(
                 'slswc-client',
-                SLSWC_CLIENT_ASSETS_URL . 'css/slswc-updater.css',
+                SLSWC_CLIENT_ASSETS_URL . 'css/slswc-client.css',
                 array(),
                 $this->version,
                 'all'

@@ -107,7 +107,7 @@ class PluginBootstrap {
         $locale = apply_filters( 'plugin_locale', $locale, 'slswc-client' );
 
         // Place your custom translations into wp-content/languages/slswc to be upgrade safe.
-        load_textdomain( 'slswc-client', trailingslashit( WP_LANG_DIR ) . 'slswc-updater/slswc-updater-' . $locale . '.mo' );
+        load_textdomain( 'slswc-client', trailingslashit( WP_LANG_DIR ) . 'slswc-client/slswc-client-' . $locale . '.mo' );
 
         // Load the plugins shipped language files.
         load_plugin_textdomain( 'slswc-client', false, SLSWC_CLIENT_PATH . '/languages/' );
