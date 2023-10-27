@@ -17,7 +17,8 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Madvault\\Slswc\\Client\\": "src/"
+            "Madvault\\Slswc\\Client\\": "src/",
+            "Madvault\\Slswc\\Client\\Updater\\": "src/Updater/"
         }
     },
     "require-dev": {
