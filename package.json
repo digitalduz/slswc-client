@@ -78,7 +78,7 @@
     "postcss": "^8.4.23",
     "prettier": "^2.8.8",
     "sass": "^1.62.1"
-  },  
+  },
   "browserslist": [
     "> 1%",
     "ie >= 11",

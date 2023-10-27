@@ -2,8 +2,8 @@
 /**
  * Main plugin file.
  *
- * @version     1.0.0
- * @since       1.0.0
+ * @version     1.1.0
+ * @since       1.1.0
  * @package     SLSWC_Updater
  * @link        https://licenseserver.io/
  */
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Plugin Name:       Software Updater (Software License Server for WooCommerce)
  * Plugin URI:        https://licenseserver.io/
  * Description:       Manage updates for your plugins and themes sold using the License Server for WooCommerce plugin
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            MadVault LLC
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
@@ -35,7 +35,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Madvault\Slswc\Client\Updater\PluginBootstrap;
 
-define( 'SLSWC_CLIENT_VERSION', '1.0.0' );
+define( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 
 define( 'SLSWC_CLIENT_FILE', __FILE__ );
 define( 'SLSWC_CLIENT_PATH', plugin_dir_path( __FILE__ ) );
