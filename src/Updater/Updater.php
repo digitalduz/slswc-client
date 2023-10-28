@@ -272,8 +272,6 @@ class Updater {
 
         $this->set_plugins( $plugins );
 
-        $this->save_products( $plugins );
-
         return $plugins;
     }
 
