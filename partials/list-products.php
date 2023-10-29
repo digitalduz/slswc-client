@@ -84,7 +84,7 @@ use Madvault\Slswc\Client\Helper;
                         <?php endif; ?>
                     </li>
                     <li>
-                        <a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&section=changelog&TB_iframe=true&width=772&height=840' ) ); ?>"
+                        <a href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $product['slug'] . '&TB_iframe=true&width=772&height=840' ) ); ?>"
                             class="thickbox open-plugin-details-modal"
                             <?php // translators: %s - Product name. ?>
                             aria-label="<?php echo esc_attr( sprintf( __( 'More information about %s', 'slswc-client' ), esc_attr( $name_version ) ) ); ?>"
@@ -106,13 +106,15 @@ use Madvault\Slswc\Client\Helper;
                 </p>
             </div>
         </div>
-        <div class="plugin-card-bottom slswc-plugin-card-bottom">                   
+        <div class="plugin-card-bottom slswc-plugin-card-bottom">
+            <?php if ( isset( $product['updated'] ) ): ?>              
             <div class="column-updated">
                 <strong><?php esc_html_e( 'Last Updated:', 'slswc-client' ); ?>&nbsp;</strong>
-                <?php echo esc_attr( human_time_diff( strtotime( $product['updated'] ) ) ); ?> ago.
+                <?php echo esc_attr( human_time_diff( Helper::date_to_time( $product['updated'] ) ) ); ?> ago.
             </div>
+            <?php endif; ?>
             <div class="column-compatibility">
-                <?php self::show_compatible( $product['compatible_to'] ); ?>
+                <?php $this->show_compatible( $product['compatible_to'] ); ?>
             </div>
         </div>
     </div>

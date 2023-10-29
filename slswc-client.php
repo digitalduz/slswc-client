@@ -29,11 +29,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * SLSWC:                   plugin
  * SLSWC Slug:              slswc-client
  * SLSWC Documentation URL: https://licenseserver.io/documentation
+ * SLSWC Compatible To:     6.3.2
+ * SLSWC Updated:           26-05-2023
  */
 
 require __DIR__ . '/vendor/autoload.php';
 
 use Madvault\Slswc\Client\Updater\PluginBootstrap;
+use Madvault\Slswc\Client\Helper;
 
 define( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 
@@ -42,7 +45,24 @@ define( 'SLSWC_CLIENT_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SLSWC_CLIENT_PARTIALS_DIR', SLSWC_CLIENT_PATH . 'partials/' );
 define( 'SLSWC_CLIENT_ASSETS_URL', plugin_dir_url( __FILE__ ) . 'assets/' );
 define( 'SLSWC_CLIENT_LOGGING', true );
-define( 'SLSWC_CLIENT_SERVER_URL', 'http://licenseserver.io/' ); // Replace this with the license server url.
+define( 'SLSWC_CLIENT_SERVER_URL', 'http://localhost:10029/' ); // Replace this with the license server url.
+
+add_filter( 'extra_plugin_headers', 'slswc_client_extra_headers' );
+add_filter( 'extra_theme_headers', 'slswc_client_extra_headers' );
+
+if ( ! function_exists( 'slswc_client_extra_headers' ) ) {
+    /**
+     * Extra theme and plugin headers.
+     *
+     * @param array $headers The current WordPress plugin and theme headers.
+     * @return array $headers The modified headers.
+     * @version 1.1.0
+     * @since   1.1.0
+     */
+    function slswc_client_extra_headers( $headers ) {
+        return Helper::extra_headers( $headers );
+    }
+}
 
 $slswc_updater_plugin = PluginBootstrap::get_instance();
 $slswc_updater_plugin->run();

@@ -3384,9 +3384,7 @@ if ( ! function_exists( 'slswc_client_manager' ) ) {
  * This is Legacy functionality and will be removed in the future. We recommend you use the Plugin and Theme classes.
  */
 
-define( 'SLSWC_LOAD_LEGACY_CLIENT', false );
-
-if ( defined( 'SLSWC_LOAD_LEGACY_CLIENT' ) && SLSWC_LOAD_LEGACY_CLIENT ) {
+if ( defined( 'SLSWC_LOAD_LEGACY_CLIENT' ) ) {
     add_filter( 'extra_plugin_headers', 'slswc_extra_headers' );
     add_filter( 'extra_theme_headers', 'slswc_extra_headers' );
 

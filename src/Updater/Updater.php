@@ -184,11 +184,17 @@ class Updater {
         );
 
         foreach ( $this->get_plugins() as $plugin ) {
-            $this->updaters[ $plugin['slug'] ] = new Plugin( $this->server_url, $plugin['slug'], $plugin );
+            $new_updater = Plugin::get_instance( $this->server_url, $plugin['file'], $plugin );
+            $new_updater->init_hooks();
+
+            $this->updaters[ $plugin['slug'] ] = $new_updater;
         }
 
         foreach ( $this->get_themes() as $theme ) {
-            $this->updaters[ $theme['slug'] ] = new Theme( $this->server_url, $theme['slug'], $theme );
+            $new_updater = Theme::get_instance( $this->server_url, $theme['file'], $theme );
+            $new_updater->init_hooks();
+
+            $this->updaters[ $theme['slug'] ] = $new_updater;
         }
     }
 
@@ -286,7 +292,7 @@ class Updater {
     public function default_remote_product( $type = 'plugin' ) {
         $default_data = array(
             'thumbnail'      => '',
-            'updated'        => gmdate( 'Y-m-d' ),
+            'updated'        => gmdate( 'd-m-Y' ),
             'reviews_count'  => 0,
             'average_rating' => 0,
             'activations'    => 0,
@@ -328,7 +334,7 @@ class Updater {
         if ( $this->is_products_page() ) {
             wp_register_script(
                 'slswc-client-products',
-                plugins_url( 'assets/js/products.js', __DIR__ ),
+                SLSWC_CLIENT_ASSETS_URL . 'js/products.js',
                 array( 'jquery', 'thickbox' ),
                 $this->version,
                 true
@@ -350,7 +356,7 @@ class Updater {
         if ( $this->is_licenses_tab() ) {
             wp_register_script(
                 'slswc-client-licenses',
-                plugins_url( 'assets/js/licenses.js', __DIR__ ),
+                SLSWC_CLIENT_ASSETS_URL . 'js/licenses.js',
                 array( 'jquery' ),
                 $this->version,
                 true
@@ -631,11 +637,11 @@ class Updater {
             $product_name = ! empty( $product['name'] ) ? $product['name'] : $product['title'];
 
             $has_license_info    = empty( $license_info ) ? false : true;
-            $license_key         = $has_license_info ? trim( $license_info['license_key'] ) : '';
-            $current_version     = $has_license_info ? trim( $license_info['version'] ) : '';
-            $license_status      = $has_license_info ? trim( $license_info['license_status'] ) : '';
-            $license_expires     = $has_license_info ? trim( $license_info['license_expires'] ) : '';
-            $license_environment = $has_license_info && isset( $license_info['environment'] ) ? trim( $license_info['environment'] ) : '';
+            $license_key         = $has_license_info ? esc_attr( $license_info['license_key'] ) : '';
+            $current_version     = $has_license_info ? esc_attr( $license_info['version'] ) : '';
+            $license_status      = $has_license_info ? esc_attr( $license_info['license_status'] ) : '';
+            $license_expires     = $has_license_info ? esc_attr( $license_info['license_expires'] ) : '';
+            $license_environment = $has_license_info && isset( $license_info['environment'] ) ? esc_attr( $license_info['environment'] ) : '';
 
             $active_status = $has_license_info ? ( array_key_exists( 'active_status', $license_info ) && isset( $license_info['active_status'][ $license_environment ] ) && 'yes' === $license_info['active_status'][ $license_environment ] ? true : false ) : false;
 
@@ -677,6 +683,15 @@ class Updater {
         Helper::log( $products );
         Helper::log( 'Remote Products' );
         Helper::log( $remote_products );
+
+        if ( ! empty( $remote_products ) ) {
+            foreach ( $remote_products as $slug => $product ) {
+                if ( ! array_key_exists( $slug, $products ) ) {
+                    continue;
+                }
+                $products[ $slug ] = Helper::map_remote_product( $products[ $slug ], (array) $product );
+            }
+        }
 
         if ( ! empty( $products ) && count( $products ) > 0 ):
             require_once SLSWC_CLIENT_PARTIALS_DIR . 'list-products.php';
@@ -735,9 +750,35 @@ class Updater {
         ?>
         <span class="compatibility-<?php echo esc_attr( $compatibility_class ); ?>">
             <strong><?php echo esc_html( $compatibility_label ); ?></strong>
-            <?php
-            esc_attr_e( ' with your version of WordPress', 'slswc-client' );
-            ?>
+            <?php esc_html_e( ' with WordPress', 'slswc-client' ); ?>&nbsp;<strong><?php echo esc_html( $wp_version ); ?></strong>
+        </span>
+        <?php
+    }
+
+    /**
+     * Show tested version
+     *
+     * @param string $version The current version of the plugin.
+     * @return void
+     * @version 1.1.0
+     * @since   1.1.0
+     */
+    public function show_tested_version( $version ) {
+        global $wp_version;
+
+        $tested = version_compare( $wp_version, $version ) > 0 ? true : false;
+
+        if ( $tested ) {
+            $tested_label = __( 'Tested', 'slswc-client' );
+            $tested_class = 'compatible';
+        } else {
+            $tested_label = __( 'Not tested', 'slswc-client' );
+            $tested_class = 'incompatible';
+        }
+        ?>
+        <span class="compatibility-<?php echo esc_attr( $tested_class ); ?>">
+            <strong><?php echo esc_html( $tested_label ); ?></strong><br />
+            <?php esc_html_e( ' with WordPress', 'slswc-client' ); ?>&nbsp;<strong><?php echo esc_html( $wp_version ); ?></strong>
         </span>
         <?php
     }
@@ -754,7 +795,7 @@ class Updater {
     public function license_status_field( $status ) {
         $license_labels = Helper::license_status_types();
 
-        echo empty( $status ) ? '' : esc_attr( $license_labels[ $status ] );
+        echo empty( $status ) || ! isset( $license_labels[ $status ] ) ? 'Inactive' : esc_attr( $license_labels[ $status ] );
     }
 
     /**
