@@ -51,7 +51,7 @@ class GenericSoftwareUpdater {
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
-    public $license_details = [];
+    public $license_details = array();
 
     /**
      * The license server url.
@@ -96,14 +96,14 @@ class GenericSoftwareUpdater {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
     public function license_details_from_file_data( $file_data, $base_file ) {
-        $license_details = [
+        $license_details = array(
             'license_key' => isset( $file_data['license_key'] ) ? esc_attr( $file_data['license_key'] ) : '',
             'slug'        => isset( $file_data['slug'] )
                 ? esc_attr( $file_data['slug'] )
                 : ( isset( $file_data['text-domain'] ) ? esc_attr( $file_data['text-domain'] ) : basename( $base_file ) ),
             'version'     => isset( $file_data['version'] ) ? esc_attr( $file_data['version'] ) : '0',
             'domain'      => isset( $file_data['domain'] ) ? esc_attr( $file_data['domain'] ) : home_url(),
-        ];
+        );
 
         $this->set_license_details( $license_details );
 
@@ -153,7 +153,7 @@ class GenericSoftwareUpdater {
     /**
      * Get domain.
      *
-     * @return void
+     * @return string $domain The domain.
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
@@ -161,6 +161,13 @@ class GenericSoftwareUpdater {
         return $this->license_details['domain'];
     }
 
+    /**
+     * Get license details.
+     *
+     * @return array $license_details The license details.
+     * @version 1.0.0
+     * @since   1.0.0
+     */
     public function get_license_details() {
         return $this->license_details;
     }
@@ -219,4 +226,3 @@ class GenericSoftwareUpdater {
         $this->license_details = $license_details;
     }
 }
-

@@ -73,7 +73,7 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
      *      )
      *    );
      */
-    public static function get_instance( $license_server_url, $base_file, $args = [] ) {
+    public static function get_instance( $license_server_url, $base_file, $args = array() ) {
         if ( is_null( self::$instance ) ) {
             self::$instance = new self( $license_server_url, $base_file, $args );
         }
@@ -90,7 +90,7 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
      * @param   string $theme_file - path to the plugin file or directory, relative to the plugins directory.
      * @param   array  $args - array of additional arguments to override default ones.
      */
-    public function __construct( $license_server_url, $theme_file, $args = [] ) {
+    public function __construct( $license_server_url, $theme_file, $args = array() ) {
         $this->theme_file         = $theme_file;
         $this->license_server_url = $license_server_url;
 
@@ -111,8 +111,8 @@ class Theme extends GenericSoftwareUpdater implements SoftwareUpdaterInterface {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
     public function init_hooks() {
-        add_filter( 'pre_set_site_transient_update_themes', [ $this, 'update_check' ], 21, 1 );
-        add_filter( 'extra_theme_headers', [ $this, 'extra_headers' ] );
+        add_filter( 'pre_set_site_transient_update_themes', array( $this, 'update_check' ), 21, 1 );
+        add_filter( 'extra_theme_headers', array( $this, 'extra_headers' ) );
     }
 
     /**

@@ -57,6 +57,9 @@
 
         <!-- Dont need to capitalize first letter -->
         <exclude name="Generic.Commenting.DocComment.ShortNotCapital" />
+
+        <!-- Don't worry about mission document comments -->
+        <exclude name="Generic.Commenting.FileComment.Missing" />
     </rule>
 
     <rule ref="WordPress-Extra">
@@ -121,8 +124,8 @@
     </rule>
 
     <rule ref="Generic.WhiteSpace.DisallowTabIndent" />
-    <rule ref="Generic.Arrays.DisallowLongArraySyntax" />
-    <rule ref="Generic.ControlStructures.DisallowYodaConditions" />
+    <!--<rule ref="Generic.Arrays.DisallowLongArraySyntax" />
+    <rule ref="Generic.ControlStructures.DisallowYodaConditions" />-->
 
     <rule ref="WordPress.WhiteSpace.ControlStructureSpacing">
         <properties>

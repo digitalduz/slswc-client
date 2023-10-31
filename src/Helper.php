@@ -10,8 +10,10 @@
 
 namespace Madvault\Slswc\Client;
 
-use \WP_Error;
-use \Exception;
+use WP_Error;
+use Exception;
+use WC_DateTime;
+use DateTimeZone;
 
 /**
  * Helper class with static helper methods
@@ -41,11 +43,11 @@ class Helper {
      */
     public static function get_api_keys() {
         return array_filter(
-            [
+            array(
                 'username'        => get_option( 'slswc_api_username', '' ),
                 'consumer_key'    => get_option( 'slswc_consumer_key', '' ),
                 'consumer_secret' => get_option( 'slswc_consumer_secret', '' ),
-            ]
+            )
         );
     }
 
@@ -59,7 +61,7 @@ class Helper {
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
-    public static function get_file_details( $base_file, $args = [], $software_type = 'plugin' ) {
+    public static function get_file_details( $base_file, $args = array(), $software_type = 'plugin' ) {
         return self::recursive_parse_args(
             $args,
             self::get_file_information( $base_file, $software_type )
@@ -76,14 +78,14 @@ class Helper {
      * @version 1.1.0
      */
     public static function get_file_information( $base_file, $type = 'plugin' ) {
-        $data = [];
+        $data = array();
         if ( 'plugin' === $type ) {
             if ( ! function_exists( 'get_plugin_data' ) ) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
             $plugin = get_plugin_data( $base_file, false );
 
-            $data = self::format_plugin_data( $plugin, $base_file, $type );
+            $data = self::format_plugin_data( $plugin, $base_file );
         } elseif ( 'theme' === $type ) {
             if ( ! function_exists( 'wp_get_theme' ) ) {
                 require_once ABSPATH . 'wp-includes/theme.php';
@@ -101,13 +103,12 @@ class Helper {
      *
      * @param array  $data The data to format.
      * @param string $file The plugin file.
-     * @param string $type The product type.
      * @return array
      * @version 1.1.0
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
-    public static function format_plugin_data( $data, $file = '', $type = 'plugin' ) {
-        $formatted_data = [
+    public static function format_plugin_data( $data, $file = '' ) {
+        $formatted_data = array(
             'name'              => $data['Name'],
             'title'             => $data['Title'],
             'description'       => $data['Description'],
@@ -118,21 +119,45 @@ class Helper {
             'text_domain'       => $data['TextDomain'],
             'domain_path'       => $data['DomainPath'],
             'network'           => $data['Network'],
+            'requires_wp'       => ! empty( $data['RequiresWP'] ) ? $data['RequiresWP'] : '',
+
             // SLSWC Headers.
             'slswc'             => ! empty( $data['SLSWC'] ) ? $data['SLSWC'] : '',
-            'slug'              => ! empty( $data['SLSWCSlug'] ) ? $data['Slug'] : $data['TextDomain'],
-            'requires_wp'       => ! empty( $data['RequiresWP'] ) ? $data['RequiresWP'] : '',
-            'compatible_to'     => ! empty( $data['SLSWCCompatibleTo'] ) ? $data['SLSWCCompatibleTo'] : '',
-            'documentation_url' => ! empty( $data['SLSWCDocumentationURL'] ) ? $data['SLSWCDocumentationURL'] : '',
-            'type'              => $type,
-        ];
+            'updated'           => ! empty( $data['SLSWC Updated'] ) ? $data['SLSWC Updated'] : '',
+            'slug'              => ! empty( $data['SLSWC Slug'] ) ? $data['SLSWC Slug'] : $data['TextDomain'],
+            'compatible_to'     => ! empty( $data['SLSWC Compatible To'] ) ? $data['SLSWC Compatible To'] : '',
+            'documentation_url' => ! empty( $data['SLSWC Documentation URL'] ) ? $data['SLSWC Documentation URL'] : '',
+            'type'              => 'plugin',
+        );
 
-        if ( $file != '' ) {
-            $sub_dir                = $type === 'theme' ? 'themes' : 'plugins';
-            $formatted_data['file'] = WP_CONTENT_DIR . "/{$sub_dir}/{$file}";
+        if ( '' !== $file ) {
+            $formatted_data['file'] = WP_CONTENT_DIR . "/plugins/{$file}";
         }
 
-        return apply_filters( 'slswc_client_formatted_plugin_data', $formatted_data, $data, $file, $type );
+        return apply_filters( 'slswc_client_formatted_plugin_data', $formatted_data, $data, $file );
+    }
+
+    /**
+     * Map a remote product with local product properties.
+     *
+     * @param array $local Local product data.
+     * @param array $remote Remote product data.
+     * @return array
+     * @version 1.1.0
+     * @since   1.1.0
+     */
+    public static function map_remote_product( $local, $remote ) {
+        $remote = (array) $remote;
+
+        foreach ( $remote as $key => $value ) {
+            if ( array_key_exists( $key, $local ) ) {
+                $local[ $key ] = $remote[ $key ];
+            }
+        }
+
+        $local['download_url'] = $remote['update_file']->file;
+
+        return apply_filters( 'slswc_client_mapped_remote_product', $local, $remote );
     }
 
     /**
@@ -145,7 +170,7 @@ class Helper {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      */
     public static function format_theme_data( $theme, $theme_file ) {
-        $formatted_data = [
+        $formatted_data = array(
             'file'              => WP_CONTENT_DIR . "/themes/{$theme_file}",
             'name'              => $theme->get( 'Name' ),
             'theme_url'         => $theme->get( 'ThemeURI' ),
@@ -158,14 +183,14 @@ class Helper {
             'tags'              => $theme->get( 'Tags' ),
             'text_domain'       => $theme->get( 'TextDomain' ),
             'domain_path'       => $theme->get( 'DomainPath' ),
+            'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) )
+                ? $theme->get( 'RequiresWP' ) : '',
             // SLSWC Headers.
             'slswc'             => ! empty( $theme->get( 'SLSWC' ) ) ? $theme->get( 'SLSWC' ) : '',
             'slug'              => ! empty( $theme->get( 'SLSWCSlug' ) )
                 ? $theme->get( 'SLSWCSlug' )
                 : $theme->get( 'TextDomain' ),
-            'requires_wp'       => ! empty( $theme->get( 'RequiresWP' ) )
-                ? $theme->get( 'RequiresWP' )
-                : '',
+            'updated'           => ! empty( $theme->get( 'SLSWCUpdated' ) ) ? $theme->get( 'SLSWCUpdated' ) : '',
             'compatible_to'     => ! empty( $theme->get( 'SLSWCCompatibleTo' ) )
                 ? $theme->get( 'SLSWCCompatibleTo' )
                 : '',
@@ -173,7 +198,7 @@ class Helper {
                 ? $theme->get( 'SLSWCDocumentationURL' )
                 : '',
             'type'              => 'theme',
-        ];
+        );
 
         return apply_filters( 'slswc_client_formatted_theme_data', $formatted_data, $theme, $theme_file );
     }
@@ -207,7 +232,7 @@ class Helper {
      * @since   1.1.0 - Refactored into classes and converted into a composer package.
      * @version 1.1.0
      */
-    public static function product_background_installer( $slug = '', $package = '' ) {
+    public static function product_background_installer( $slug = '', $package = '' ) { // phpcs:ignore
         global $wp_filesystem;
 
         $slug = isset( $_REQUEST['slug'] ) ? wp_unslash( sanitize_text_field( wp_unslash( $_REQUEST['slug'] ) ) ) : '';
@@ -215,9 +240,9 @@ class Helper {
             || ! empty( $_REQUEST ) && array_key_exists( 'nonce', $_REQUEST )
             && isset( $_REQUEST ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ), 'slswc_client_install_' . $slug ) ) {
             wp_send_json_error(
-                [
+                array(
                     'message' => esc_attr__( 'Failed to install product. Security token invalid.', 'slswcclient' ),
-                ]
+                )
             );
         }
 
@@ -262,27 +287,27 @@ class Helper {
                         if ( $unzipfile ) {
                             $deleted = $wp_filesystem->delete( $destination );
                             wp_send_json_success(
-                                [
+                                array(
                                     'message' => sprintf(
                                         // translators: %s - the name of the plugin/theme.
                                         __( 'Successfully installed new version of %s', 'slswcclient' ),
                                         $name
                                     ),
-                                ]
+                                )
                             );
                         } else {
                             wp_send_json_error(
-                                [
+                                array(
                                     'slug'    => $slug,
                                     'message' => __( 'Installation failed. There was an error extracting the downloaded file.', 'slswcclient' ),
-                                ]
+                                )
                             );
                         }
                     }
                 }
             } catch ( Exception $e ) {
                 wp_send_json_error(
-                    [
+                    array(
                         'slug'    => $slug . '_install_error',
                         'message' => sprintf(
                             // translators: 1: theme slug, 2: error message, 3: URL to install theme manually.
@@ -291,20 +316,20 @@ class Helper {
                             $e->getMessage(),
                             esc_url( admin_url( 'update.php?action=install-' . $product_type . '&' . $product_type . '=' . $slug . '&_wpnonce=' . wp_create_nonce( 'install-' . $product_type . '_' . $slug ) ) )
                         ),
-                    ]
+                    )
                 );
             }
 
-            wp_send_json_error( [ 'message' => __( 'No action taken.', 'slswcclient' ) ] );
+            wp_send_json_error( array( 'message' => __( 'No action taken.', 'slswcclient' ) ) );
 
             // Discard feedback.
             ob_end_clean();
         }
 
         wp_send_json(
-            [
+            array(
                 'message' => __( 'Failed to install product. Download link not provided or is invalid.', 'slswcclient' ),
-            ]
+            )
         );
     }
 
@@ -320,7 +345,7 @@ class Helper {
     public static function is_dev( $url = '', $environment = '' ) {
         $is_dev = false;
 
-        if ( $environment === 'staging' ) {
+        if ( 'staging' === $environment ) {
             return apply_filters( 'slswc_client_is_dev', true, $url, $environment );
         }
 
@@ -392,11 +417,11 @@ class Helper {
     public static function is_tld_dev( $host ) {
         $tlds_to_check = apply_filters(
             'slswc_client_url_tlds',
-            [
+            array(
                 '.dev',
                 '.local',
                 '.test',
-            ]
+            )
         );
 
         foreach ( $tlds_to_check as $tld ) {
@@ -423,19 +448,19 @@ class Helper {
 
         $subdomains_to_check = apply_filters(
             'slswc_client_url_subdomains',
-            [
+            array(
                 'dev.',
                 '*.staging.',
                 '*.test.',
                 'staging-*.',
                 '*.wpengine.com',
                 '*.easywp.com',
-            ]
+            )
         );
 
         foreach ( $subdomains_to_check as $subdomain ) {
             $subdomain = str_replace( '.', '(.)', $subdomain );
-            $subdomain = str_replace( [ '*', '(.)' ], '(.*)', $subdomain );
+            $subdomain = str_replace( array( '*', '(.)' ), '(.*)', $subdomain );
 
             if ( preg_match( '/^(' . $subdomain . ')/', $host ) ) {
                 return true;
@@ -454,7 +479,7 @@ class Helper {
     public static function license_status_types() {
         return apply_filters(
             'slswc_license_status_types',
-            [
+            array(
                 'valid'           => __( 'Valid', 'slswcclient' ),
                 'deactivated'     => __( 'Deactivated', 'slswcclient' ),
                 'max_activations' => __( 'Max Activations reached', 'slswcclient' ),
@@ -463,7 +488,7 @@ class Helper {
                 'active'          => __( 'Active', 'slswcclient' ),
                 'expiring'        => __( 'Expiring', 'slswcclient' ),
                 'expired'         => __( 'Expired', 'slswcclient' ),
-            ]
+            )
         );
     }
 
@@ -527,4 +552,26 @@ class Helper {
 
 		return $headers;
 	}
+
+    /**
+     * Convert a date string to time
+     *
+     * @param string $date_string The date string.
+     * @return int $timestamp The timestamp of the given date string.
+     * @version 1.1.0
+     */
+    public static function date_to_time( $date_string ) {
+
+        if ( 0 == $date_string ) {
+            return 0;
+        }
+
+        try {
+            $date_time = new WC_DateTime( $date_string, new DateTimeZone( 'UTC' ) );
+
+            return intval( $date_time->getTimestamp() );
+        } catch ( Exception $e ) {
+            return 0;
+        }        
+    }
 }
