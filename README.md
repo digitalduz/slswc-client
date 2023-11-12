@@ -6,7 +6,7 @@ This is the class file required to be included with your plugin or theme to prov
 
 Install the SDK using the composer package manager.
 
-`composer require madvault/slswc-client`
+`composer require digitalduz/slswc-client`
 
 Then use the client as follows for a plugin:
 
@@ -84,7 +84,7 @@ Here is a full example of how to use this in a plugin:
  */
 
 require __DIR__ . '/vendor/autoload.php';
-use Madvault\Slswc\Client\Plugin;
+use Digitalduz\Slswc\Client\Plugin;
 
 function test_slswc_client_for_plugin() {
     $license_server_url = 'http://example.com';
@@ -107,7 +107,7 @@ Put this in `functions.php`
 ```php
 require __DIR__ . '/vendor/autoload.php';
 
-use Madvault\Slswc\Client\Theme;
+use Digitalduz\Slswc\Client\Theme;
 
 function theme_slswc_client() {
     $license_details = array(

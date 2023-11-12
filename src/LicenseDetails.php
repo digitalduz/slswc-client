@@ -8,7 +8,7 @@
  * @package SLSWC_CLient
  */
 
-namespace Madvault\Slswc\Client;
+namespace Digitalduz\Slswc\Client;
 
 /**
  * License details class.

@@ -7,7 +7,7 @@
  * @package Slswc_Client
  */
 
-namespace Madvault\Slswc\Client;
+namespace Digitalduz\Slswc\Client;
 
 /**
  * Software Updater Interface

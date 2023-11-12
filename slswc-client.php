@@ -35,8 +35,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Madvault\Slswc\Client\Updater\PluginBootstrap;
-use Madvault\Slswc\Client\Helper;
+use Digitalduz\Slswc\Client\Updater\PluginBootstrap;
+use Digitalduz\Slswc\Client\Helper;
 
 define( 'SLSWC_CLIENT_VERSION', '1.1.0' );
 

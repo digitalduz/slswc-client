@@ -8,7 +8,7 @@
  * @link        https://licenseserver.io/
  */
 
-namespace MadVault\Slswc\Client\Updater;
+namespace Digitalduz\Slswc\Client\Updater;
 
 /**
  * Plugin bootstrap class.

@@ -8,9 +8,9 @@
  * @link        https://licenseserver.io/
  */
 
-namespace Madvault\Slswc\Client;
+namespace Digitalduz\Slswc\Client;
 
-use Madvault\Slswc\Client\Helper;
+use Digitalduz\Slswc\Client\Helper;
 
 use WP_Error;
 

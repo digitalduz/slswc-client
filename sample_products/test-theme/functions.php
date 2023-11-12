@@ -10,7 +10,7 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use Madvault\Slswc\Client\Theme;
+use Digitalduz\Slswc\Client\Theme;
 
 /**
  * Initialize License CLient

@@ -29,7 +29,7 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use Madvault\SLSWC\Client\Plugin;
+use Digitalduz\SLSWC\Client\Plugin;
 
 /**
  * Initialize license server client.

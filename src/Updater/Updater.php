@@ -8,12 +8,12 @@
  * @link        https://licenseserver.io/
  */
 
-namespace Madvault\Slswc\Client\Updater;
+namespace Digitalduz\Slswc\Client\Updater;
 
-use Madvault\Slswc\Client\ApiClient;
-use Madvault\Slswc\Client\Plugin;
-use Madvault\Slswc\Client\Helper;
-use Madvault\Slswc\Client\Theme;
+use Digitalduz\Slswc\Client\ApiClient;
+use Digitalduz\Slswc\Client\Plugin;
+use Digitalduz\Slswc\Client\Helper;
+use Digitalduz\Slswc\Client\Theme;
 
 use Exception;
 

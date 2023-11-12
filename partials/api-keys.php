@@ -6,7 +6,7 @@
  * @package SLSWC_Updater/Partials
  */
 
-use Madvault\Slswc\Client\Helper;
+use Digitalduz\Slswc\Client\Helper;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;

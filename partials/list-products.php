@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use Madvault\Slswc\Client\Helper;
+use Digitalduz\Slswc\Client\Helper;
 
 ?>
 <h2 class="screen-reader-text">

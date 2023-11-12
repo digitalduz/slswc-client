@@ -1,5 +1,5 @@
 {
-    "name": "madvault/slswc-client",
+    "name": "digitalduz/slswc-client",
     "description": "Software License Server for WooCommerce",
     "license": "GPL-2.0-or-later",
     "version": "1.1.0",
@@ -17,8 +17,8 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Madvault\\Slswc\\Client\\": "src/",
-            "Madvault\\Slswc\\Client\\Updater\\": "src/Updater/"
+            "Digitalduz\\Slswc\\Client\\": "src/",
+            "Digitalduz\\Slswc\\Client\\Updater\\": "src/Updater/"
         }
     },
     "require-dev": {

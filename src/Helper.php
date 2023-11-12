@@ -8,7 +8,7 @@
  * @link        https://licenseserver.io/
  */
 
-namespace Madvault\Slswc\Client;
+namespace Digitalduz\Slswc\Client;
 
 use Exception;
 use WC_DateTime;
