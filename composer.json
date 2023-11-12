@@ -21,13 +21,15 @@
         }
     },
     "require-dev": {
-        "mockery/mockery": "^1.5"
+        "mockery/mockery": "^1.5",
+        "phpstan/phpstan": "^1.10"
     },
     "prefer-stable" : true,
     "scripts": {
         "fix": "./vendor/bin/phpcbf --warning-severity=0 -s --ignore-annotations --extensions=php,html ./src",
         "lint": "./vendor/bin/phpcs --warning-severity=0 -s --ignore-annotations --extensions=php,html ./src",
-        "phptest": "./vendor/bin/phpcs -p ./src --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html"
+        "phptest": "./vendor/bin/phpcs -p ./src --standard=PHPCompatibility --runtime-set testVersion 5.3-8.0 --report-full=./reports/php-compatibility.html",
+        "analyze": "vendor/bin/phpstan analyse ./src ./partials ./sample_products"
     },
     "config": {
         "allow-plugins": {
