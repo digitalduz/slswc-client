@@ -214,7 +214,6 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
      * @return object
      */
     public function add_plugin_info( $result, $action = null, $args = null ) {
-
         // Is this about our plugin?
         if ( isset( $args->slug ) ) {
             if ( $args->slug !== $this->get_slug() ) {
@@ -224,7 +223,7 @@ class Plugin extends GenericSoftwareUpdater implements SoftwareUpdaterInterface 
             return $result;
         }
 
-        $server_response = $this->client->request( 'product', $this->get_license_details() );
+        $server_response = $this->client->request( 'check_update', $this->get_license_details() );
 
         if ( ! isset( $server_response->software_details ) || is_null( $server_response->software_details ) ) {
             return $result;
