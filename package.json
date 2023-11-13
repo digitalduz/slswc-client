@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "name": "slswc-updater",
-=======
   "name": "slswc-client",
->>>>>>> 99e684df6340763f63b381f0a4c7369db0416d7b
   "version": "1.1.0",
   "private": true,
   "slug": "slswc-client",
@@ -16,15 +12,11 @@
     "format-scss": "prettier --write \"./assets/src/scss/**/*.scss\"",
     "format-js": "prettier-eslint --write --eslint-config-path=.eslintrc.js --config=.prettierrc \"./assets/src/js/**/*.js\"",
     "format-php": "composer run fix",
-<<<<<<< HEAD
-    "lint-php": "composer run lint; exit 0"
-=======
     "lint-js": "eslint assets/src/js; exit 0",
     "lint-scss": "stylelint assets/src/scss; exit 0",
     "lint-php": "composer run lint; exit 0",
     "cypress:open": "cypress open",
     "cypress:test": "cypress run"
->>>>>>> 99e684df6340763f63b381f0a4c7369db0416d7b
   },
   "prettier": {
     "singleQuote": true,
